@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Virtual Robot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --h1-bg:   #b2c0ff;
+    --h2-bg:   #9ed8ff;
+    --h3-bg:   #e6ccff;
+    --h4-bg:   #ccffcc;
+    --req-bg:  #d9ffb3;
+    --req-border: #5cb85c;
+    --rem-bg:  #E3F2FD;
+    --rem-border: #90caf9;
+    --code-bg: #f7f7f9;
+    --code-border: #c8c8d0;
+    --text:    #1e1e2e;
+    --text-muted: #555570;
+    --accent:  #3638a8;
+    --link:    #545454;
+    --body-bg: #fafafa;
+    --radius:  8px;
+    --font-body: 'DM Sans', sans-serif;
+    --font-head: 'Lora', Georgia, serif;
+    --font-code: 'Source Code Pro', 'Consolas', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--body-bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+/* ── layout wrapper ── */
+.page-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 36px 60px;
+}
+
+/* ── top banner ── */
+#top {
+    background: linear-gradient(135deg, #2a2d72 0%, #4a4fc4 60%, #7b80e8 100%);
+    padding: 32px 36px 28px;
+    margin-bottom: 0;
+    position: relative;
+    overflow: hidden;
+}
+#top::before {
+    content: '✦';
+    position: absolute;
+    right: 48px; top: 18px;
+    font-size: 80px;
+    opacity: 0.08;
+    color: #fff;
+    animation: pulse 3s ease-in-out infinite;
+}
+#top::after {
+    content: '✦';
+    position: absolute;
+    right: 140px; top: 40px;
+    font-size: 40px;
+    opacity: 0.06;
+    color: #fff;
+    animation: pulse 3s ease-in-out infinite 1s;
+}
+@keyframes pulse { 0%,100%{opacity:.06} 50%{opacity:.14} }
+
+#top h1 {
+    color: #fff;
+    font-family: var(--font-head);
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.25);
+}
+#top .subtitle {
+    color: rgba(255,255,255,0.75);
+    font-size: 0.85rem;
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* ── section nav strip ── */
+.toc-strip {
+    background: #fff;
+    border-bottom: 2px solid var(--h1-bg);
+    padding: 10px 36px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.toc-strip a {
+    color: var(--accent);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+}
+.toc-strip a:hover { opacity: 1; text-decoration: underline; }
+
+/* ── typography ── */
+h1 {
+    font-family: var(--font-head);
+    font-size: 1.55rem;
+    font-weight: 700;
+    background: var(--h1-bg);
+    color: #1a1a3a;
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    margin: 36px 0 14px;
+    border-left: 5px solid #5a5fcf;
+    letter-spacing: 0.01em;
+}
+h2 {
+    font-family: var(--font-head);
+    font-size: 1.22rem;
+    font-weight: 600;
+    background: var(--h2-bg);
+    color: #103050;
+    border-radius: var(--radius);
+    padding: 8px 16px;
+    margin: 28px 0 12px;
+    border-left: 4px solid #4db6e8;
+}
+h3 {
+    font-family: var(--font-head);
+    font-size: 1.05rem;
+    font-weight: 600;
+    background: var(--h3-bg);
+    color: #3a1060;
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    margin: 22px 0 10px;
+    border-left: 3px solid #b07de0;
+}
+h4 {
+    background: var(--h4-bg);
+    font-size: 0.97rem;
+    font-weight: 600;
+    border-radius: 5px;
+    padding: 5px 12px;
+    margin: 18px 0 8px;
+    width: 95%;
+    border-left: 3px solid #6abf69;
+}
+
+p { margin: 0 0 12px; }
+
+/* ── links ── */
+a, a:visited, a:active, a:link {
+    color: var(--link);
+    text-decoration: underline;
+    font-size: 93%;
+}
+a:hover { background: #e8e8e8; border-radius: 3px; }
+
+/* ── pre / code blocks ── */
+pre {
+    font-family: var(--font-code);
+    font-size: 0.82rem;
+    background: var(--code-bg);
+    border: 1.5px solid var(--code-border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    overflow-x: auto;
+    line-height: 1.6;
+    margin: 10px 0 18px;
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.04);
+    position: relative;
+}
+pre::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 8px; right: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #aaa;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+tt  { font-family: var(--font-code); font-size: 90%; color: #006600; }
+em  { font-family: var(--font-body); font-size: 80%; font-weight: 700;
+      border: 1px solid #abe876; color: #1632cc; border-radius: 3px; padding: 0 3px; }
+bc  { font-family: var(--font-body); font-size: 90%; font-weight: 700;
+      color: #990000; background: #fcf8c7; border-radius: 3px; padding: 0 3px; }
+ks  { font-family: var(--font-body); font-weight: 700; color: #0000CD; font-size: 90%; }
+kc  { font-family: var(--font-body); font-weight: 700; color: #008000; font-size: 90%; }
+k   { color: #990000; font-weight: 700; font-size: 90%; }
+
+/* ── requirement box ── */
+div.req {
+    background: var(--req-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--req-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.req::before {
+    content: 'Requisiti';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a7a3a;
+    margin-bottom: 8px;
+}
+
+/* ── remark box ── */
+div.remark {
+    background: var(--rem-bg);
+    border: 1.5px solid var(--rem-border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin: 10px 0 18px;
+}
+
+/* ── tables ── */
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th { background: #e8ecff; color: #1a1a3a; font-weight: 600; }
+th, td { border: 1px solid #c8c8d4; padding: 8px 12px; font-size: 0.9rem; }
+tr:nth-child(even) td { background: #f6f8ff; }
+
+/* ── images ── */
+img { border: 1.5px solid #d5f2ed; border-radius: 6px; max-width: 100%; }
+
+/* ── footer ── */
+.footer {
+    background: linear-gradient(90deg, rgba(86,56,253,0.88), rgba(86,56,253,0.70));
+    color: #fff;
+    padding: 14px 20px;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    margin-top: 40px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.footer img { border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; width: 42px; height: 42px; object-fit: cover; }
+.footer a { color: #d0d8ff; }
+
+/* ── body content wrapper ── */
+div.body { font-size: 1rem; }
+div.wrapdesc { width: 90%; margin: auto; }
+div.imagedesc { width: 85%; margin: auto; }
+
+hr { clear: both; height: 1px; background: #ddd; border: none; margin: 24px 0; }
+
+ol, ul, li { margin: 0 0 0 18px; padding: 0 0 5px; }
+
+@media (max-width: 600px) {
+    .page-wrap { padding: 0 16px 40px; }
+    #top { padding: 22px 16px 18px; }
+    .toc-strip { padding: 8px 16px; gap: 12px; }
+}
+
+@media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="top">
+    <h1>Virtual Robot</h1>
+    <div class="subtitle">ISS 2026 — Valeria Capacci</div>
+</div>
+
+<div class="toc-strip">
+    <a href="#intro">Introduction</a>
+    <a href="#req">Requirements</a>
+    <a href="#reqanalysis">Req. Analysis</a>
+    <a href="#probanalysis">Problem Analysis</a>
+    <a href="#tests">Test Plans</a>
+    <a href="#project">Project</a>
+    <a href="#testing">Testing</a>
+    <a href="#deploy">Deployment</a>
+</div>
+
+<div class="page-wrap">
+<div class="body">
+
+<h1 id="intro">Introduction</h1>
+<p><strong>Goal</strong>: Realizzare un sistema software che comanda un Differential Drive Robot (DDR).</p>
+
+<h1 id="req">Requirements</h1>
+
+<div class="req">
+<strong>R1</strong> &nbsp; Partendo dalla posizione iniziale HOME, il robot si sposta lungo il perimetro di una stanza rettangolare vuota.<br><br>
+<strong>R2</strong> &nbsp; Il DDR si deve fermare quando tornato in HOME.<br><br>
+<strong>R3</strong> &nbsp; Il DDR è anche sensibile ai dati rilevati da un Radar. Quando il Radar rileva un 'intruso' a una distanza minore di una distanza prefissata ``DMIN``:<br>
+  - se il DDR si sta muovendo , il DDR si ferma fino a che il Radar non rileva più un 'intruso' così vicino.<br>
+  - se il DDR è fermo in HOME, il DDR ruota su sè stesso fino a che un 'intruso' così vicino scompare.
+</div>
+
+<h1 id="reqanalysis">Requirement Analysis</h1>
+
+<pre data-lang="analisi">
+Nel sistema entrano in gioco due principali entità:
+
+- Il Robot (DDR), una macchina (già fornita) in grado di spostarsi in avanti e indietro, di ruotare 
+  e di fermarsi in modo autonomo.
+  Inizia a muoversi da una posizione iniziale HOME, si sposta lungo un percorso
+  e si ferma quando torna al punto di partenza.
+  Esso, inoltre, deve essere in grado di fermarsi o ruotare (a seconda del caso)
+  se si imbatte in ostacoli abbastanza vicini.
+
+- Per formalizzare la HOME, dobbiamo prima formalizzare il concetto di stanza. La
+  stanza ha una forma rettangolare, pertanto possiamo rappresentarla come una griglia.
+  Per semplicità, scegliamo di rappresentare come unità di misura della stanza l'unità
+  robot. Il robot può essere rappresentato inscrivibile in un quadrato di lato r. Ogni
+  cella (piastrella) della griglia (stanza) avrà quindi misura r*r.
+
+  - Il Radar, un dispositivo dotato di sensori in grado di captare oggetti (ostacoli
+  in questo caso) posti a una certa distanza.
+  Se l'ostacolo si trova a una distanza minore di "DMIN", il compito del Radar è
+  quello di notificare l'ostacolo al Robot stesso.
+  Può essere visto come un attore: ha una vita propria e fa le cose proprie in autonomia.
+  Come fa il radar a comunicare con il DDR? Attraverso tre modi possibili:
+    - Evento (Emissione di informazioni) (Modello A): il radar notifica il Robot attraverso
+      un evento ogni tot tempo.
+    - Request/Response (Polling) (Modello B): il Robot fa una richiesta e attende che il radar
+      risponda.
+    - Observer (publish/subscrive) (Modello C): il Robot si iscrive e il Radar notifica
+      automaticamente le informazioni (pubblica).
+</pre>
+
+<h2>Radar con evento</h2>
+<pre data-lang="QAK">
+    Event dist : dist(X)   
+
+    QActor radarevent context ctxradar { 
+        
+        State s0 initial { 	
+            //stato iniziale
+            //si inizializza timer (ogni quanto manda la distanza)
+        } 
+        Transition t0 
+            whenTimeVar  Timer -> sendDist
+        
+        State sendDist{
+                //controlla se c'è u  oggetto davanti e se si:
+                //notifica a robot
+                emit dist : dist(X)
+        }
+        Goto s0
+    }
+</pre>
+
+<h2>Radar con polling</h2>
+<pre data-lang="QAK">
+    Request getDistance : getDistance(X)
+    Reply dist : dist(X) for getDistance
+
+    QActor radarpolling context ctxradar { 
+
+	State s0 initial {
+        //stato iniziale
+ 		println("Aspetto richiesta...") color green
+	}
+	Transition t0  
+        //arriva richiesta -> risponde con la distanza
+		whenRequest getDistance -> handleRequest
+   
+	State handleRequest{  
+		printCurrentMessage	color green	 
+ 		onMsg( getDistance : getDistance(X) ){  
+ 			// calcola distanza 
+ 			// ...
+ 			//manda risposta
+ 			replyTo getDistance with dist : dist( $Answer )  
+ 		} 
+	}  
+	Goto s0
+}
+</pre>
+
+<h2>Radar con observer</h2>
+<pre data-lang="QAK">
+    Dispatch dist : dist(X)
+
+    QActor radarobserver context ctxradar{
+        State s0 initial { 	
+            //stato iniziale
+            //si inizializza timer (ogni quanto pubblica la distanza)
+        } 
+        Transition t0 
+            whenTimeVar  Timer -> publishDist
+            
+        State publishDist {
+            //aggiorna distanza
+            updateResource [# "$DIST " #]
+        }
+        Goto s0
+    }
+</pre>
+
+
+
+<h1 id="probanalysis">Problem Analysis</h1>
+
+<pre data-lang="analisi">
+
+</pre>
+
+<p></p>
+
+<h2></h2>
+<p></p>
+
+<pre data-lang="QAK">
+
+</pre>
+
+<h2></h2>
+
+<pre data-lang="QAK">
+
+</pre>
+
+<h1 id="tests">Test Plans</h1>
+
+<h1 id="project">Project</h1>
+
+<h1 id="testing">Testing</h1>
+
+<h1 id="deploy">Deployment</h1>
+
+<h1>Maintenance</h1>
+
+</div><!-- .body -->
+
+<div class="footer">
+    <img src="./img/20260220_164401.jpg" alt="VC" onerror="this.style.display='none'">
+    <div>
+        By <strong>Valeria Capacci</strong> &nbsp;·&nbsp;
+        <a href="mailto:valeria.capacci@studio.unibo.it">valeria.capacci@studio.unibo.it</a><br>
+        GIT repo: <a href="https://github.com/valecapa/iss2026">https://github.com/valecapa/iss2026</a>
+    </div>
+</div>
+
+</div><!-- .page-wrap -->
+</body>
+</html>
