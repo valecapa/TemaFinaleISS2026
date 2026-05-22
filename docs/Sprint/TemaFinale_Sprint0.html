@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Virtual Robot</title>
+    <title>Cargoservice</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
@@ -15,6 +15,8 @@
     --h4-bg:   #fdf0f8;
     --req-bg:  #fef0fb;
     --req-border: #d484b8;
+    --domanda-bg:  #d2e6f4;
+    --domanda-border: #5caaeb;
     --rem-bg:  #f8eaff;
     --rem-border: #c9a0e0;
     --code-bg: #fdf8ff;
@@ -133,7 +135,7 @@ h1 {
 }
 h2 {
     font-family: var(--font-head);
-    font-size: 1.22rem;
+    font-size: 1rem;
     font-weight: 600;
     background: var(--h2-bg);
     color: #6a1a40;
@@ -174,29 +176,42 @@ a, a:visited, a:active, a:link {
 }
 a:hover { background: #f4e0f8; border-radius: 3px; }
 
-/* ── pre / code blocks ── */
+/* ── text blocks ── */
 pre {
-    font-family: var(--font-code);
-    font-size: 0.82rem;
-    background: var(--code-bg);
-    border: 1.5px solid var(--code-border);
-    border-radius: var(--radius);
-    padding: 18px 20px;
+    font-family: var(--font-main);
+    font-size: 0.95rem;
+    background: #fff9fc;
+    border: 1px solid #f1d7ea;
+    border-left: 5px solid #d87bc4;
+    border-radius: 16px;
+    padding: 20px 24px;
     overflow-x: auto;
-    line-height: 1.6;
-    margin: 10px 0 18px;
-    box-shadow: inset 0 1px 4px rgba(120,0,100,0.04);
-    position: relative;
+    line-height: 1.8;
+    margin: 14px 0 22px;
+    color: #4a3b46;
+    white-space: pre-wrap;
+    word-break: break-word;
+
+    box-shadow:
+        0 4px 14px rgba(216,123,196,0.08),
+        inset 0 1px 2px rgba(255,255,255,0.7);
 }
+
 pre::before {
-    content: attr(data-lang);
+    content: "Informazione";
     position: absolute;
-    top: 8px; right: 12px;
-    font-size: 0.7rem;
+    top: -11px;
+    left: 16px;
+
+    background: #d87bc4;
+    color: white;
+
+    padding: 4px 10px;
+    border-radius: 999px;
+
+    font-size: 0.72rem;
     font-weight: 600;
-    color: #c090d0;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 tt  { font-family: var(--font-code); font-size: 90%; color: #7a006a; }
@@ -226,6 +241,26 @@ div.req::before {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: #9a3880;
+    margin-bottom: 8px;
+}
+/* ── domanda box ── */
+div.domanda {
+    background: var(--domanda-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--domanda-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.domanda::before {
+    content: 'Domanda al committente:';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #5caaeb;
     margin-bottom: 8px;
 }
 
@@ -324,7 +359,7 @@ ol, ul, li { margin: 0 0 0 18px; padding: 0 0 5px; }
 <body>
 
 <div id="top">
-    <h1>Virtual Robot</h1>
+    <h1>Cargoservice</h1>
     <div class="subtitle">ISS 2026 — Valeria Capacci &amp; Ginevra Pentoli</div>
 </div>
 
@@ -343,118 +378,65 @@ ol, ul, li { margin: 0 0 0 18px; padding: 0 0 5px; }
 <div class="body">
 
 <h1 id="intro">Introduction</h1>
-<p><strong>Goal</strong>: Realizzare un sistema software che comanda un Differential Drive Robot (DDR).</p>
-
+<strong>Goal</strong>: Costruire un sistema software <code>cargoservice</code> che gestisce automaticamente il carico in stiva di beni.
 <h1 id="req">Requirements</h1>
-
+The company asks us to build a software systems (named cargoservice) that: <br>
 <div class="req">
-<strong>R1</strong> &nbsp; Partendo dalla posizione iniziale HOME, il robot si sposta lungo il perimetro di una stanza rettangolare vuota.<br><br>
-<strong>R2</strong> &nbsp; Il DDR si deve fermare quando tornato in HOME.<br><br>
-<strong>R3</strong> &nbsp; Il DDR è anche sensibile ai dati rilevati da un Radar. Quando il Radar rileva un 'intruso' a una distanza minore di una distanza prefissata <tt>DMIN</tt>:<br>
-  - se il DDR si sta muovendo , il DDR si ferma fino a che il Radar non rileva più un 'intruso' così vicino.<br>
-  - se il DDR è fermo in HOME, il DDR ruota su sè stesso fino a che un 'intruso' così vicino scompare.
+<strong>R1</strong> &nbsp; is able to receive the request to load on the cargo a product container already registered in the productservice. The request is rejected when: <br>
+- the product-weight is evaluated too high, since the ship can carry a maximum load of MaxLoad>0 kg .<br>
+- the hold is already full, i.e. the 4 slots are alrready occupied. <br>
+If the request is accepted, the cargoservice associates a slot to the product PID and returns the name of the reserved
+slot. Afttwerds, it waits that the product container is delivered to the ioport. In the meantime, other requests are not
+elaborated.<br><br>
+<strong>R2</strong> &nbsp; is able to detect (by means of the sonar sensor ) the presence of the product container at the ioport <br><br>
+<strong>R3</strong> &nbsp; is able to ensure that the product container is placed by the cargorobot within its reserved slot. At the end of the work: <br>
+- the cargorobot should returns to its HOME location.<br>
+- the cargoservice can process another load-request <br> <br>
+<strong>R4</strong> &nbsp; is able to show the current state of the hold, by mesans of a dynamically updated web-gui <br><br>
+<strong>R5</strong> &nbsp; interrupts any activity and turns on a led if the sonar sensor measures a distance D > DFREE for at least 3 secs (per‐
+haps a sonar failure). The service continues its activities as soon as the sonar measures a distance D <= DFREE . <br><br>
 </div>
 
 <h1 id="reqanalysis">Requirement Analysis</h1>
 
 <pre data-lang="analisi">
-Nel sistema entrano in gioco due principali entità:
+<h2> Sistema cargoservice</h2>
+Diamo il nome <code>cargoservice</code> al sistema software da realizzare, per distinguerlo dalle entità che lo compongono.  Si tratta di un sistema distribuito su più nodi computazionali, i cui componenti operano tramite scambio di messaggi.
+Il sistema comprende le seguenti macro-entità:
 
-- Il Robot (DDR), una macchina (già fornita) in grado di spostarsi in avanti e indietro, di ruotare 
-  e di fermarsi in modo autonomo.
-  Inizia a muoversi da una posizione iniziale HOME, si sposta lungo un percorso
-  e si ferma quando torna al punto di partenza.
-  Esso, inoltre, deve essere in grado di fermarsi o ruotare (a seconda del caso)
-  se si imbatte in ostacoli abbastanza vicini.
+- il <strong>cargorobot</strong> <code>(DDR)</code>,  un robot che può muoversi in avanti, indietro, ruotare su se stesso, fermarsi. Ovviamente queste azioni
+sono da intendersi come comandi, ma occorre specificare meglio.
+- il <code>productservice</code>, servizio già esistente per la registrazione dei prodotti
+- il sensore <code>sonar</code>, dispositivo fisico da integrare 
+- la <strong>stiva</strong> (<code>hold</code>), con i suoi slot di posizionamento 
+- il <code>LED</code> di allarme, attuatore fisico
+- la <code>web-gui</code>, interfaccia utente a aggiornamento dinamico
 
-- Per formalizzare la HOME, dobbiamo prima formalizzare il concetto di stanza. La
-  stanza ha una forma rettangolare, pertanto possiamo rappresentarla come una griglia.
-  Per semplicità, scegliamo di rappresentare come unità di misura della stanza l'unità
-  robot. Il robot può essere rappresentato inscrivibile in un quadrato di lato r. Ogni
-  cella (piastrella) della griglia (stanza) avrà quindi misura r*r.
-
-  - Il Radar, un dispositivo dotato di sensori in grado di captare oggetti (ostacoli
-  in questo caso) posti a una certa distanza.
-  Se l'ostacolo si trova a una distanza minore di "DMIN", il compito del Radar è
-  quello di notificare l'ostacolo al Robot stesso.
-  Può essere visto come un attore: ha una vita propria e fa le cose proprie in autonomia.
-  Come fa il radar a comunicare con il DDR? Attraverso tre modi possibili:
-    - Evento (Emissione di informazioni) (Modello A): il radar notifica il Robot attraverso
-      un evento ogni tot tempo.
-    - Request/Response (Polling) (Modello B): il Robot fa una richiesta e attende che il radar
-      risponda.
-    - Observer (publish/subscrive) (Modello C): il Robot si iscrive e il Radar notifica
-      automaticamente le informazioni (pubblica).
+<h2>DDR</h2>
+<div class="domanda">
+    <strong>Domanda: </strong> Il software che rappresenta il DDR è già disponibile o dobbiamo costruirlo noi? 
+     <strong> Risposta: </strong> è disponibile il simulatore <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.1'>VirtualRobot26</a>, che definisce un insieme di<a href="https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.4"> Comandi-base per il robot in cril. </a> Questo simulatore si presenta come un servizio
+</div>
+<h2><code>productservice</code></h2>
+Il <code>productservice</code> è un servizio già disponibile che gestisce un registro di prodotti. Ad ogni prodotto è associato un peso (in kg). Dopo la registrazione di un prodotto, il servizio restituisce un identificatore univoco PID (numero naturale, PID > 0).
+<div class="domanda">
+    <strong>Domanda:</strong> Il software che rappresenta il productservice è già raggiungibile in rete, oppure deve essere avviato localmente? Il cargoservice lo interroga attivamente (pull) o riceve notifiche (push)?
+</div>
 </pre>
 
-<h2>Radar con evento</h2>
+<h2></h2>
 <pre data-lang="QAK">
-    Event dist : dist(X)   
-
-    QActor radarevent context ctxradar { 
-        
-        State s0 initial { 	
-            //stato iniziale
-            //si inizializza timer (ogni quanto manda la distanza)
-        } 
-        Transition t0 
-            whenTimeVar  Timer -> sendDist
-        
-        State sendDist{
-                //controlla se c'è u  oggetto davanti e se si:
-                //notifica a robot
-                emit dist : dist(X)
-        }
-        Goto s0
-    }
+    
 </pre>
 
-<h2>Radar con polling</h2>
+<h2></h2>
 <pre data-lang="QAK">
-    Request getDistance : getDistance(X)
-    Reply dist : dist(X) for getDistance
-
-    QActor radarpolling context ctxradar { 
-
-	State s0 initial {
-        //stato iniziale
- 		println("Aspetto richiesta...") color green
-	}
-	Transition t0  
-        //arriva richiesta -> risponde con la distanza
-		whenRequest getDistance -> handleRequest
-   
-	State handleRequest{  
-		printCurrentMessage	color green	 
- 		onMsg( getDistance : getDistance(X) ){  
- 			// calcola distanza 
- 			// ...
- 			//manda risposta
- 			replyTo getDistance with dist : dist( $Answer )  
- 		} 
-	}  
-	Goto s0
-}
+    
 </pre>
 
 <h2>Radar con observer</h2>
 <pre data-lang="QAK">
-    Dispatch dist : dist(X)
-
-    QActor radarobserver context ctxradar{
-        State s0 initial { 	
-            //stato iniziale
-            //si inizializza timer (ogni quanto pubblica la distanza)
-        } 
-        Transition t0 
-            whenTimeVar  Timer -> publishDist
-            
-        State publishDist {
-            //aggiorna distanza
-            updateResource [# "$DIST " #]
-        }
-        Goto s0
-    }
+    
 </pre>
 
 
