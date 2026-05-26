@@ -58,26 +58,24 @@ body {
     position: relative;
     overflow: hidden;
 }
-#top::before {
-    content: '✦';
-    position: absolute;
-    right: 48px; top: 18px;
-    font-size: 80px;
-    opacity: 0.10;
-    color: #fff;
-    animation: pulse 3s ease-in-out infinite;
-}
-#top::after {
-    content: '✦';
-    position: absolute;
-    right: 140px; top: 40px;
-    font-size: 40px;
-    opacity: 0.07;
-    color: #fff;
-    animation: pulse 3s ease-in-out infinite 1s;
-}
-@keyframes pulse { 0%,100%{opacity:.07} 50%{opacity:.16} }
 
+#top::after {
+    content: '';
+    position: absolute;
+
+    top: -80px;
+    right: -20px;
+
+    width: 300px;
+    height: 300px;
+
+    background-image: url('../img/boat.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    opacity: 0.7;
+}
 #top h1 {
     color: #fff;
     font-family: var(--font-head);
@@ -140,8 +138,9 @@ h2 {
     background: var(--h2-bg);
     color: #6a1a40;
     border-radius: var(--radius);
-    padding: 8px 16px;
-    margin: 28px 0 12px;
+    margin: 0;
+    padding: 6px 15px;
+    line-height: 1.1;
     border-left: 4px solid #d060a0;
 }
 h3 {
@@ -180,39 +179,29 @@ a:hover { background: #f4e0f8; border-radius: 3px; }
 pre {
     font-family: var(--font-main);
     font-size: 0.95rem;
+
     background: #fff9fc;
+    color: #4a3b46;
+
     border: 1px solid #f1d7ea;
     border-left: 5px solid #d87bc4;
     border-radius: 16px;
-    padding: 20px 24px;
+
+    padding: 18px 22px;
+
     overflow-x: auto;
-    line-height: 1.8;
-    margin: 14px 0 22px;
-    color: #4a3b46;
     white-space: pre-wrap;
     word-break: break-word;
+
+    line-height: 1.45;
+
+    margin: 14px 0 22px;
 
     box-shadow:
         0 4px 14px rgba(216,123,196,0.08),
         inset 0 1px 2px rgba(255,255,255,0.7);
 }
 
-pre::before {
-    content: "Informazione";
-    position: absolute;
-    top: -11px;
-    left: 16px;
-
-    background: #d87bc4;
-    color: white;
-
-    padding: 4px 10px;
-    border-radius: 999px;
-
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-}
 
 tt  { font-family: var(--font-code); font-size: 90%; color: #7a006a; }
 em  { font-family: var(--font-body); font-size: 80%; font-weight: 700;
@@ -250,7 +239,7 @@ div.domanda {
     border: 2px solid var(--domanda-border);
     border-radius: var(--radius);
     padding: 16px 20px;
-    margin: 12px 0 18px;
+    margin: 0;
     position: relative;
 }
 div.domanda::before {
@@ -261,7 +250,6 @@ div.domanda::before {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: #5caaeb;
-    margin-bottom: 8px;
 }
 
 /* ── remark box ── */
@@ -379,6 +367,7 @@ ol, ul, li { margin: 0 0 0 18px; padding: 0 0 5px; }
 
 <h1 id="intro">Introduction</h1>
 <strong>Goal</strong>: Costruire un sistema software <code>cargoservice</code> che gestisce automaticamente il carico in stiva di beni.
+
 <h1 id="req">Requirements</h1>
 The company asks us to build a software systems (named cargoservice) that: <br>
 <div class="req">
@@ -398,47 +387,113 @@ haps a sonar failure). The service continues its activities as soon as the sonar
 </div>
 
 <h1 id="reqanalysis">Requirement Analysis</h1>
-
 <pre data-lang="analisi">
 <h2> Sistema cargoservice</h2>
 Diamo il nome <code>cargoservice</code> al sistema software da realizzare, per distinguerlo dalle entità che lo compongono.  Si tratta di un sistema distribuito su più nodi computazionali, i cui componenti operano tramite scambio di messaggi.
 Il sistema comprende le seguenti macro-entità:
 
-- il <strong>cargorobot</strong> <code>(DDR)</code>,  un robot che può muoversi in avanti, indietro, ruotare su se stesso, fermarsi. Ovviamente queste azioni
-sono da intendersi come comandi, ma occorre specificare meglio.
-- il <code>productservice</code>, servizio già esistente per la registrazione dei prodotti
-- il sensore <code>sonar</code>, dispositivo fisico da integrare 
-- la <strong>stiva</strong> (<code>hold</code>), con i suoi slot di posizionamento 
-- il <code>LED</code> di allarme, attuatore fisico
-- la <code>web-gui</code>, interfaccia utente a aggiornamento dinamico
+    - il <strong>cargorobot</strong> <code>(DDR)</code>,
+    - il <code>productservice</code>, servizio già esistente per la registrazione dei prodotti
+    - il sensore <code>sonar</code>, dispositivo fisico da integrare 
+    - la <strong>stiva</strong> (<code>hold</code>), con i suoi slot di posizionamento 
+    - il <code>LED</code> di allarme, attuatore fisico
+    - la <code>web-gui</code>, interfaccia utente a aggiornamento dinamico
 
-<h2>DDR</h2>
+<h2><code>cargorobot</code> (DDR)</h2>
+Il DDR robot che può muoversi in avanti, indietro, ruotare su se stesso, fermarsi. Ovviamente queste azioni sono da intendersi come comandi, ma occorre specificare meglio. <br>
 <div class="domanda">
     <strong>Domanda: </strong> Il software che rappresenta il DDR è già disponibile o dobbiamo costruirlo noi? 
-     <strong> Risposta: </strong> è disponibile il simulatore <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.1'>VirtualRobot26</a>, che definisce un insieme di<a href="https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.4"> Comandi-base per il robot in cril. </a> Questo simulatore si presenta come un servizio
+     <strong> Risposta: </strong> è disponibile il simulatore <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.1'>VirtualRobot26</a>, che definisce un insieme di <a href="https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.4">comandi-base per il robot in cril. </a> Questo simulatore si presenta come un servizio
 </div>
+//essenza di un'entita software: come dico alla macchina cos'è l'entita software. è un service: lo uso con dei comandi/messaggi via socket che possono essere o http (sincrono) o via WebSocket la cui interazione puo essere anche asincrona. privilegio l'interazione asincrona. 
+//apro un clientsocket per cui devo sapere solo la porta del servizio (8091). va descritto il linguaggio con cui vengono comnicati imessaggi
+Occorre esaminare se il servizio fornito:
+    - sia sufficiente per risolvere il problema (posizionare un container in uno slot specifico e tornare in HOME)
+    - sia adeguato per essere usato direttamente a livello di codice senza modifiche
+<code>
+    public interface ICargoRobot {
+    void moveToIOPort() throws Exception;       // raggiunge lo IOPort
+    void pickContainer() throws Exception;      // preleva il container
+    void moveToSlot(String slotName) throws Exception; // raggiunge lo slot
+    void placeContainer() throws Exception;     // deposita il container
+    void returnHome() throws Exception;         // torna in HOME
+    void halt() throws Exception;               // si ferma immediatamente
+}</code>
+
 <h2><code>productservice</code></h2>
-Il <code>productservice</code> è un servizio già disponibile che gestisce un registro di prodotti. Ad ogni prodotto è associato un peso (in kg). Dopo la registrazione di un prodotto, il servizio restituisce un identificatore univoco PID (numero naturale, PID > 0).
+Il <code>productservice</code> è un servizio già disponibile che gestisce un registro di prodotti. Ad ogni prodotto è associato un peso (in kg). Dopo la registrazione di un prodotto, il servizio restituisce un identificatore univoco PID (numero naturale, PID > 0). <br>
 <div class="domanda">
     <strong>Domanda:</strong> Il software che rappresenta il productservice è già raggiungibile in rete, oppure deve essere avviato localmente? Il cargoservice lo interroga attivamente (pull) o riceve notifiche (push)?
 </div>
-</pre>
+Notiamo come occorra verificare se il servizio esistente fornisce effettivamente un'operazione per recuperare il peso dato un PID.
 
-<h2></h2>
-<pre data-lang="QAK">
+<h2>Hold <code>(stiva)</code></h2>
+La stiva è un'area rettangolare e piatta con un unico punto di ingresso/uscita denominato <code>IOPort</code>. Fornisce 4 slot per container di prodotti. Lo <code>slot5</code> è permanentemente occupato; gli altri slot sono inizialmente vuoti.
+Formalizziamo la stiva come una classe Java <code>Hold:</code>
+<code>
+    public class Hold {
+    public static final int NUM_SLOTS = 4; // slot5 permanente
+    public static final int MAX_LOAD_KG = ...; // parametro di configurazione
+
+    public enum SlotState { FREE, RESERVED, OCCUPIED } 
+    //stato RESERVED per gestire la situazione di accettazione della richiesta,
+    //se uno slot è RESERVED, non si elaborano altre richieste.
+
+    private SlotState[] slots = {
+        SlotState.FREE,
+        SlotState.FREE, 
+        SlotState.FREE,
+        SlotState.FREE
+    };
+
+    private int[] slotPID = new int[NUM_SLOTS]; // PID associato a ogni slot
+    private float currentLoad = 0.0f;           // peso totale corrente in kg
+}
+</code>
+<div class="domanda">
+Il testo dice che il cargoservice "associa uno slot al prodotto PID", ma non specifica con quale criterio. Possibili strategie:
+    - primo libero
+    - ottimizzazione del percorso del robot (minima distanza dallo IOPort) <br>
+    <strong>Domanda:</strong> quale strategia di assegnazione degli slot deve essere adottata?
+</div>
+<h2>Sonar sensor</h2>
+Il sonar è un sensore fisico collocato davanti all'<code>IOPort</code>. Misura continuamente una distanza <code>D</code> Il valore <code>DFREE</code> è una costante di configurazione che rappresenta la distanza libera attesa (area vuota davanti al sensore).
+Due soglie operative:
+    - <code>D < DFREE/2 </code>per almeno 3 secondi → presenza di un container allo IOPort
+    - <code>D > DFREE</code> per almeno 3 secondi → possibile guasto del sensore
+
+<div class="domanda">
+    Ambiguità: il testo dice che il sistema "interrompe ogni attività" se D > DFREE per 3 secondi. Ma non è specificato cosa accade se il guasto si verifica mentre il cargorobot è già in movimento.
+    Due interpretazioni possibili:
+    - Interpretazione A: il robot si ferma immediatamente (halt), il container rimane dove si trova, e il sistema resta sospeso finché il sonar non si riprende. Al ripristino, il robot riprende l'operazione interrotta.
+    - Interpretazione B: il robot completa l'operazione corrente (posiziona il container), poi il sistema si mette in attesa prima di accettare nuove richieste.
     
-</pre>
+    <strong>Domanda:</strong> quale delle due interpretazioni è quella corretta? In caso di Interpretazione A: il robot deve riprendere dal punto in cui era, o deve tornare in HOME e ricominciare?
+</div>
+    <div class="domanda">
+    <strong>Domanda:</strong> Il software che gestisce il sonar è già disponibile, oppure dobbiamo costruirlo noi?
+    <strong>Risposta:</strong> in attesa di uno strumento più evoluto, viene fornito un dispositivo fisico basato su un RaspBerry PicoW, ma senza software di supporto.
+</div>
+<div class="domanda">
+    <strong>Domanda:</strong> in quale formato ci aspettiamo di ricevere i dati dal sonar?
+    <strong>Risposta:</strong> stringhe della forma <code>distance(DIRECTION, D)</code>, dove <code>D</code> è la distanza misurata (intero, in cm o mm).
+</div>
+Occorre esaminare se basti scrivere software sul microcontrollore per integrare compiutamente il sonar nel sistema, oppure se serva un componente intermediario (proxy/adapter) che traduca i messaggi grezzi in eventi comprensibili al <code>cargoservice</code>. <br>
+<h2><code>HOME</code></h2>
+<code>HOME</code> è la posizione iniziale del cargorobot nella stiva. Il robot deve tornare in <code>HOME</code> al termine di ogni operazione di carico.
+<code>HOME</code> non può essere un punto matematico ma deve essere una zona, correlata alla dimensione fisica del robot. Tuttavia, dato che il cargorobot è già fornito come servizio preconfigurato, è probabile che la posizione <code>HOME</code> sia già nota internamente al servizio. <br>
+<h2>Struttura del sistema</h2>
+Il <code>cargoservice</code> non può essere eseguito sul nodo del <code>cargorobot</code> (che deve rimanere un componente autonomo), né sul microcontrollore del sonar. Il sistema è quindi logicamente distribuito su almeno tre nodi:
+    - il nodo applicativo principale, <code>cargoservice</code>
+    - il nodo robot, <code>cargorobot</code>
+    - il sonar sensor
+    - il nodo esterno, <code>productservice</code>, già esistente da requisiti.
 
-<h2></h2>
-<pre data-lang="QAK">
-    
+Trattandosi di un sistema distribuito in cui i componenti comunicano a scambio di messaggi, la struttura del sistema può essere formalizzata con un linguaggio di modellazione a messaggi (come qak), in modo da distinguere chiaramente:
+    - <code>dispatch</code> (messaggi punto-a-punto)
+    - <code>emit</code> (eventi broadcast, es. lettura sonar)
+    - <code>request/response</code> (interazioni sincrone con productservice e cargorobot)
 </pre>
-
-<h2>Radar con observer</h2>
-<pre data-lang="QAK">
-    
-</pre>
-
 
 
 <h1 id="probanalysis">Problem Analysis</h1>
