@@ -410,8 +410,10 @@ Il DDR robot che può muoversi in avanti, indietro, ruotare su se stesso, fermar
 Occorre esaminare se il servizio fornito:
     - sia sufficiente per risolvere il problema (posizionare un container in uno slot specifico e tornare in HOME)
     - sia adeguato per essere usato direttamente a livello di codice senza modifiche
+
+    //qual è i lpercorsomilgiore che puo fare per passare dalla posizione A alla posizione B? c'è un enorme abstraction gap. analizzando il problema, ho capito il problema piu grosso 8LO SPOSTAMENT9. VEDIamo se riesco a fattorizzare lo spostamento con un componente che mi aiuta a farlo (analisi del problema)
 <code>
-    public interface ICargoRobot {
+public interface ICargoRobot {
     void moveToIOPort() throws Exception;       // raggiunge lo IOPort
     void pickContainer() throws Exception;      // preleva il container
     void moveToSlot(String slotName) throws Exception; // raggiunge lo slot
@@ -419,15 +421,26 @@ Occorre esaminare se il servizio fornito:
     void returnHome() throws Exception;         // torna in HOME
     void halt() throws Exception;               // si ferma immediatamente
 }</code>
-
+//cos'è il cargorobot? devo dire al committente cos'è per me. o è un pojo o è un attore. prima di nominare la parola attore prima, perche mentre pojo lo capisce cjìhiunque la parole attore la conosciamo solo noi. nel momento in cui viene detto che si vuole modellare come atore cosa intendimao per attore. ci vuole il link
 <h2><code>productservice</code></h2>
+//il committente con productservice ci da ance l'entita di pordotto. devo anceh capire cosa intende con database. ottica  microservizi: ciascuno miscroservizio puo avere il suo database
 Il <code>productservice</code> è un servizio già disponibile che gestisce un registro di prodotti. Ad ogni prodotto è associato un peso (in kg). Dopo la registrazione di un prodotto, il servizio restituisce un identificatore univoco PID (numero naturale, PID > 0). <br>
 <div class="domanda">
     <strong>Domanda:</strong> Il software che rappresenta il productservice è già raggiungibile in rete, oppure deve essere avviato localmente? Il cargoservice lo interroga attivamente (pull) o riceve notifiche (push)?
 </div>
+
 Notiamo come occorra verificare se il servizio esistente fornisce effettivamente un'operazione per recuperare il peso dato un PID.
 
 <h2>Hold <code>(stiva)</code></h2>
+//come formalizzo la hold? devo trDURRE UN aerea rettangolare, come al solito ci sono edlle dimensine ma anchde un input port che va formalizzare. 
+//formalizziamo dove va l'input port: è una cella con certe coordinate, va fatta come la home
+//vanno formalizzat gli slot: in che posizione sono? come sono fatti?
+//la hold sara fatta di celle, ma io parto dalla macrostruttura: l'entta hold che bestia computazionale è? un pojo, quindi ci saranno gli slot
+//modello anche gli slot come pojo, lo slot è un pojo con uno stato
+//lo slot ha delle coordinate? o ce l'ha la hold? ha nelle oordinate una porta d'ingresso
+//le porte di ingresso è comodo metterle a nord o a ovest
+//le coordinate sono nella stiva, non sono una sua porprieta intrinseca. 
+
 La stiva è un'area rettangolare e piatta con un unico punto di ingresso/uscita denominato <code>IOPort</code>. Fornisce 4 slot per container di prodotti. Lo <code>slot5</code> è permanentemente occupato; gli altri slot sono inizialmente vuoti.
 Formalizziamo la stiva come una classe Java <code>Hold:</code>
 <code>
@@ -450,6 +463,9 @@ Formalizziamo la stiva come una classe Java <code>Hold:</code>
     private float currentLoad = 0.0f;           // peso totale corrente in kg
 }
 </code>
+
+//request per il maxload??  con actor qak va fatta
+//test per vedere se è troppo piena o se è vuota o se gli metto un prodotto che non è registrato nel productservice
 <div class="domanda">
 Il testo dice che il cargoservice "associa uno slot al prodotto PID", ma non specifica con quale criterio. Possibili strategie:
     - primo libero
