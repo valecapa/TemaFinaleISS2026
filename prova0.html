@@ -472,18 +472,21 @@ li { margin-bottom: 4px; }
     <tr><th>Stato</th><th>Descrizione</th></tr>
     <tr><td><strong>Engaged</strong></td><td>Richiesta accettata, in attesa che il cliente porti il container (timeout 30 s) <code>LED </code> → lampeggia </tr>
     <tr><td><strong>Disengaged</strong></td><td>Timeout di 30 s scaduto</td></tr>
-    <tr><td><strong>Working</strong></td><td>Robot in movimento, operazione di carico in corso</td></tr>
+    <tr><td><strong>Service working</strong></td><td>Robot in movimento, operazione di carico in corso</td></tr>
     <tr><td><strong>Out of service</strong></td><td>Guasto sonar rilevato (D &gt; DFREE per ≥ 3 s)</td></tr>
 </table>
 
 <div class="domanda">
     <strong>Domanda:</strong> Cosa avviene dopo lo scadere del timer in stato <em>Disengaged</em>?
 </div>
+<div class="domanda">
+    <strong>Domanda:</strong> Durante lo stato <em>Service working</em>, il <code>LED</code> è spento oppure lampeggia?
+</div>
 
 <!-- ─── Struttura del sistema ─── -->
 <h2>Struttura del sistema</h2>
 
-<p>Il <code>cargoservice</code> è un sistema distribuito su almeno i seguenti nodi computazionali:</p>
+<p>Il <code>cargoservice</code> è un sistema distribuito sui seguenti nodi computazionali:</p>
 <ul>
     <li><strong>Nodo principale</strong>: <code>cargoservice</code> (orchestrazione, business logic)</li>
     <li><strong>Nodo robot</strong>: <code>cargorobot</code> (DDR + VirtualRobot26)</li>
@@ -497,13 +500,13 @@ li { margin-bottom: 4px; }
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="probanalysis">Problem Analysis</h1>
 
-<p>L'analisi del problema ha l'obiettivo di passare da <em>cosa</em> il sistema deve fare (requisiti) a <em>come</em> è strutturato: quali entità computazionali lo compongono, che natura hanno, e come si scambiano messaggi. Il risultato è un modello qak che cattura i requisiti in termini di attori concorrenti.</p>
+<p>L'analisi del problema ha l'obiettivo di passare da <em>cosa</em> il sistema deve fare (requisiti) a <em>come</em> è strutturato: quali entità computazionali lo compongono, che natura hanno, e come si scambiano messaggi. Il risultato è un modello qak che cattura i requisiti in termini di attori.</p>
 
 <h2>Natura delle entità: attori vs. POJO</h2>
 
-<p>Il punto di partenza è decidere la natura computazionale di ciascuna entità identificata nell'analisi dei requisiti. Un <strong>POJO</strong> (Plain Old Java Object) è un oggetto passivo, manipolato da chi lo chiama; un <strong>attore</strong> è un'entità autonoma, con il proprio thread di controllo, che reattiva su messaggi in arrivo e può inviarne ad altri.</p>
+<p>Il punto di partenza è decidere la natura computazionale di ciascuna entità identificata nell'analisi dei requisiti. Un <strong>POJO</strong> (Plain Old Java Object) è un oggetto passivo; un <strong>attore</strong> è un'entità autonoma, reattiva su messaggi in arrivo e può inviarne ad altri.</p>
 
-<p>Il cargoservice deve reagire a eventi eterogenei e concorrenti — una pressione sul pushbutton, una lettura del sonar, un segnale del marker, una risposta del robot — che possono arrivare in qualsiasi momento e in qualsiasi ordine. Questa natura reattiva e concorrente rende il modello ad attori la scelta naturale: ciascuna entità del sistema gestisce la propria coda di messaggi e reagisce agli stimoli senza bloccare le altre.</p>
+<p>Il cargoservice deve reagire a eventi concorrenti (una pressione sul pushbutton, una lettura del sonar, un segnale del marker, una risposta del robot) che possono arrivare in qualsiasi momento e in qualsiasi ordine. Questa natura reattiva e concorrente rende il modello ad attori la scelta più adatta per il sistema: ciascuna entità gestisce la propria coda di messaggi e reagisce agli stimoli senza bloccare le altre.</p>
 
 <table>
     <tr><th>Entità</th><th>Natura</th><th>Motivazione</th></tr>
@@ -511,17 +514,19 @@ li { margin-bottom: 4px; }
     <tr><td><code>cargorobot</code></td><td>Attore qak</td><td>Entità autonoma con comportamento sequenziale proprio; riceve comandi e risponde al termine</td></tr>
     <tr><td><code>sonarproxy</code></td><td>Attore qak</td><td>Riceve continuamente stringhe grezze dal PicoW e le trasforma in eventi comprensibili al sistema</td></tr>
     <tr><td><code>ioporthandler</code></td><td>Attore qak</td><td>Gestisce gli eventi del pushbutton e aggiorna il display; disaccoppia l'hardware dall'orchestratore</td></tr>
-    <tr><td><code>marker</code></td><td>Dispositivo esterno</td><td>Hardware; segnala il completamento via messaggio al <code>cargoservice</code></td></tr>
     <tr><td><code>Hold</code></td><td>POJO</td><td>Struttura dati passiva: stato degli slot, peso corrente; gestita internamente dal <code>cargoservice</code></td></tr>
 </table>
+<div class="domanda">
+    <strong>Domanda:</strong> Il dispositivo <code>marker</code>, va inteso come dispositivo esterno (hardware) che segnala il comportamento via messaggio o come un servizio?
+</div>
 
 <h2>Abstraction gap del <code>cargorobot</code></h2>
 
 <p>Il simulatore VirtualRobot26 espone solo primitive di basso livello: muovi avanti per N passi, ruota a sinistra/destra, fermati. I requisiti richiedono invece operazioni di alto livello: raggiungere l'IOPort, prelevare il container, raggiungere slot5, depositare, raggiungere lo slot riservato, tornare a HOME.</p>
 
-<p>Questo <em>abstraction gap</em> va colmato nel progetto del <code>cargorobot</code>. La soluzione è definire un livello intermedio di navigazione — che traduce le operazioni di alto livello in sequenze di comandi primitivi — mantenendo la responsabilità di <em>cosa fare</em> nel <code>cargoservice</code> e quella di <em>come muoversi</em> nel <code>cargorobot</code>.</p>
+<p>Questo <em>abstraction gap</em> viene colmato definendo un livello intermedio di navigazione, che traduce le operazioni di alto livello in sequenze di comandi primitivi, mantenendo la responsabilità di <em>cosa fare</em> nel <code>cargoservice</code> e quella di <em>come muoversi</em> nel <code>cargorobot</code>.</p>
 
-<p>Il <code>cargorobot</code> espone quindi un'interfaccia a messaggi (non un'interfaccia Java), del tipo:</p>
+<p>Il <code>cargorobot</code> espone quindi un'interfaccia a messaggi, del tipo:</p>
 
 <pre>// Messaggi che cargoservice invia a cargorobot (dispatch)
 dispatch moveto      : moveto(DESTINATION)   // es. moveto(IOPORT), moveto(SLOT1), moveto(HOME)
