@@ -378,13 +378,13 @@ li { margin-bottom: 4px; }
 <!-- ─── cargorobot ─── -->
 <h2><code>cargorobot</code> (DDR)</h2>
 
-<p>Il DDR è un robot a guida differenziale che può muoversi in avanti, indietro, ruotare su se stesso e fermarsi. È disponibile un simulatore (<a href="https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.1">VirtualRobot26</a>) che espone i comandi-base del robot via socket (HTTP o WebSocket), presentandosi come un servizio che fornisce solo primitive di movimento.</p>
+<p>Il DDR è un robot a guida differenziale che può muoversi in avanti, indietro, ruotare su se stesso e fermarsi. È disponibile un simulatore (<a href="https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.1">VirtualRobot26</a>) che espone i comandi-base del robot in cril, presentandosi come un servizio che fornisce solo primitive di movimento.</p>
 
 <p>Il <code>cargorobot</code> come entità con comportamento applicativo va però <strong>progettato e realizzato</strong> da noi: la responsabilità dell'orchestrazione delle operazioni (raggiungere l'IOPort, prelevare il container, raggiungere slot5, ecc.) appartiene al <code>cargoservice</code>, non al DDR. Esiste dunque un <em>abstraction gap</em> significativo tra i comandi primitivi del simulatore e le operazioni di alto livello richieste, che sarà analizzato nella Problem Analysis.</p>
 
 <div class="domanda">
     <strong>Domanda:</strong> Il servizio VirtualRobot26 è sufficiente per risolvere il problema (posizionare un container in uno slot e tornare in HOME) o richiede modifiche?<br>
-    <strong>Risposta:</strong> in attesa di chiarimenti; si assume che il simulatore fornisca le primitive necessarie (avanza, ruota, fermati) e che la logica applicativa vada implementata sopra di esse.
+    <strong>Risposta:</strong> si assume che il simulatore fornisca le primitive necessarie (avanza, ruota, fermati) e che la logica applicativa vada implementata sopra di esse.
 </div>
 
 <!-- ─── IOPort ─── -->
@@ -394,14 +394,7 @@ li { margin-bottom: 4px; }
 <ul>
     <li>un <strong>pushbutton</strong>: premuto dal cliente per inviare una richiesta di carico;</li>
     <li>un <strong>display</strong>: mostra la risposta alla richiesta e lo stato corrente della stiva;</li>
-    <li>un <strong>sonar</strong>: rilevatore di presenza del container nell'area d'ingresso.</li>
 </ul>
-
-<div class="domanda">
-    <strong>Domanda:</strong> Il software che gestisce pushbutton e display dell'IOPort è già disponibile, oppure occorre svilupparlo?
-    In quale formato arrivano gli eventi del pushbutton al <code>cargoservice</code>?
-</div>
-
 <!-- ─── Sonar ─── -->
 <h2>Sonar sensor</h2>
 
@@ -409,7 +402,7 @@ li { margin-bottom: 4px; }
 
 <p>Due soglie operative:</p>
 <ul>
-    <li><code>D &lt; DFREE/2</code> per almeno 3 secondi → <strong>presenza di un container</strong> allo IOPort</li>
+    <li><code>D &lt; DFREE/2</code> per almeno 3 secondi → <strong>presenza di un container</strong> allo IOPort → stato <em>Service working</em></li> 
     <li><code>D &gt; DFREE</code> per almeno 3 secondi → <strong>possibile guasto del sensore</strong> → stato <em>Out of service</em></li>
 </ul>
 
@@ -433,10 +426,10 @@ li { margin-bottom: 4px; }
 <!-- ─── Marker ─── -->
 <h2>Marker (slot5)</h2>
 
-<p><code>slot5</code> non è permanentemente occupato, ma è una <strong>stazione di marcatura temporanea</strong>. Quando il <code>cargorobot</code> deposita un container in <code>slot5</code>, il dispositivo <em>marker</em> applica un barcode identificativo e segnala al sistema quando l'attività è completata. Solo allora il robot può prelevare il container e portarlo nello slot riservato.</p>
+<p><code>slot5</code> è una <strong>stazione di marcatura temporanea</strong>. Quando il <code>cargorobot</code> deposita un container in <code>slot5</code>, il dispositivo <em>marker</em> applica un barcode identificativo e segnala al sistema quando l'attività è completata. Solo allora il robot può prelevare il container e portarlo nello slot riservato.</p>
 
 <div class="domanda">
-    <strong>Domanda:</strong> Come segnala il marker il completamento della marcatura? Via messaggio su rete, interrupt hardware, callback HTTP?
+    <strong>Domanda:</strong> Come segnala il marker il completamento della marcatura? Via messaggio su rete?
 </div>
 
 <!-- ─── Hold ─── -->
@@ -445,21 +438,24 @@ li { margin-bottom: 4px; }
 <p>La stiva è un'area rettangolare e piatta con un unico punto di ingresso/uscita (<code>IOPort</code>). Fornisce:</p>
 <ul>
     <li><strong>slot1–slot4</strong>: slot per la deposizione definitiva dei container</li>
-    <li><strong>slot5</strong>: stazione temporanea di marcatura (non conta ai fini del "pieno")</li>
+    <li><strong>slot5</strong>: stazione temporanea di marcatura </li>
 </ul>
 
 <p>Formalizziamo la stiva come classe Java <code>Hold</code>:</p>
 
 <pre>public class Hold {
     public static final int NUM_SLOTS = 4;       // slot1..slot4
-    public static final float MAX_LOAD_KG = ...; // parametro di configurazione
 
     public enum SlotState { FREE, RESERVED, OCCUPIED }
     // RESERVED: slot assegnato a una richiesta accettata, robot non ancora arrivato.
     // Finché uno slot è RESERVED il sistema è 'engaged' e non accetta nuove richieste.
 
-    private SlotState[] slots = new SlotState[NUM_SLOTS]; // slot1..slot4
-    private float currentLoad = 0.0f; // peso totale corrente in kg
+    private SlotState[] slots = { // slot1..slot4
+        SlotState.FREE,
+        SlotState.FREE, 
+        SlotState.FREE,
+        SlotState.FREE
+    };
 
     // slot5 è gestito separatamente: è libero o occupato dal marker
     private boolean slot5Occupied = false;
@@ -482,15 +478,15 @@ li { margin-bottom: 4px; }
 <p>Dall'analisi dei requisiti emergono i seguenti stati operativi del servizio:</p>
 
 <table>
-    <tr><th>Stato</th><th>Descrizione</th><th>LED</th></tr>
-    <tr><td><strong>Idle</strong></td><td>Sistema pronto, IOPort libero, nessuna richiesta in corso</td><td>spento</td></tr>
-    <tr><td><strong>Engaged</strong></td><td>Richiesta accettata, in attesa che il cliente porti il container (timeout 30 s)</td><td>lampeggia</td></tr>
-    <tr><td><strong>Working</strong></td><td>Robot in movimento, operazione di carico in corso</td><td>lampeggia</td></tr>
-    <tr><td><strong>Out of service</strong></td><td>Guasto sonar rilevato (D &gt; DFREE per ≥ 3 s)</td><td>acceso fisso</td></tr>
+    <tr><th>Stato</th><th>Descrizione</th></tr>
+    <tr><td><strong>Engaged</strong></td><td>Richiesta accettata, in attesa che il cliente porti il container (timeout 30 s) <code>LED </code> → lampeggia </tr>
+    <tr><td><strong>Disengaged</strong></td><td>Timeout di 30 s scaduto</td></tr>
+    <tr><td><strong>Working</strong></td><td>Robot in movimento, operazione di carico in corso</td></tr>
+    <tr><td><strong>Out of service</strong></td><td>Guasto sonar rilevato (D &gt; DFREE per ≥ 3 s)</td></tr>
 </table>
 
 <div class="domanda">
-    <strong>Domanda:</strong> Il LED in stato <em>Engaged</em> e in stato <em>Working</em> deve comportarsi allo stesso modo (lampeggio), o i due stati devono essere distinguibili visivamente (frequenze diverse)?
+    <strong>Domanda:</strong> Cosa avviene dopo lo scadere del timer in stato <em>Disengaged</em>?
 </div>
 
 <!-- ─── Struttura del sistema ─── -->
