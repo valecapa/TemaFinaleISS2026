@@ -324,29 +324,21 @@ li { margin-bottom: 4px; }
 
 <p><strong>Goal</strong>: Costruire un sistema software <code>cargoservice</code> che automatizza le operazioni di carico di container nella stiva di una nave, impiegando un robot a guida differenziale (<em>cargorobot</em>).</p>
 
-<p>La stiva è un'area rettangolare con un Input/Output port (<code>IOPort</code>) e cinque slot. I container vengono introdotti dall'<code>IOPort</code>, marcati temporaneamente in <code>slot5</code>, e poi collocati dal <code>cargorobot</code> in uno degli slot 1–4.</p>
-
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="req">Requirements</h1>
 
 <p>The company asks us to build a service named <code>cargoservice</code> that:</p>
 
 <div class="req">
-<p><strong>R1</strong> &nbsp; is able to receive a request to load a container sent by some customer via the pushbutton of the <code>IOPort</code>. The system responds as follows:</p>
+<p><strong>R1</strong> &nbsp; is able to receive a request to load a container sent by some customer via the pushbutton of the <code>IOPort</code>.</p>
 <ul>
     <li>It sends the answer <strong>retrylater</strong> if the IOPort is currently occupied by a container, or if the system is <em>Out of service</em>.</li>
     <li>It <strong>rejects</strong> the request when the hold is already full (i.e. slots 1–4 are all occupied).</li>
     <li>Otherwise, it considers the system as <em>engaged</em>, detects a free slot, and returns the name of the reserved slot. While engaged, the system must <strong>blink a LED</strong>.</li>
 </ul>
-<p>When the request is accepted, the customer must move the container into the sensor area within a prefixed time (e.g. 30 secs); otherwise the system becomes <em>disengaged</em>.</p>
+<p><strong>R2</strong> &nbsp; when the <em>request to load</em> is accepted, the customer must move the container into the <em>sensor</em> area within a prefixed time (e.g. 30 secs); otherwise the system becomes <em>disengaged</em>.</p>
 
-<p><strong>R2</strong> &nbsp; is able to detect (by means of the sonar sensor) the presence of the product container at the IOPort, when it measures a distance D &lt; DFREE/2 for at least 3 secs.</p>
-
-<p><strong>R3</strong> &nbsp; uses the <code>cargorobot</code> to move the container from the IOPort to <code>slot5</code> (for barcode marking by the marker device), waits for the marking to complete, then moves the container to the reserved slot. At the end:</p>
-<ul>
-    <li>the <code>cargorobot</code> returns to its <code>HOME</code> location;</li>
-    <li>the <code>cargoservice</code> can process another load request.</li>
-</ul>
+<p><strong>R3</strong> &nbsp; uses the <code>cargorobot</code> to move the container from the IOPort to <code>slot5</code> (for barcode marking the container) and then to the reserved slot.</p>
 
 <p><strong>R4</strong> &nbsp; shows on the display of the <code>IOPort</code>:</p>
 <ul>
@@ -355,7 +347,6 @@ li { margin-bottom: 4px; }
     <li>the message <em>"Out of service"</em> if the sonar measures D &gt; DFREE for at least 3 secs (possible sonar failure).</li>
 </ul>
 
-<p><strong>R5</strong> &nbsp; interrupts any activity and turns on a LED if the sonar sensor measures a distance D &gt; DFREE for at least 3 secs (possible sonar failure). The service resumes its activities as soon as the sonar measures D ≤ DFREE.</p>
 </div>
 
 <!-- ══════════════════════════════════════════════════════ -->
