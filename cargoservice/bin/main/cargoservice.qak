@@ -1,0 +1,278 @@
+// ═══════════════════════════════════════════════════════════════
+//  cargoservice.qak  —  modello qak del sistema
+//  Sprint0: architettura logica completa, corpi degli attori da
+//  implementare negli sprint successivi.
+// ═══════════════════════════════════════════════════════════════
+
+// ── MESSAGGI ───────────────────────────────────────────────────
+
+// Richieste sincrone (request/reply): il cliente preme il pushbutton
+request  loadrequest  : loadrequest(none)
+reply    loadaccepted : loadaccepted(SLOTNAME)
+reply    loadrejected : loadrejected(REASON)    // REASON: full | retrylater
+
+// Comandi punto-a-punto verso cargorobot (dispatch, fire-and-forget)
+dispatch moveto       : moveto(DEST)            // DEST: IOPORT | SLOT5 | HOME | slotN
+dispatch pick         : pick(none)
+dispatch place        : place(none)
+dispatch halt         : halt(none)
+dispatch resume       : resume(none)
+
+// Risposta del robot al termine di ogni operazione (dispatch)
+dispatch robotdone    : robotdone(none)
+
+// Segnale del marker: container marcato in slot5 (dispatch)
+dispatch markdone     : markdone(none)
+
+// Comandi verso ioporthandler (dispatch)
+dispatch updateDisplay : updateDisplay(MSG)
+dispatch blinkLed      : blinkLed(ONOFF)       // ONOFF: on | off | blink
+
+// Eventi broadcast emessi da sonarproxy (emit, technology-independent)
+event sonarcontainer  : sonarcontainer(D)      // D < DFREE/2 per >= 3s: container presente
+event sonarfault      : sonarfault(D)          // D > DFREE per >= 3s: possibile guasto
+event sonarfree       : sonarfree(D)           // ripristino dopo fault
+
+
+// ── CONTESTO ───────────────────────────────────────────────────
+
+context ctxCargoservice ip [host="localhost" port=8050]
+
+
+// ── ATTORI ─────────────────────────────────────────────────────
+
+// ── cargoservice ───────────────────────────────────────────────
+// Orchestratore principale. Gestisce la macchina a stati del servizio:
+// idle → engaged → serviceworking → idle
+// Transizione trasversale: sonarfault → outofservice (da qualsiasi stato)
+
+QActor cargoservice context ctxCargoservice {
+
+    State idle initial {
+        [# hold.releaseReserved()
+           forward ioporthandler -m blinkLed(off)
+           forward ioporthandler -m updateDisplay(hold.displayStatus()) #]
+    }
+    Transition t0
+        whenMsg   loadrequest    -> engaged
+        whenEvent sonarfault     -> outofservice
+
+    // ── engaged: slot riservato, LED blink, timer 30s ──────────
+    State engaged {
+        onMsg loadrequest : loadrequest(none) {
+            [# val slot = hold.reserveFirstFree()
+               if (slot != null) {
+                   replyTo(loadrequest, loadaccepted(slot))
+                   forward ioporthandler -m blinkLed(blink)
+               } else {
+                   replyTo(loadrequest, loadrejected(full))
+               } #]
+        }
+        delay 30000
+    }
+    Transition t1
+        whenEvent sonarcontainer -> serviceworking
+        whenTime  30000          -> disengaged
+        whenEvent sonarfault     -> outofservice
+
+    // ── disengaged: timeout scaduto, slot rilasciato ───────────
+    State disengaged {
+        [# hold.releaseReserved()
+           forward ioporthandler -m blinkLed(off)
+           forward ioporthandler -m updateDisplay(hold.displayStatus()) #]
+    }
+    Goto idle
+
+    // ── serviceworking: sequenza robot ─────────────────────────
+    // Fase 1: raggiungi IOPort e preleva il container
+    State serviceworking {
+        [# forward ioporthandler -m updateDisplay(serviceworking) #]
+        forward cargorobot -m moveto(IOPORT)
+    }
+    Transition t2
+        whenMsg   robotdone   -> pickAtIoport
+        whenEvent sonarfault  -> outofservice
+
+    State pickAtIoport {
+        forward cargorobot -m pick(none)
+    }
+    Transition t3
+        whenMsg   robotdone   -> moveToSlot5
+        whenEvent sonarfault  -> outofservice
+
+    // Fase 2: porta in slot5 e attendi marcatura
+    State moveToSlot5 {
+        forward cargorobot -m moveto(SLOT5)
+    }
+    Transition t4
+        whenMsg   robotdone   -> placeAtSlot5
+        whenEvent sonarfault  -> outofservice
+
+    State placeAtSlot5 {
+        forward cargorobot -m place(none)
+        [# hold.setSlot5Occupied(true) #]
+    }
+    Transition t5
+        whenMsg   markdone    -> pickFromSlot5    // attende il marker, non robotdone
+        whenEvent sonarfault  -> outofservice
+
+    State pickFromSlot5 {
+        [# hold.setSlot5Occupied(false) #]
+        forward cargorobot -m pick(none)
+    }
+    Transition t6
+        whenMsg   robotdone   -> moveToReserved
+        whenEvent sonarfault  -> outofservice
+
+    // Fase 3: deposita nello slot riservato e torna HOME
+    State moveToReserved {
+        [# val dest = hold.getReservedSlotName() #]
+        forward cargorobot -m moveto($dest)
+    }
+    Transition t7
+        whenMsg   robotdone   -> placeAtReserved
+        whenEvent sonarfault  -> outofservice
+
+    State placeAtReserved {
+        forward cargorobot -m place(none)
+    }
+    Transition t8
+        whenMsg   robotdone   -> returnHome
+        whenEvent sonarfault  -> outofservice
+
+    State returnHome {
+        [# hold.markReservedOccupied()
+           forward ioporthandler -m updateDisplay(hold.displayStatus()) #]
+        forward cargorobot -m moveto(HOME)
+    }
+    Transition t9
+        whenMsg   robotdone   -> idle
+        whenEvent sonarfault  -> outofservice
+
+    // ── outofservice: fault sonar ───────────────────────────────
+    // Il robot viene fermato. Tutte le loadrequest ricevono retrylater.
+    // Il sistema rimane sospeso finché sonarfree non ripristina.
+    State outofservice {
+        [# forward cargorobot -m halt(none)
+           forward ioporthandler -m blinkLed(on)
+           forward ioporthandler -m updateDisplay(outofservice) #]
+    }
+    Transition t10
+        whenMsg   loadrequest  -> rejectRetry
+        whenEvent sonarfree    -> serviceworking
+
+    State rejectRetry {
+        replyTo loadrequest with loadrejected(retrylater)
+    }
+    Goto outofservice
+
+} // cargoservice
+
+
+// ── cargorobot ─────────────────────────────────────────────────
+// Entità autonoma con comportamento sequenziale.
+// Riceve moveto/pick/place/halt/resume e risponde con robotdone.
+// La navigazione (traduzione da destinazione simbolica a comandi
+// primitivi DDR) è responsabilità di questo attore.
+
+QActor cargorobot context ctxCargoservice {
+
+    State idle initial {
+        println("$name | ready")
+    }
+    Transition t0
+        whenMsg moveto  -> doMoveto
+        whenMsg halt    -> doHalt
+
+    State doMoveto {
+        onMsg moveto : moveto(DEST) {
+            [# val dest = payloadArg(0)
+               println("$name | moving to $dest") #]
+            // TODO Sprint1: tradurre dest in sequenza comandi cril verso VirtualRobot26
+        }
+        forward cargoservice -m robotdone(none)
+    }
+    Goto idle
+
+    State doHalt {
+        [# println("$name | HALT received") #]
+        // TODO Sprint1: inviare stop al VirtualRobot26, salvare stato corrente
+    }
+    Transition t0
+        whenMsg resume -> doResume
+
+    State doResume {
+        [# println("$name | RESUME received") #]
+        // TODO Sprint1: riprendere dal punto di interruzione
+        forward cargoservice -m robotdone(none)
+    }
+    Goto idle
+
+} // cargorobot
+
+
+// ── sonarproxy ─────────────────────────────────────────────────
+// Legge stringhe distance(DIRECTION, D) dal PicoW via UDP/TCP.
+// Applica la logica di temporizzazione (3s sotto/sopra soglia).
+// Emette eventi broadcast: sonarcontainer | sonarfault | sonarfree.
+
+QActor sonarproxy context ctxCargoservice {
+
+    State idle initial {
+        [# println("$name | waiting for sonar data from PicoW") #]
+        // TODO Sprint1: aprire connessione UDP/TCP verso PicoW
+        //               parsare stringhe distance(DIRECTION, D)
+        //               applicare timer 3s per le soglie DFREE/2 e DFREE
+    }
+    Transition t0
+        whenMsg sonardata -> processSonar
+
+    State processSonar {
+        onMsg sonardata : sonardata(D) {
+            [# val d = payloadArg(0).toInt()
+               // logica di temporizzazione da implementare:
+               // if d < DFREE/2 per >= 3s -> emit sonarcontainer(d)
+               // if d > DFREE   per >= 3s -> emit sonarfault(d)
+               // if d in range dopo fault  -> emit sonarfree(d)
+               println("$name | sonar reading: $d") #]
+        }
+    }
+    Goto idle
+
+} // sonarproxy
+
+
+// ── ioporthandler ──────────────────────────────────────────────
+// Gestisce pushbutton, display e LED fisici.
+// Invia loadrequest a cargoservice alla pressione del pushbutton.
+// Riceve updateDisplay e blinkLed da cargoservice.
+
+QActor ioporthandler context ctxCargoservice {
+
+    State idle initial {
+        [# println("$name | ready") #]
+        // TODO Sprint1: ascoltare eventi pushbutton dall'hardware
+    }
+    Transition t0
+        whenMsg updateDisplay -> doDisplay
+        whenMsg blinkLed      -> doLed
+
+    State doDisplay {
+        onMsg updateDisplay : updateDisplay(MSG) {
+            [# val msg = payloadArg(0)
+               println("$name | display: $msg") #]
+            // TODO Sprint1: inviare stringa al display fisico
+        }
+    }
+    Goto idle
+
+    State doLed {
+        onMsg blinkLed : blinkLed(ONOFF) {
+            [# val mode = payloadArg(0)
+               println("$name | LED: $mode") #]
+            // TODO Sprint1: controllare LED fisico (GPIO o messaggio al PicoW)
+        }
+    }
+    Goto idle
+
+} // ioporthandler
