@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cargoservice</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --h1-bg:   #f0e6ff;
+    --h2-bg:   #fce4f0;
+    --h3-bg:   #f9e0f5;
+    --h4-bg:   #fdf0f8;
+    --req-bg:  #fef0fb;
+    --req-border: #d484b8;
+    --domanda-bg:  #d2e6f4;
+    --domanda-border: #5caaeb;
+    --rem-bg:  #f8eaff;
+    --rem-border: #c9a0e0;
+    --code-bg: #fdf8ff;
+    --code-border: #dfc8e8;
+    --text:    #1e1a2e;
+    --text-muted: #5a4a6a;
+    --accent:  #7b3fa0;
+    --link:    #6b3a8a;
+    --body-bg: #fdf9ff;
+    --radius:  8px;
+    --font-body: 'DM Sans', sans-serif;
+    --font-head: 'Lora', Georgia, serif;
+    --font-code: 'Source Code Pro', 'Consolas', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--body-bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.page-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 36px 60px;
+}
+
+/* ── top banner ── */
+#top {
+    background: linear-gradient(135deg, #7b2fa0 0%, #b060c8 45%, #e080b0 80%, #f4a8cc 100%);
+    padding: 32px 36px 28px;
+    margin-bottom: 0;
+    position: relative;
+    overflow: hidden;
+}
+#top::after {
+    content: '';
+    position: absolute;
+
+    top: -80px;
+    right: -20px;
+
+    width: 300px;
+    height: 300px;
+
+    background-image: url('../img/boat.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    opacity: 0.7;
+}
+#top h1 {
+    color: #fff;
+    font-family: var(--font-head);
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 12px rgba(80,0,60,0.25);
+}
+#top .subtitle {
+    color: rgba(255,255,255,0.80);
+    font-size: 0.85rem;
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* ── section nav strip ── */
+.toc-strip {
+    background: #fff;
+    border-bottom: 2px solid #e8c8f4;
+    padding: 10px 36px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.toc-strip a {
+    color: var(--accent);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+}
+.toc-strip a:hover { opacity: 1; text-decoration: underline; }
+
+/* ── typography ── */
+h1 {
+    font-family: var(--font-head);
+    font-size: 1.55rem;
+    font-weight: 700;
+    background: var(--h1-bg);
+    color: #3a1a5a;
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    margin: 36px 0 14px;
+    border-left: 5px solid #9a5fc8;
+    letter-spacing: 0.01em;
+}
+h2 {
+    font-family: var(--font-head);
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: var(--h2-bg);
+    color: #6a1a40;
+    border-radius: var(--radius);
+    margin: 24px 0 10px;
+    padding: 6px 15px;
+    line-height: 1.3;
+    border-left: 4px solid #d060a0;
+}
+h3 {
+    font-family: var(--font-head);
+    font-size: 1.05rem;
+    font-weight: 600;
+    background: var(--h3-bg);
+    color: #6a1860;
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    margin: 22px 0 10px;
+    border-left: 3px solid #c870b8;
+}
+h4 {
+    background: var(--h4-bg);
+    font-size: 0.97rem;
+    font-weight: 600;
+    border-radius: 5px;
+    padding: 5px 12px;
+    margin: 18px 0 8px;
+    width: 95%;
+    border-left: 3px solid #d890c0;
+}
+
+p { margin: 0 0 12px; }
+
+a, a:visited, a:active, a:link {
+    color: var(--link);
+    text-decoration: underline;
+    font-size: 93%;
+}
+a:hover { background: #f4e0f8; border-radius: 3px; }
+
+/* ── code blocks ── */
+pre {
+    font-family: var(--font-code);
+    font-size: 0.88rem;
+    background: #fff9fc;
+    color: #4a3b46;
+    border: 1px solid #f1d7ea;
+    border-left: 5px solid #d87bc4;
+    border-radius: 16px;
+    padding: 18px 22px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.55;
+    margin: 14px 0 22px;
+    box-shadow: 0 4px 14px rgba(216,123,196,0.08), inset 0 1px 2px rgba(255,255,255,0.7);
+}
+
+code {
+    font-family: var(--font-code);
+    font-size: 90%;
+    background: #fdf0fa;
+    color: #7a006a;
+    border-radius: 4px;
+    padding: 1px 5px;
+}
+
+/* ── requirement box ── */
+div.req {
+    background: var(--req-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--req-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.req::before {
+    content: 'Requisiti';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a3880;
+    margin-bottom: 8px;
+}
+
+/* ── domanda box ── */
+div.domanda {
+    background: var(--domanda-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--domanda-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.domanda::before {
+    content: 'Domanda al committente:';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #1a6aab;
+    margin-bottom: 6px;
+}
+
+
+
+/* ── tables ── */
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th { background: #f0e0f8; color: #3a1a5a; font-weight: 600; }
+th, td { border: 1px solid #e0c8ec; padding: 8px 12px; font-size: 0.9rem; }
+tr:nth-child(even) td { background: #fdf6ff; }
+
+img { border: 1.5px solid #e8d0f4; border-radius: 6px; max-width: 100%; }
+
+/* ── footer ── */
+.footer {
+    background: linear-gradient(90deg, rgba(140,50,180,0.85), rgba(200,90,150,0.75));
+    color: #fff;
+    padding: 18px 24px;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    margin-top: 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.footer-authors {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.footer-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.footer-author img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.footer-author-initials {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.footer-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,0.3);
+}
+.footer a { color: #f4d0ff; }
+
+div.body { font-size: 1rem; }
+hr { clear: both; height: 1px; background: #e8d0f0; border: none; margin: 24px 0; }
+ol, ul { margin: 0 0 12px 20px; padding: 0; }
+li { margin-bottom: 4px; }
+
+@media (max-width: 600px) {
+    .page-wrap { padding: 0 16px 40px; }
+    #top { padding: 22px 16px 18px; }
+    .toc-strip { padding: 8px 16px; gap: 12px; }
+    .footer-divider { display: none; }
+}
+
+@media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="top">
+    <h1>Cargoservice</h1>
+    <div class="subtitle">ISS 2026 — Valeria Capacci &amp; Ginevra Pentoli</div>
+</div>
+
+<div class="toc-strip">
+    <a href="#intro">Introduction</a>
+    <a href="#req">Requirements</a>
+    <a href="#reqanalysis">Req. Analysis</a>
+    <a href="#probanalysis">Problem Analysis</a>
+    <a href="#tests">Test Plans</a>
+    <a href="#project">Project</a>
+    <a href="#testing">Testing</a>
+    <a href="#deploy">Deployment</a>
+</div>
+
+<div class="page-wrap">
+<div class="body">
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="intro">Introduction</h1>
+
+<p><strong>Goal</strong>: Costruire un sistema software <code>cargoservice</code> che automatizza le operazioni di carico di container nella stiva di una nave, impiegando un robot a guida differenziale (<em>cargorobot</em>).</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="req">Requirements</h1>
+
+<p>The company asks us to build a service named <code>cargoservice</code> that:</p>
+
+<div class="req">
+<p><strong>R1</strong> &nbsp; is able to receive a request to load a container sent by some customer via the pushbutton of the <code>IOPort</code>.</p>
+<ul>
+    <li>It sends the answer <strong>retrylater</strong> if the IOPort is currently occupied by a container, or if the system is <em>Out of service</em>.</li>
+    <li>It <strong>rejects</strong> the request when the hold is already full (i.e. slots 1–4 are all occupied).</li>
+    <li>Otherwise, it considers the system as <em>engaged</em>, detects a free slot, and returns the name of the reserved slot. While engaged, the system must <strong>blink a LED</strong>.</li>
+</ul>
+<p><strong>R2</strong> &nbsp; when the <em>request to load</em> is accepted, the customer must move the container into the <em>sensor</em> area within a prefixed time (e.g. 30 secs); otherwise the system becomes <em>disengaged</em>.</p>
+
+<p><strong>R3</strong> &nbsp; uses the <code>cargorobot</code> to move the container from the IOPort to <code>slot5</code> (for barcode marking the container) and then to the reserved slot.</p>
+
+<p><strong>R4</strong> &nbsp; shows on the display of the <code>IOPort</code>:</p>
+<ul>
+    <li>the current state of the hold;</li>
+    <li>the message <em>"Service working"</em> when everything is going well;</li>
+    <li>the message <em>"Out of service"</em> if the sonar measures D &gt; DFREE for at least 3 secs (possible sonar failure).</li>
+</ul>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="reqanalysis">Requirement Analysis</h1>
+
+<h2>Sistema <code>cargoservice</code></h2>
+
+<p>Diamo il nome <code>cargoservice</code> al sistema software da realizzare, per distinguerlo dalle entità che lo compongono. Si tratta di un sistema distribuito su più nodi computazionali, i cui componenti operano tramite scambio di messaggi.</p>
+
+<p>Il sistema comprende le seguenti macro-entità:</p>
+<ul>
+    <li>il <strong>cargorobot</strong> (DDR), da progettare e realizzare</li>
+    <li>il sensore <strong>sonar</strong>, dispositivo fisico da integrare</li>
+    <li>la <strong>stiva</strong> (<code>hold</code>), con i suoi slot di posizionamento</li>
+    <li>il <strong>marker</strong>, dispositivo che etichetta con barcode il container in slot5 e segnala il completamento</li>
+    <li>il dispositivo <strong>IOPort</strong>, dotato di pushbutton e display</li>
+    <li>il <strong>LED</strong> di allarme/stato, attuatore fisico</li>
+</ul>
+
+<!-- ─── cargorobot ─── -->
+<h2><code>cargorobot</code> (DDR)</h2>
+
+<p>Il DDR è un robot a guida differenziale che può muoversi in avanti, indietro, ruotare su se stesso e fermarsi. È disponibile un simulatore (<a href="https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.1">VirtualRobot26</a>) che espone i comandi-base del robot in cril, presentandosi come un servizio che fornisce solo primitive di movimento.</p>
+
+<p>Il <code>cargorobot</code> come entità con comportamento applicativo va però <strong>progettato e realizzato</strong> da noi: la responsabilità dell'orchestrazione delle operazioni (raggiungere l'IOPort, prelevare il container, raggiungere slot5, ecc.) appartiene al <code>cargoservice</code>, non al DDR. Esiste dunque un <em>abstraction gap</em> significativo tra i comandi primitivi del simulatore e le operazioni di alto livello richieste, che sarà analizzato nella Problem Analysis.</p>
+
+<div class="domanda">
+    <strong>Domanda:</strong> Il servizio VirtualRobot26 è sufficiente per risolvere il problema (posizionare un container in uno slot e tornare in HOME) o richiede modifiche?<br>
+    <strong>Risposta:</strong> si assume che il simulatore fornisca le primitive necessarie (avanza, ruota, fermati) e che la logica applicativa vada implementata sopra di esse.
+</div>
+
+<!-- ─── IOPort ─── -->
+<h2>IOPort</h2>
+
+<p>L'<code>IOPort</code> è un dispositivo fisico collocato all'ingresso della stiva. È composto da:</p>
+<ul>
+    <li>un <strong>pushbutton</strong>: premuto dal cliente per inviare una richiesta di carico;</li>
+    <li>un <strong>display</strong>: mostra la risposta alla richiesta e lo stato corrente della stiva;</li>
+</ul>
+
+<p>Pushbutton e display sono in realtà l'interfaccia fisica di una <strong>web GUI</strong>: il pushbutton invia richieste al sistema, il display ne mostra gli esiti. Il cliente vi accede da un qualsiasi dispositivo collegato alla rete (es. smartphone), puntando il browser all'IP del nodo che espone la pagina. Tale pagina può essere servita dallo stesso nodo che gestisce l'applicazione oppure da un microservizio ad hoc separato; per preferenza del committente si adotta questa seconda soluzione, trattando l'<code>IOPort</code> come nodo a sé stante (si veda <a href="#struttura">Struttura del sistema</a>).</p>
+
+<!-- ─── Sonar ─── -->
+<h2>Sonar sensor</h2>
+
+<p>Il sonar è un sensore fisico collocato davanti all'<code>IOPort</code>. Misura continuamente una distanza <code>D</code>. Il valore <code>DFREE</code> è una costante di configurazione che rappresenta la distanza libera attesa (area vuota davanti al sensore).</p>
+
+<p>Due soglie operative:</p>
+<ul>
+    <li><code>D &lt; DFREE/2</code> per almeno 3 secondi → <strong>presenza di un container</strong> allo IOPort → stato <em>Service working</em></li> 
+    <li><code>D &gt; DFREE</code> per almeno 3 secondi → <strong>possibile guasto del sensore</strong> → stato <em>Out of service</em></li>
+</ul>
+
+<div class="domanda">
+    <strong>Domanda:</strong> Il software che gestisce il sonar è già disponibile, oppure dobbiamo costruirlo noi?<br>
+    <strong>Risposta:</strong> in attesa di uno strumento più evoluto, viene fornito un dispositivo fisico basato su un RaspBerry PicoW, senza software di supporto. Occorre scrivere il firmware sul microcontrollore.
+</div>
+
+<div class="domanda">
+    <strong>Domanda:</strong> in quale formato ci aspettiamo di ricevere i dati dal sonar?<br>
+    <strong>Risposta:</strong> stringhe della forma <code>distance(DIRECTION, D)</code>, dove <code>D</code> è la distanza misurata (intero, in cm o mm).
+</div>
+
+<p>Occorre valutare se sia sufficiente scrivere software sul microcontrollore per integrare compiutamente il sonar nel sistema, oppure se serva un componente intermediario (proxy/adapter) che traduca i messaggi grezzi in eventi comprensibili al <code>cargoservice</code>.</p>
+
+<div class="domanda">
+    <strong>Domanda:</strong> Cosa accade se il guasto sonar si verifica mentre il cargorobot è già in movimento? Due interpretazioni: (A) il robot si ferma immediatamente e riprende dal punto in cui era al ripristino; (B) il robot completa l'operazione corrente e poi il sistema si mette in attesa.<br>
+    <strong>Risposta:</strong> interpretazione A. Il robot si ferma immediatamente (<em>halt</em>), il container rimane nella posizione corrente e il sistema resta sospeso finché il sonar non torna a misurare D ≤ DFREE. Al ripristino, il robot riprende l'operazione dal punto in cui si era fermato.
+</div>
+
+<!-- ─── Marker ─── -->
+<h2>Marker (slot5)</h2>
+
+<p><code>slot5</code> è una <strong>stazione di marcatura temporanea</strong>. Quando il <code>cargorobot</code> deposita un container in <code>slot5</code>, il dispositivo <em>marker</em> applica un barcode identificativo: attende alcuni secondi (tempo di marcatura) e poi segnala al sistema il completamento dell'attività. Solo allora il robot può prelevare il container e portarlo nello slot riservato.</p>
+
+<div class="domanda">
+    <strong>Domanda:</strong> Come segnala il marker il completamento della marcatura? Via messaggio su rete?<br>
+    <strong>Risposta:</strong> via messaggio, ma non necessariamente su rete — coerente con il fatto che il marker è logicamente parte del nodo <code>cargoservice</code> (si veda <a href="#struttura">Struttura del sistema</a>), il messaggio può quindi restare interno al nodo.
+</div>
+
+<!-- ─── Hold ─── -->
+<h2>Hold (stiva)</h2>
+
+<p>La stiva è un'area rettangolare e piatta con un unico punto di ingresso/uscita (<code>IOPort</code>). Fornisce:</p>
+<ul>
+    <li><strong>slot1–slot4</strong>: slot per la deposizione definitiva dei container</li>
+    <li><strong>slot5</strong>: stazione temporanea di marcatura </li>
+</ul>
+
+<p>Formalizziamo la stiva come classe Java <code>Hold</code>:</p>
+
+<pre>public class Hold {
+    public static final int NUM_SLOTS = 4;       // slot1..slot4
+
+    public enum SlotState { FREE, RESERVED, OCCUPIED }
+    // RESERVED: slot assegnato a una richiesta accettata, robot non ancora arrivato.
+    // Finché uno slot è RESERVED il sistema è 'engaged' e non accetta nuove richieste.
+
+    private SlotState[] slots = { // slot1..slot4
+        SlotState.FREE,
+        SlotState.FREE, 
+        SlotState.FREE,
+        SlotState.FREE
+    };
+
+    // slot5 è libero o occupato dal marker
+    private boolean slot5Occupied = false;
+
+    // Riserva il primo slot libero; restituisce il suo nome (es. "slot1") o null se piena
+    public String reserveFirstFree() { ... }
+
+    // Segna lo slot attualmente RESERVED come OCCUPIED
+    public void markReservedOccupied() { ... }
+
+    // True se tutti e 4 gli slot sono OCCUPIED
+    public boolean isFull() { ... }
+
+    // Stringa per il display (es. "2/4 occupied")
+    public String displayStatus() { ... }
+}</pre>
+
+<div class="domanda">
+    Il testo non specifica con quale criterio associare uno slot al container. Possibili strategie: primo libero (<em>first free</em>), oppure ottimizzazione del percorso del robot (minima distanza dallo IOPort).<br>
+    <strong>Domanda:</strong> quale strategia di assegnazione degli slot deve essere adottata?<br>
+    <strong>Risposta:</strong> basta prenderne uno libero (strategia <em>first free</em>).
+</div>
+
+<!-- ─── HOME ─── -->
+<h2><code>HOME</code></h2>
+
+<p><code>HOME</code> è la posizione iniziale del <code>cargorobot</code> nella stiva. Il robot deve tornare in <code>HOME</code> al termine di ogni operazione di carico. <code>HOME</code> non può essere un punto matematico ma deve essere una <em>zona</em>, correlata alla dimensione fisica del robot: la sua definizione e la logica di navigazione verso di essa sono parte del progetto del <code>cargorobot</code> che dobbiamo realizzare.</p>
+
+<!-- ─── Stati del sistema ─── -->
+<h2>Stati del sistema <code>cargoservice</code></h2>
+
+<p>Dall'analisi dei requisiti emergono i seguenti stati operativi del servizio:</p>
+
+<table>
+    <tr><th>Stato</th><th>Descrizione</th></tr>
+    <tr><td><strong>Idle</strong></td><td>In attesa di richieste</tr>
+    <tr><td><strong>Engaged</strong></td><td>Richiesta accettata, in attesa che il cliente porti il container (timeout 30 s) <code>LED </code> → lampeggia </tr>
+    <tr><td><strong>Disengaged</strong></td><td>Timeout di 30 s scaduto</td></tr>
+    <tr><td><strong>Service working</strong></td><td>Robot in movimento, operazione di carico in corso</td></tr>
+    <tr><td><strong>Out of service</strong></td><td>Guasto sonar rilevato (D &gt; DFREE per ≥ 3 s)</td></tr>
+</table>
+
+<div class="domanda">
+    <strong>Domanda:</strong> Cosa avviene dopo lo scadere del timer in stato <em>Disengaged</em>?<br>
+    <strong>Risposta:</strong> si processa una nuova richiesta, "dimenticando" quella precedente: il sistema torna semplicemente disponibile in <em>idle</em>.
+</div>
+<div class="domanda">
+    <strong>Domanda:</strong> Durante lo stato <em>Service working</em>, il <code>LED</code> è spento oppure lampeggia?<br>
+    <strong>Risposta:</strong> il sistema è ancora da considerarsi <em>engaged</em>, quindi il LED continua a lampeggiare.
+</div>
+
+<!-- ─── Struttura del sistema ─── -->
+<h2 id="struttura">Struttura del sistema</h2>
+
+<p>Il <code>cargoservice</code> è un sistema <strong>eterogeneo</strong>: ogni nodo computazionale impiega un tipo di software diverso (applicazione, firmware su microcontrollore, simulatore del robot). Java da solo non basta a coprire lo scambio di messaggi fra nodi così eterogenei; per questo si adotta <strong>qak</strong>, un linguaggio non di programmazione ma di <em>modellazione</em>, pensato proprio per catturare i requisiti distinguendo i tipi di interazione fra le entità (messaggi punto-a-punto, eventi broadcast, interazioni sincrone). Il modello qak completo sarà sviluppato nella Problem Analysis, ma i nodi principali sono già individuabili a livello di requisiti:</p>
+<ul>
+    <li><strong>Nodo principale</strong>: <code>cargoservice</code> (orchestrazione, business logic; comprende anche la logica del marker)</li>
+    <li><strong>Nodo robot</strong>: <code>cargorobot</code>, che si appoggia al servizio <code>VirtualRobot26</code> — <code>cargorobot</code> lo utilizza come servizio esterno (non lo estende)</li>
+    <li><strong>Microcontrollore sonar</strong>: RaspBerry PicoW con firmware da sviluppare</li>
+    <li><strong>Dispositivo IOPort</strong>: nodo separato che espone la web GUI (pushbutton + display) al cliente</li>
+</ul>
+
+<p>Si contano quindi almeno 3 nodi (<code>virtualrobot</code>, <code>cargoservice</code>, sonar), 4 se si considera l'<code>IOPort</code> come nodo a sé stante.</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="probanalysis">Problem Analysis</h1>
+
+<p>L'analisi del problema ha l'obiettivo di passare da <em>cosa</em> il sistema deve fare (requisiti) a <em>come</em> è strutturato: quali entità computazionali lo compongono, che natura hanno, e come si scambiano messaggi. Il risultato è un modello qak che cattura i requisiti in termini di attori.</p>
+
+<h2>Natura delle entità: attori vs. POJO</h2>
+
+<p>Il punto di partenza è decidere la natura computazionale di ciascuna entità identificata nell'analisi dei requisiti. Un <strong>POJO</strong> (Plain Old Java Object) è un oggetto passivo; un <strong>attore</strong> è un'entità autonoma, reattiva su messaggi in arrivo e può inviarne ad altri.</p>
+
+<p>Il cargoservice deve reagire a eventi concorrenti (una pressione sul pushbutton, una lettura del sonar, un segnale del marker, una risposta del robot) che possono arrivare in qualsiasi momento e in qualsiasi ordine. Questa natura reattiva e concorrente rende il modello ad attori la scelta più adatta per il sistema: ciascuna entità gestisce la propria coda di messaggi e reagisce agli stimoli senza bloccare le altre.</p>
+
+<table>
+    <tr><th>Entità</th><th>Natura</th><th>Motivazione</th></tr>
+    <tr><td><code>cargoservice</code></td><td>Attore qak</td><td>Orchestratore principale: reattivo a loadrequest, sonardata, markdone, robotdone</td></tr>
+    <tr><td><code>cargorobot</code></td><td>Attore qak</td><td>Entità autonoma con comportamento sequenziale proprio; riceve comandi e risponde al termine</td></tr>
+    <tr><td><code>sonarproxy</code></td><td>Attore qak</td><td>Riceve continuamente stringhe grezze dal PicoW e le trasforma in eventi comprensibili al sistema</td></tr>
+    <tr><td><code>ioporthandler</code></td><td>Attore qak</td><td>Gestisce gli eventi del pushbutton e aggiorna il display; disaccoppia l'hardware dall'orchestratore</td></tr>
+    <tr><td><code>Hold</code></td><td>POJO</td><td>Struttura dati passiva: stato degli slot, peso corrente; gestita internamente dal <code>cargoservice</code></td></tr>
+</table>
+<div class="domanda">
+    <strong>Domanda:</strong> Il dispositivo <code>marker</code>, va inteso come dispositivo esterno (hardware) che segnala il comportamento via messaggio o come un servizio?
+</div>
+
+<h2>Abstraction gap del <code>cargorobot</code></h2>
+
+<p>Il committente mette a disposizione più varianti di <code>VirtualRobot26</code>: <code>robotsmart</code>, <code>robotobj</code>, <code>robotservice</code>. Si sceglie la variante che riduce maggiormente l'abstraction gap, ovvero <code>robotsmart</code>: è in grado di calcolare autonomamente il percorso verso un punto, ricevendo in input solo le coordinate di destinazione. Il <code>cargorobot</code> lo utilizza come servizio esterno (non lo estende): <code>cargorobot</code> ne è piuttosto una specializzazione a livello applicativo, che ne orchestra l'uso.</p>
+
+<p>Anche <code>robotsmart</code> espone comunque solo primitive di basso livello rispetto ai requisiti: muovi avanti per N passi, ruota a sinistra/destra, fermati. I requisiti richiedono invece operazioni di alto livello: raggiungere l'IOPort, prelevare il container, raggiungere slot5, depositare, raggiungere lo slot riservato, tornare a HOME.</p>
+
+<p>Questo <em>abstraction gap</em> viene colmato definendo un livello intermedio di navigazione, che traduce le operazioni di alto livello in sequenze di comandi primitivi, mantenendo la responsabilità di <em>cosa fare</em> nel <code>cargoservice</code> e quella di <em>come muoversi</em> nel <code>cargorobot</code>.</p>
+
+<p>Il <code>cargorobot</code> espone quindi un'interfaccia a messaggi, del tipo:</p>
+
+<pre>// Messaggi che cargoservice invia a cargorobot (dispatch)
+dispatch moveto      : moveto(DESTINATION)   // es. moveto(IOPORT), moveto(SLOT1), moveto(HOME)
+dispatch pick        : pick(none)
+dispatch place       : place(none)
+dispatch halt        : halt(none)
+dispatch resume      : resume(none)
+
+// Messaggi che cargorobot risponde a cargoservice (dispatch)
+dispatch robotdone   : robotdone(OK)
+dispatch robotfailed : robotfailed(REASON)</pre>
+
+<p>Il fatto che <code>moveto</code> riceva una destinazione simbolica (e non coordinate fisiche) è una scelta deliberata di incapsulamento: la mappatura da nome-slot a percorso fisico appartiene al <code>cargorobot</code>, che conosce la geometria della stiva.</p>
+
+<h2>Gestione del sonar: proxy e temporizzazione</h2>
+
+<p>Il sonar sul PicoW emette continuamente stringhe <code>distance(DIRECTION, D)</code>. Il <code>cargoservice</code> non può consumare direttamente questi dati grezzi: occorre un attore <code>sonarproxy</code> che:</p>
+<ul>
+    <li>riceve le stringhe via UDP/TCP dal microcontrollore;</li>
+    <li>applica la logica di temporizzazione (3 secondi sotto soglia / sopra soglia);</li>
+    <li>emette <strong>eventi</strong> broadcast quando le condizioni sono soddisfatte.</li>
+</ul>
+
+<p>L'uso di <strong>emit</strong> (broadcast) anziché dispatch è motivato dal fatto che la lettura sonar riguarda potenzialmente più attori: il <code>cargoservice</code> (per rilevare il container) e lo stesso <code>cargoservice</code> per il fault, ma in futuro potrebbe riguardare anche un logger o un monitor.  Il broadcast disaccoppia il produttore dai consumatori rendendolo technology independent: il <code>sonarproxy</code> emette un evento senza assumere nulla su chi lo riceverà né su come lo elaborerà, permettendo di aggiungere nuovi consumatori senza toccare il produttore.</p>
+
+<pre>// Eventi emessi da sonarproxy (broadcast)
+event sonarcontainer : sonarcontainer(D)   // D < DFREE/2 per >= 3 s: container presente
+event sonarfault     : sonarfault(D)       // D > DFREE per >= 3 s: possibile guasto
+event sonarfree      : sonarfree(D)        // ripristino dopo fault</pre>
+
+<h2>Flusso principale e gestione degli stati</h2>
+
+<p>Il <code>cargoservice</code> è un attore con stato esplicito. I suoi stati operativi corrispondono direttamente ai requisiti e guidano la struttura del modello qak.</p>
+
+<pre>// Stati interni del cargoservice
+State idle           // in attesa di richieste
+State engaged        // richiesta accettata, attende container (timeout 30s), LED blink
+State disengaged     // timeout scaduto senza che il container sia stato rilevato
+State serviceworking // robot in movimento, operazione di carico in corso
+State outofservice   // fault sonar: tutte le richieste rifiutate con 'retrylater'</pre>
+
+<p>In stato <code>idle</code> il sistema è disponibile. All'arrivo di una <code>loadrequest</code> il <code>cargoservice</code> verifica la hold: se piena risponde <code>loadrejected(full)</code>, altrimenti riserva il primo slot libero, risponde con il suo nome, avvia il LED in modalità blink e fa partire il timer da 30 secondi. Il sistema entra in stato <code>engaged</code>.</p>
+
+<pre>// [idle] → ricezione richiesta di carico
+Transition t0 whenMsg loadrequest -> engaged
+
+State engaged {
+    [# val slot = hold.reserveFirstFree()
+       replyTo(loadrequest, loadaccepted(slot))
+       ledBlink() #]
+    delay 30000   // timeout: il cliente ha 30s per portare il container
+}</pre>
+
+<p>In stato <code>engaged</code> il sistema attende che il sonar rilevi il container entro il timeout. Se arriva l'evento <code>sonarcontainer</code> in tempo, il <code>cargoservice</code> ordina al robot di raggiungere l'IOPort e transisce in <code>serviceworking</code>. Se invece scade il timer senza rilevamento, lo slot viene rilasciato e il sistema torna in <code>idle</code> (<code>disengaged</code> è uno stato transitorio di pulizia).</p>
+
+<pre>// [engaged] → container rilevato in tempo
+Transition t1
+    whenEvent sonarcontainer -> serviceworking
+    whenTime  30000          -> disengaged
+
+State serviceworking {
+    forward cargorobot -m moveto(IOPORT)
+}
+
+State disengaged {
+    [# hold.releaseReserved(); ledOff() #]
+}
+Goto idle</pre>
+
+<p>In stato <code>serviceworking</code> il <code>cargoservice</code> orchestra la sequenza di operazioni del robot. Ogni passo è atomico: il sistema invia un comando e attende il corrispondente <code>robotdone</code> prima di procedere. Il robot raggiunge l'IOPort e preleva il container.</p>
+
+<pre>// [serviceworking] — fase 1: prelievo all'IOPort
+Transition t2 whenMsg robotdone -> pickAtIoport
+
+State pickAtIoport {
+    forward cargorobot -m pick(none)
+}
+Transition t3 whenMsg robotdone -> moveToSlot5
+
+State moveToSlot5 {
+    forward cargorobot -m moveto(SLOT5)
+}
+Transition t4 whenMsg robotdone -> placeAtSlot5</pre>
+
+<p>Il container viene depositato in <code>slot5</code> per la marcatura. A differenza degli altri passi, qui il sistema non attende <code>robotdone</code> ma <code>markdone</code>: è il marker a segnalare il completamento dell'etichettatura, non il robot. Solo dopo quel segnale il robot può riprendere.</p>
+
+<pre>// [serviceworking] — fase 2: marcatura in slot5
+State placeAtSlot5 {
+    forward cargorobot -m place(none)
+}
+Transition t5 whenMsg markdone -> pickFromSlot5   // attende il marker, non robotdone
+
+State pickFromSlot5 {
+    forward cargorobot -m pick(none)
+}
+Transition t6 whenMsg robotdone -> moveToReserved</pre>
+
+<p>Il container marcato viene portato nello slot riservato e depositato. Il robot infine torna in <code>HOME</code>: solo al ricevimento dell'ultimo <code>robotdone</code> la hold viene aggiornata, il LED spento e il sistema torna disponibile in <code>idle</code>.</p>
+
+<pre>// [serviceworking] — fase 3: deposizione nello slot riservato e ritorno
+State moveToReserved {
+    [# val dest = hold.getReservedSlot() #]
+    forward cargorobot -m moveto(dest)
+}
+Transition t7 whenMsg robotdone -> placeAtReserved
+
+State placeAtReserved {
+    forward cargorobot -m place(none)
+}
+Transition t8 whenMsg robotdone -> returnHome
+
+State returnHome {
+    forward cargorobot -m moveto(HOME)
+}
+Transition t9 whenMsg robotdone -> idle   // hold aggiornata, LED off</pre>
+
+<h2>Gestione del fault sonar (interruzione e ripresa)</h2>
+
+<p>L'evento <code>sonarfault</code> può arrivare in qualsiasi stato. Il <code>cargoservice</code> lo gestisce come transizione trasversale:</p>
+<ul>
+    <li>se in <em>working</em>: invia <code>halt</code> al robot, salva lo stato corrente dell'operazione (quale passo era in corso), accende LED fisso, mostra "Out of service" sul display;</li>
+    <li>all'arrivo di <code>sonarfree</code>: invia <code>resume</code> al robot (che riprende dal punto in cui era), torna allo stato <em>working</em>;</li>
+    <li>se in <em>idle</em> o <em>engaged</em>: risponde <em>retrylater</em> a eventuali richieste, attende <code>sonarfree</code>.</li>
+</ul>
+
+<h2>Modello qak (architettura logica)</h2>
+
+<p>Il modello qak del sistema è il seguente. Distinguiamo chiaramente i tipi di messaggio:</p>
+
+<pre>// ── MESSAGGI ──────────────────────────────────────────────────
+// Richieste sincrone (request/reply)
+request  loadrequest  : loadrequest(none)
+reply    loadaccepted : loadaccepted(SLOTNAME)
+reply    loadrejected : loadrejected(REASON)   // REASON: full | retrylater
+
+// Comandi punto-a-punto (dispatch, fire-and-forget)
+dispatch moveto       : moveto(DEST)
+dispatch pick         : pick(none)
+dispatch place        : place(none)
+dispatch halt         : halt(none)
+dispatch resume       : resume(none)
+dispatch robotdone    : robotdone(none)
+dispatch markdone     : markdone(none)
+dispatch updateDisplay: updateDisplay(MSG)
+dispatch blinkLed     : blinkLed(ONOFF)
+
+// Eventi broadcast (emit)
+event sonarcontainer  : sonarcontainer(D)
+event sonarfault      : sonarfault(D)
+event sonarfree       : sonarfree(D)
+
+// ── ATTORI ────────────────────────────────────────────────────
+context ctxCargoservice ip [host="localhost" port=8050]
+
+QActor cargoservice context ctxCargoservice {
+    // gestisce loadrequest, sonarcontainer, sonarfault, sonarfree,
+    // robotdone, markdone; orchestra il sistema
+}
+
+QActor cargorobot context ctxCargoservice {
+    // riceve moveto/pick/place/halt/resume
+    // invia robotdone al termine di ogni operazione
+}
+
+QActor sonarproxy context ctxCargoservice {
+    // legge dati grezzi dal PicoW, emette sonarcontainer / sonarfault / sonarfree
+}
+
+QActor ioporthandler context ctxCargoservice {
+    // legge eventi pushbutton, invia loadrequest a cargoservice
+    // riceve updateDisplay, aggiorna il display fisico
+}</pre>
+
+<p>La separazione tra <code>cargoservice</code> (orchestratore) e <code>ioporthandler</code> / <code>sonarproxy</code> rispetta il principio di separazione delle responsabilità (SOC): il servizio applicativo non dipende dai dettagli del protocollo hardware.</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="tests">Test Plans</h1>
+<p>L'unico componente testabile in isolamento è la classe <code>Hold</code>. I test verificano la logica richiesta dai requisiti: accettazione/rifiuto richiesta e stato della stiva.</p>
+
+<h2>T1 — Hold</h2>
+
+<p><strong>T1.1</strong> A partire da una hold vuota, <code>reserveFirstFree()</code> deve restituire <code>"slot1"</code>, applicando la strategia <em>first free</em>.</p>
+
+<p><strong>T1.2</strong> Dopo aver riservato e marcato come occupati tutti e 4 gli slot, <code>isFull()</code> deve restituire <code>true</code>.</p>
+
+<p><strong>T1.3</strong> Con la hold piena, <code>reserveFirstFree()</code> deve restituire <code>null</code>, indicando che non è possibile accettare ulteriori richieste (R1: <em>rejects the request when the hold is full</em>).</p>
+
+<p><strong>T1.4</strong> Dopo una <code>reserveFirstFree()</code> seguita da <code>markReservedOccupied()</code>, lo slot deve risultare OCCUPIED e la hold non ancora piena; una successiva <code>reserveFirstFree()</code> deve riuscire (restituisce non-null).</p>
+
+<p><strong>T1.5</strong> Con uno slot già RESERVED, una seconda chiamata a <code>reserveFirstFree()</code> deve restituire <code>null</code>: la hold ammette al più una prenotazione attiva alla volta.</p>
+
+<pre>class HoldTest {
+
+    Hold hold;
+
+    @BeforeEach
+    void setUp() { hold = new Hold(); }
+
+    @Test // T1.1
+    void reserveFromEmpty() {
+        assertEquals("slot1", hold.reserveFirstFree());
+    }
+
+    @Test // T1.2
+    void fullWhenAllOccupied() {
+        for (int i = 0; i &lt; Hold.NUM_SLOTS; i++) {
+            hold.reserveFirstFree();
+            hold.markReservedOccupied();
+        }
+        assertTrue(hold.isFull());
+    }
+
+    @Test // T1.3
+    void reserveWhenFull() {
+        for (int i = 0; i &lt; Hold.NUM_SLOTS; i++) {
+            hold.reserveFirstFree();
+            hold.markReservedOccupied();
+        }
+        assertNull(hold.reserveFirstFree());
+    }
+
+    @Test // T1.4
+    void markReservedBecomesOccupied() {
+        hold.reserveFirstFree();
+        hold.markReservedOccupied();
+        assertFalse(hold.isFull()); // 1/4, non piena
+        assertNotNull(hold.reserveFirstFree());
+    }
+
+    @Test // T1.5
+    void noDoubleReserve() {
+        hold.reserveFirstFree(); // slot1 → RESERVED
+        assertNull(hold.reserveFirstFree());
+    }
+}</pre>
+
+<p>I test seguenti (T2–T5) sono pianificati per gli sprint successivi, quando gli attori coinvolti (<code>cargorobot</code>, <code>sonarproxy</code>, <code>ioporthandler</code>) saranno implementati; sono descritti già ora per fissare il comportamento atteso.</p>
+
+<h2>T2 — Rilevamento container via sonar (R2)</h2>
+
+<p>Questi test verificano che il <code>sonarproxy</code> generi correttamente gli eventi in base alle letture. Si usa un mock del PicoW che invia stringhe <code>distance(DIRECTION, D)</code> configurabili.</p>
+
+<table>
+    <tr><th>ID</th><th>Precondizione</th><th>Azione</th><th>Esito atteso</th></tr>
+    <tr>
+        <td>T2.1</td>
+        <td>Sistema <em>engaged</em></td>
+        <td>Sonar emette D &lt; DFREE/2 per 3 s consecutivi</td>
+        <td>Evento <code>sonarcontainer</code> emesso; sistema avanza a <em>working</em></td>
+    </tr>
+    <tr>
+        <td>T2.2</td>
+        <td>Sistema <em>engaged</em></td>
+        <td>Sonar emette D &lt; DFREE/2 per meno di 3 s, poi risale</td>
+        <td>Nessun evento <code>sonarcontainer</code>; sistema rimane <em>engaged</em></td>
+    </tr>
+    <tr>
+        <td>T2.3</td>
+        <td>Sistema <em>idle</em></td>
+        <td>Sonar emette D &lt; DFREE/2 per 3 s (container lasciato senza richiesta)</td>
+        <td>Evento <code>sonarcontainer</code> emesso ma ignorato dal <code>cargoservice</code> in stato <em>idle</em></td>
+    </tr>
+</table>
+
+<h2>T3 — Ciclo completo di carico (R3)</h2>
+
+<p>Questi test verificano il flusso nominale end-to-end con il robot simulato (VirtualRobot26). Si controlla che il container percorra correttamente la sequenza IOPort → slot5 → slot riservato, e che il robot torni in HOME.</p>
+
+<table>
+    <tr><th>ID</th><th>Precondizione</th><th>Azione</th><th>Esito atteso</th></tr>
+    <tr>
+        <td>T3.1</td>
+        <td>Hold vuota, sistema <em>idle</em></td>
+        <td>loadrequest → sonarcontainer → ciclo completo</td>
+        <td>Robot in HOME, slot1 OCCUPIED, sistema torna <em>idle</em>, LED spento</td>
+    </tr>
+    <tr>
+        <td>T3.2</td>
+        <td>Dopo T3.1 (slot1 OCCUPIED)</td>
+        <td>Nuovo ciclo completo</td>
+        <td>slot2 OCCUPIED (strategia first free rispettata)</td>
+    </tr>
+    <tr>
+        <td>T3.3</td>
+        <td>Hold vuota</td>
+        <td>Ciclo completo; verificare passaggio per slot5</td>
+        <td>Il robot si ferma in slot5 dopo il pick, attende <code>markdone</code>, poi prosegue allo slot riservato</td>
+    </tr>
+    <tr>
+        <td>T3.4</td>
+        <td>Hold vuota</td>
+        <td>4 cicli completi consecutivi</td>
+        <td>slot1–4 tutti OCCUPIED; quinta richiesta riceve <code>loadrejected(full)</code></td>
+    </tr>
+</table>
+
+<h2>T4 — Display IOPort (R4)</h2>
+
+<table>
+    <tr><th>ID</th><th>Precondizione</th><th>Azione</th><th>Esito atteso</th></tr>
+    <tr>
+        <td>T4.1</td>
+        <td>Hold con slot1 OCCUPIED, slot2–4 FREE</td>
+        <td>Osserva display dopo aggiornamento stato</td>
+        <td>Display mostra stato corrente della hold (es. "1/4 occupied")</td>
+    </tr>
+    <tr>
+        <td>T4.2</td>
+        <td>Sistema <em>working</em></td>
+        <td>Osserva display</td>
+        <td>Display mostra "Service working"</td>
+    </tr>
+    <tr>
+        <td>T4.3</td>
+        <td>Sonar fault attivo</td>
+        <td>Osserva display</td>
+        <td>Display mostra "Out of service"</td>
+    </tr>
+    <tr>
+        <td>T4.4</td>
+        <td>Sistema <em>out of service</em></td>
+        <td>Sonar torna a D ≤ DFREE</td>
+        <td>Display aggiornato a "Service working", stato hold visibile</td>
+    </tr>
+</table>
+
+<h2>T5 — Fault sonar e ripresa (R5)</h2>
+
+<table>
+    <tr><th>ID</th><th>Precondizione</th><th>Azione</th><th>Esito atteso</th></tr>
+    <tr>
+        <td>T5.1</td>
+        <td>Sistema <em>idle</em></td>
+        <td>Sonar emette D &gt; DFREE per 3 s</td>
+        <td>Sistema passa a <em>out of service</em>, LED acceso fisso, display "Out of service"</td>
+    </tr>
+    <tr>
+        <td>T5.2</td>
+        <td>Sistema <em>out of service</em></td>
+        <td>Invia <code>loadrequest</code></td>
+        <td>Risposta <code>loadrejected(retrylater)</code></td>
+    </tr>
+    <tr>
+        <td>T5.3</td>
+        <td>Sistema <em>working</em>, robot in movimento verso slot5</td>
+        <td>Sonar emette D &gt; DFREE per 3 s</td>
+        <td>Robot riceve <code>halt</code> e si ferma; sistema passa a <em>out of service</em></td>
+    </tr>
+    <tr>
+        <td>T5.4</td>
+        <td>Continuazione di T5.3: robot fermo, sistema <em>out of service</em></td>
+        <td>Sonar torna a D ≤ DFREE</td>
+        <td>Evento <code>sonarfree</code>; robot riceve <code>resume</code> e riprende dal punto in cui era; sistema torna <em>working</em></td>
+    </tr>
+    <tr>
+        <td>T5.5</td>
+        <td>Sistema <em>out of service</em></td>
+        <td>Sonar emette D &gt; DFREE per meno di 3 s poi scende</td>
+        <td>Nessun evento <code>sonarfault</code>; sistema non cambia stato</td>
+    </tr>
+</table>
+
+<h2>Strategia di esecuzione</h2>
+
+<p>I test T1 non richiedono hardware né simulatore robot: la hold è un POJO testabile in isolamento con JUnit, stimolando direttamente l'attore <code>cargoservice</code> via messaggi in-memory.</p>
+
+<p>I test T2 richiedono il <code>sonarproxy</code> con un mock del PicoW (un thread che invia stringhe <code>distance</code> a frequenza configurabile).</p>
+
+<p>I test T3–T5 richiedono VirtualRobot26 attivo. Per T5.3 e T5.4 occorre iniettare il fault sonar in modo controllato durante l'esecuzione del robot: si usa il mock del PicoW con timing preciso.</p>
+
+<p>Tutte le costanti temporali (timeout 30 s, soglia 3 s sonar) sono esternalizzate in un file di configurazione e abbassabili a valori ridotti (es. 1 s) per i test automatici.</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="project">Project</h1>
+
+<p><em>(Da completare.)</em></p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="testing">Testing</h1>
+
+<p><em>(Da completare.)</em></p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="deploy">Deployment</h1>
+
+<p><em>(Da completare.)</em></p>
+
+<h1>Maintenance</h1>
+
+<p><em>(Da completare.)</em></p>
+
+</div><!-- .body -->
+
+<div class="footer">
+    <div class="footer-authors">
+        <div class="footer-author">
+            <img src="../img/VC.jpg" alt="VC"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+
+            <div class="footer-author-initials" style="display:none;">
+                VC
+            </div>
+            <div>
+                <strong>Valeria Capacci</strong><br>
+                <a href="mailto:valeria.capacci@studio.unibo.it">valeria.capacci@studio.unibo.it</a>
+            </div>
+        </div>
+        <div class="footer-divider"></div>
+        <div class="footer-author">
+            <img src="../img/GP.jpeg" alt="GP"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+
+            <div class="footer-author-initials" style="display:none;">
+                GP
+            </div>
+            <div>
+                <strong>Ginevra Pentoli</strong><br>
+                <a href="mailto:ginevra.pentoli@studio.unibo.it">ginevra.pentoli@studio.unibo.it</a>
+            </div>
+        </div>
+    </div>
+    <div style="margin-left: auto; font-size: 0.8rem; opacity: 0.85;">
+        GIT: <a href="https://github.com/valecapa/TemaFinaleISS2026">github.com/valecapa/TemaFinaleISS2026</a>
+    </div>
+</div>
+
+</div><!-- .page-wrap -->
+</body>
+</html>
