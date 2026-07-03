@@ -548,21 +548,14 @@ li { margin-bottom: 4px; }
     <tr><th>Entità</th><th>Natura</th><th>Motivazione</th></tr>
     <tr><td><code>cargoservice</code></td><td>Attore qak</td><td>Orchestratore principale: reattivo a loadrequest, sonardata, markdone, robotdone</td></tr>
     <tr><td><code>cargorobot</code></td><td>Attore qak</td><td>Entità autonoma con comportamento sequenziale proprio; riceve comandi e risponde al termine</td></tr>
-    <tr><td><code>sonarproxy</code></td><td>Attore qak</td><td>Riceve continuamente stringhe grezze dal PicoW e le trasforma in eventi comprensibili al sistema</td></tr>
-    <tr><td><code>ioporthandler</code></td><td>Attore qak</td><td>Gestisce gli eventi del pushbutton e aggiorna il display; disaccoppia l'hardware dall'orchestratore</td></tr>
+    <tr><td><code>sonar</code></td><td>Attore qak</td><td>Riceve continuamente stringhe grezze dal PicoW e le trasforma in eventi comprensibili al sistema</td></tr>
+    <tr><td><code>ioport</code></td><td>Attore qak</td><td>Gestisce gli eventi del pushbutton e aggiorna il display; disaccoppia l'hardware dall'orchestratore</td></tr>
     <tr><td><code>Hold</code></td><td>POJO</td><td>Struttura dati passiva: stato degli slot, peso corrente; gestita internamente dal <code>cargoservice</code></td></tr>
 </table>
 
-<h2>Gestione del sonar: proxy e temporizzazione</h2>
+<h2>Gestione del sonar</h2>
 
-<p>Il sonar sul PicoW emette continuamente stringhe <code>distance(DIRECTION, D)</code>. Il <code>cargoservice</code> non può consumare direttamente questi dati grezzi: occorre un attore <code>sonarproxy</code> che:</p>
-<ul>
-    <li>riceve le stringhe via UDP/TCP dal microcontrollore;</li>
-    <li>applica la logica di temporizzazione (3 secondi sotto soglia / sopra soglia);</li>
-    <li>emette <strong>eventi</strong> broadcast quando le condizioni sono soddisfatte.</li>
-</ul>
-
-<p>L'uso di <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.17'><strong>emit</strong></a> (broadcast) anziché dispatch è motivato dal fatto che la lettura sonar riguarda potenzialmente più attori: il <code>cargoservice</code> (per rilevare il container) e lo stesso <code>cargoservice</code> per il fault, ma in futuro potrebbe riguardare anche un logger o un monitor.  Il broadcast disaccoppia il produttore dai consumatori rendendolo technology independent: il <code>sonarproxy</code> emette un evento senza assumere nulla su chi lo riceverà né su come lo elaborerà, permettendo di aggiungere nuovi consumatori senza toccare il produttore.</p>
+<p>L'uso di <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.17'><strong>emit</strong></a> (broadcast) anziché dispatch è motivato dal fatto che il broadcast disaccoppia il produttore dai consumatori rendendolo technology independent: il <code>sonar</code> emette un evento senza assumere nulla su chi lo riceverà né su come lo elaborerà, permettendo di aggiungere nuovi consumatori senza toccare il produttore.</p>
 
 <h2>Modello qak (architettura logica)</h2>
 
@@ -575,12 +568,12 @@ li { margin-bottom: 4px; }
 <p>Il modello qak del sistema è il seguente. Distinguiamo chiaramente i tipi di messaggio:</p>
 
 <pre>
-// Richieste sincrone (request/reply)
+// ioport
 request  loadrequest  : loadrequest(none)
 reply    loadaccepted : loadaccepted(SLOTNAME)
 reply    loadrejected : loadrejected(REASON)   // REASON: full | retrylater
 
-// Comandi punto-a-punto (dispatch, fire-and-forget)
+// cargorobot
 dispatch moveto       : moveto(DEST)
 dispatch pick         : pick(none)
 dispatch place        : place(none)
@@ -591,12 +584,11 @@ dispatch markdone     : markdone(none)
 dispatch updateDisplay: updateDisplay(MSG)
 dispatch blinkLed     : blinkLed(ONOFF)
 
-// Eventi broadcast (emit)
+// sonar
 event sonarcontainer  : sonarcontainer(D)
 event sonarfault      : sonarfault(D)
 event sonarfree       : sonarfree(D)
 
-// ── ATTORI ────────────────────────────────────────────────────
 context ctxCargoservice ip [host="localhost" port=8050]
 
 QActor cargoservice context ctxCargoservice {
