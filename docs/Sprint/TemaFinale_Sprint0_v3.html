@@ -548,7 +548,7 @@ li { margin-bottom: 4px; }
     <tr><td><code>cargorobot</code></td><td>Attore qak</td><td>Entità autonoma con comportamento sequenziale proprio; riceve comandi e risponde al termine</td></tr>
     <tr><td><code>sonar</code></td><td>Attore qak</td><td>Riceve continuamente stringhe grezze dal PicoW e le trasforma in eventi comprensibili al sistema</td></tr>
     <tr><td><code>ioport</code></td><td>Attore qak</td><td>Gestisce gli eventi del pushbutton e aggiorna il display; disaccoppia l'hardware dall'orchestratore</td></tr>
-    <tr><td><code>Hold</code></td><td>POJO</td><td>Struttura dati passiva: stato degli slot, peso corrente; gestita internamente dal <code>cargoservice</code></td></tr>
+    <tr><td><code>Hold</code></td><td>POJO</td><td>Struttura dati passiva (stato degli slot) gestita internamente dal <code>cargoservice</code></td></tr>
 </table>
 
 <h2>Gestione del sonar</h2>
@@ -566,44 +566,42 @@ li { margin-bottom: 4px; }
 <p>Il modello qak del sistema è il seguente. Distinguiamo chiaramente i tipi di messaggio:</p>
 
 <pre>
-// ioport
-request  loadrequest  : loadrequest(none)
-reply    loadaccepted : loadaccepted(SLOTNAME)
-reply    loadrejected : loadrejected(REASON)   // REASON: full | retrylater
 
-// cargorobot
-dispatch moveto       : moveto(DEST)
-dispatch pick         : pick(none)
-dispatch place        : place(none)
-dispatch halt         : halt(none)
-dispatch resume       : resume(none)
-dispatch robotdone    : robotdone(none)
-dispatch markdone     : markdone(none)
-dispatch updateDisplay: updateDisplay(MSG)
-dispatch blinkLed     : blinkLed(ONOFF)
+request  loadrequest  : loadrequest(none)       //fa una richiesta di carico
+reply    loadaccepted : loadaccepted(SLOTNAME)  //carico accettato 
+reply    loadrejected : loadrejected(REASON)   //carico rifiutato (REASON: full | retrylater)
 
-// sonar
-event sonarcontainer  : sonarcontainer(D)
-event sonarfault      : sonarfault(D)
-event sonarfree       : sonarfree(D)
+dispatch moveto       : moveto(DEST)        //ordina al robot di muoversi a DEST
+dispatch pick         : pick(none)          //ordina al robot di prelevare il container
+dispatch place        : place(none)         //ordina di rilasciare il container
+dispatch halt         : halt(none)          //ordina al robot di fermarsi
+dispatch resume       : resume(none)        //ordina al robot di ripartire
+dispatch robotdone    : robotdone(none)     //robot termina operazione
+dispatch markdone     : markdone(none)      //marker terminato
+dispatch updateDisplay: updateDisplay(MSG)  //aggiorna il display con un messaggio MSG
+dispatch blinkLed     : blinkLed(STATE)     //fa lampeggiare il led (STATE: ON | OFF)
 
-context ctxCargoservice ip [host="localhost" port=8050]
+event sonarcontainer  : sonarcontainer(D)   //notifica che c'è un container disponibile per il ritiro
+event sonarfault      : sonarfault(D)       //notifica che c'è un problema
+event sonarfree       : sonarfree(D)        //notifica che non ci sono container in attesa sulla porta
 
-QActor cargoservice context ctxCargoservice {
+context ctxcargoservice ip [host="localhost" port=8050]
+
+QActor cargoservice context ctxcargoservice {
     // gestisce loadrequest, sonarcontainer, sonarfault, sonarfree,
     // robotdone, markdone; orchestra il sistema
 }
 
-QActor cargorobot context ctxCargoservice {
+QActor cargorobot context ctxcargoservice {
     // riceve moveto/pick/place/halt/resume
     // invia robotdone al termine di ogni operazione
 }
 
-QActor sonarproxy context ctxCargoservice {
+QActor sonar context ctxcargoservice {
     // legge dati grezzi dal PicoW, emette sonarcontainer / sonarfault / sonarfree
 }
 
-QActor ioporthandler context ctxCargoservice {
+QActor ioport context ctxcargoservice {
     // legge eventi pushbutton, invia loadrequest a cargoservice
     // riceve updateDisplay, aggiorna il display fisico
 }</pre>
