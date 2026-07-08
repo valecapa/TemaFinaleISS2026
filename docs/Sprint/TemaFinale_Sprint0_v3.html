@@ -392,7 +392,10 @@ li { margin-bottom: 4px; }
 <!-- ─── cargorobot ─── -->
 <h2><code>cargorobot</code> (DDR)</h2>
 
-<p>Il DDR è un robot a guida differenziale che può muoversi in avanti, indietro, ruotare su se stesso e fermarsi. È disponibile un simulatore (<a href="https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.1">VirtualRobot26</a>) che espone i comandi-base del robot in cril, presentandosi come un servizio che fornisce solo primitive di movimento.</p>
+<p>Il DDR è un robot a guida differenziale che può muoversi in avanti, indietro, ruotare su se stesso e fermarsi. È disponibile un simulatore (<a href="https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.1"><code>VirtualRobot26</code></a>) che espone i comandi-base del robot in cril, presentandosi come un servizio che fornisce solo primitive di movimento.</p>
+
+<p>Il committente mette però a disposizione più varianti di <code>VirtualRobot26</code>: <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.30'><code>RobotSmart26</code></a>, <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.27'><code>RobotService26</code></a>, <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.26'><code>RobotObj26</code></a>. Si sceglie la variante che riduce maggiormente l'abstraction gap, ovvero <code>RobotSmart26</code>, che è in grado di calcolare autonomamente il percorso verso un punto, ricevendo in input solo le coordinate di destinazione. Il <code>cargorobot</code> lo utilizza come servizio esterno.</p>
+
 
 <p>Il <code>cargorobot</code> come entità con comportamento applicativo va però <strong>progettato e realizzato</strong> da noi: la responsabilità dell'orchestrazione delle operazioni (raggiungere l'IOPort, prelevare il container, raggiungere slot5, ecc.) appartiene al <code>cargoservice</code>, non al DDR. Esiste dunque un <em>abstraction gap</em> significativo tra i comandi primitivi del simulatore e le operazioni di alto livello richieste, che sarà analizzato nella Problem Analysis.</p>
 
@@ -425,7 +428,7 @@ li { margin-bottom: 4px; }
 
 <div class="domanda">
     <strong>Domanda:</strong> Il software che gestisce il sonar è già disponibile, oppure dobbiamo costruirlo noi?<br>
-    <strong>Risposta:</strong> in attesa di uno strumento più evoluto, viene fornito un dispositivo fisico basato su un RaspBerry PicoW, senza software di supporto. Occorre scrivere il firmware sul microcontrollore.
+    <strong>Risposta:</strong> in attesa di uno strumento più evoluto, viene fornito un dispositivo fisico basato su un RaspBerry, senza software di supporto. Occorre scrivere il firmware sul microcontrollore.
 </div>
 
 <div class="domanda">
@@ -526,15 +529,18 @@ li { margin-bottom: 4px; }
 <!-- ─── Struttura del sistema ─── -->
 <h2 id="struttura">Struttura del sistema</h2>
 
-<p>Il <code>cargoservice</code> è un sistema <strong>eterogeneo</strong>: ogni nodo computazionale impiega un tipo di software diverso (applicazione, firmware su microcontrollore, simulatore del robot). Java da solo non basta a coprire lo scambio di messaggi; per questo si adotta <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.17'><strong>qak</strong></a>, un linguaggio di <em>modellazione</em>, pensato proprio per distinguere i tipi di interazione fra le entità <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#page=201'><strong>(dispatch, request, event)</strong></a>. Il modello qak completo sarà sviluppato nella Problem Analysis, ma i nodi principali sono già individuabili a livello di requisiti:</p>
+<p>Il <code>cargoservice</code> è un sistema <strong>eterogeneo</strong>: ogni nodo computazionale impiega un tipo di software diverso (applicazione, firmware su microcontrollore, simulatore del robot). <br> 
+Usare esclusivamente Java per lo scambio dei messaggi renderebbe la comunicazione <strong>dipendente dal linguaggio scelto</strong>. Questa soluzione può essere accettabile in un sistema omogeneo, in cui tutti i nodi utilizzano Java, ma non in un sistema composto da nodi implementati con tecnologie e linguaggi potenzialmente diversi. 
+Ogni nodo destinatario dovrebbe disporre delle classi Java compatibili con i tipi di messaggio ricevuti. Questo introdurrebbe un forte accoppiamento tra i nodi e renderebbe più difficile integrare o modificare componenti sviluppati con tecnologie differenti. <br> 
+Per questo si adotta <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.17'><strong>qak</strong></a>, un linguaggio di <em>modellazione</em>, pensato proprio per distinguere i tipi di interazione fra le entità <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#page=201'><strong>(dispatch, request, event)</strong></a>. Il modello qak completo sarà sviluppato nella Problem Analysis, ma i nodi principali sono già individuabili a livello di requisiti:</p>
 <ul>
     <li><strong>Nodo principale</strong>: <code>cargoservice</code></li>
-    <li><strong>Nodo robot</strong>: <code>cargorobot</code>, che si appoggia al servizio <code>VirtualRobot26</code></li>
-    <li><strong>Microcontrollore sonar</strong>: RaspBerry PicoW con firmware da sviluppare</li>
+    <li><strong>Nodo robot</strong>: <code>cargorobot</code>, che si appoggia al servizio <code>RobotSmart26</code></li>
+    <li><strong>Microcontrollore sonar</strong>: RaspBerry con firmware da sviluppare</li>
     <li><strong>Dispositivo IOPort</strong>: nodo separato che espone la web GUI (pushbutton + display) al cliente</li>
 </ul>
 
-<p>Si contano quindi almeno 3 nodi (<code>virtualrobot</code>, <code>cargoservice</code>, sonar), 4 se si considera l'<code>IOPort</code> come nodo a sé stante.</p>
+<p>Si contano quindi almeno 3 nodi (<code>cargorobot</code>, <code>cargoservice</code>, <code>sonar</code>), 4 se si considera l'<code>IOPort</code> come nodo a sé stante.</p>
 
 <h2>Natura delle entità: attori vs. POJO</h2>
 
@@ -551,13 +557,7 @@ li { margin-bottom: 4px; }
     <tr><td><code>Hold</code></td><td>POJO</td><td>Struttura dati passiva (stato degli slot) gestita internamente dal <code>cargoservice</code></td></tr>
 </table>
 
-<h2>Gestione del sonar</h2>
-
-<p>L'uso di <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.17'><strong>emit</strong></a> (broadcast) anziché dispatch è motivato dal fatto che il broadcast disaccoppia il produttore dai consumatori rendendolo technology independent: il <code>sonar</code> emette un evento senza assumere nulla su chi lo riceverà né su come lo elaborerà, permettendo di aggiungere nuovi consumatori senza toccare il produttore.</p>
-
 <h2>Modello qak (architettura logica)</h2>
-
-<p>Il committente mette a disposizione più varianti di <code>VirtualRobot26</code>: <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.30'><code>RobotSmart26</code></a>, <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.27'><code>RobotService26</code></a>, <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.26'><code>RobotObj26</code></a>. Si sceglie la variante che riduce maggiormente l'abstraction gap, ovvero <code>RobotSmart26</code>: è in grado di calcolare autonomamente il percorso verso un punto, ricevendo in input solo le coordinate di destinazione. Il <code>cargorobot</code> lo utilizza come servizio esterno.</p>
 
 <p>Anche <code>RobotSmart26</code> espone comunque solo primitive di basso livello rispetto ai requisiti che richiedono invece operazioni di alto livello: raggiungere l'IOPort, prelevare il container, raggiungere slot5, etc.</p>
 
