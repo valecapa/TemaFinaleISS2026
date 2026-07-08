@@ -1,0 +1,47 @@
+System sprint0
+
+Request loadrequest  : loadrequest(none)                        // richiesta di carico
+Reply   loadaccepted : loadaccepted(SLOTNAME) for loadrequest   // carico accettato
+Reply   loadrejected : loadrejected(REASON)   for loadrequest   // carico rifiutato, REASON: full | retrylater
+
+Dispatch blinkLed     : blinkLed(STATE)         // aggiorna stato del led, STATE: on | off
+Dispatch updateDisplay: updateDisplay(MSG)      // aggiorna display
+
+Event sonarcontainer  : sonarcontainer(D)       // rileva container, D: distanza
+Event sonarfault      : sonarfault(D)           // problema al sonar -> guasto, D: distanza
+
+
+Context ctxcargoservice ip [ host="localhost" port=8050 ]
+
+QActor cargoservice context ctxcargoservice {
+    // gestisce loadrequest, sonarcontainer, sonarfault e orchestra il sistema
+    
+    State s0 initial{
+    	println("$name | inizio ") color magenta
+    }
+}
+
+QActor cargorobot context ctxcargoservice {
+    // gestisce i movimenti del robot
+    
+    State s0 initial{
+    	println("$name | inizio ") color magenta
+    }
+}
+
+QActor sonarproxy context ctxcargoservice {
+    // emette sonarcontainer / sonarfault
+    
+    State s0 initial{
+    	println("$name | inizio ") color magenta
+    }
+}
+
+QActor ioporthandler context ctxcargoservice {
+    // invia loadrequest a cargoservice
+    // riceve updateDisplay e aggiorna il display fisico
+    
+    State s0 initial{
+    	println("$name | inizio ") color magenta
+    }
+}

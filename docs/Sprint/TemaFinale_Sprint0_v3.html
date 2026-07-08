@@ -68,7 +68,7 @@ body {
     width: 300px;
     height: 300px;
 
-    background-image: url('../img/boat.png');
+    /*background-image: url('../img/boat.png');*/
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -324,7 +324,7 @@ li { margin-bottom: 4px; }
 <body>
 
 <div id="top">
-    <h1>Cargoservice</h1>
+    <h1>Cargoservice - Sprint0</h1>
     <div class="subtitle">ISS 2026 — Valeria Capacci &amp; Ginevra Pentoli</div>
 </div>
 
@@ -544,16 +544,16 @@ Per questo si adotta <a href='https://anatali.github.io/issLab2026/_static/docs/
 
 <h2>Natura delle entità: attori vs. POJO</h2>
 
-<p>Il punto di partenza è decidere la natura computazionale di ciascuna entità identificata nell'analisi dei requisiti. Un <strong>POJO</strong> (Plain Old Java Object) è un oggetto passivo; un <strong>attore</strong> è un'entità autonoma, reattiva su messaggi in arrivo e può inviarne ad altri.</p>
+<p>Il punto di partenza è decidere la natura computazionale di ciascuna entità identificata. Un <strong>POJO</strong> (Plain Old Java Object) è un oggetto passivo; un <strong>attore</strong> è un'entità autonoma, reattiva su messaggi in arrivo e può inviarne ad altri.</p>
 
 <p>Il cargoservice deve reagire a eventi concorrenti (una pressione sul pushbutton, una lettura del sonar, un segnale del marker, una risposta del robot) che possono arrivare in qualsiasi momento e in qualsiasi ordine. Questa natura reattiva e concorrente rende il modello ad attori la scelta più adatta per il sistema: ciascuna entità gestisce la propria coda di messaggi e reagisce agli stimoli senza bloccare le altre.</p>
 
 <table>
     <tr><th>Entità</th><th>Natura</th><th>Motivazione</th></tr>
-    <tr><td><code>cargoservice</code></td><td>Attore qak</td><td>Orchestratore principale: reattivo a loadrequest, sonardata, markdone, robotdone</td></tr>
-    <tr><td><code>cargorobot</code></td><td>Attore qak</td><td>Entità autonoma con comportamento sequenziale proprio; riceve comandi e risponde al termine</td></tr>
-    <tr><td><code>sonar</code></td><td>Attore qak</td><td>Riceve continuamente stringhe grezze dal PicoW e le trasforma in eventi comprensibili al sistema</td></tr>
-    <tr><td><code>ioport</code></td><td>Attore qak</td><td>Gestisce gli eventi del pushbutton e aggiorna il display; disaccoppia l'hardware dall'orchestratore</td></tr>
+    <tr><td><code>cargoservice</code></td><td>Attore qak</td><td>Orchestratore principale: reattivo</td></tr>
+    <tr><td><code>cargorobot</code></td><td>Attore qak</td><td>Entità autonoma che riceve comandi e risponde al termine di essi</td></tr>
+    <tr><td><code>sonar</code></td><td>Attore qak</td><td>Riceve dati grezzi dal Pico e li trasforma in eventi comprensibili al sistema</td></tr>
+    <tr><td><code>ioport</code></td><td>Attore qak</td><td>Gestisce gli eventi del pushbutton e aggiorna il display</td></tr>
     <tr><td><code>Hold</code></td><td>POJO</td><td>Struttura dati passiva (stato degli slot) gestita internamente dal <code>cargoservice</code></td></tr>
 </table>
 
@@ -566,45 +566,57 @@ Per questo si adotta <a href='https://anatali.github.io/issLab2026/_static/docs/
 <p>Il modello qak del sistema è il seguente. Distinguiamo chiaramente i tipi di messaggio:</p>
 
 <pre>
+System sprint0
 
-request  loadrequest  : loadrequest(none)       //fa una richiesta di carico
-reply    loadaccepted : loadaccepted(SLOTNAME)  //carico accettato 
-reply    loadrejected : loadrejected(REASON)   //carico rifiutato (REASON: full | retrylater)
+Request loadrequest  : loadrequest(none)                        // richiesta di carico
+Reply   loadaccepted : loadaccepted(SLOTNAME) for loadrequest   // carico accettato
+Reply   loadrejected : loadrejected(REASON)   for loadrequest   // carico rifiutato, REASON: full | retrylater
 
-dispatch moveto       : moveto(DEST)        //ordina al robot di muoversi a DEST
-dispatch pick         : pick(none)          //ordina al robot di prelevare il container
-dispatch place        : place(none)         //ordina di rilasciare il container
-dispatch halt         : halt(none)          //ordina al robot di fermarsi
-dispatch resume       : resume(none)        //ordina al robot di ripartire
-dispatch robotdone    : robotdone(none)     //robot termina operazione
-dispatch markdone     : markdone(none)      //marker terminato
-dispatch updateDisplay: updateDisplay(MSG)  //aggiorna il display con un messaggio MSG
-dispatch blinkLed     : blinkLed(STATE)     //fa lampeggiare il led (STATE: ON | OFF)
+Dispatch blinkLed     : blinkLed(STATE)         // aggiorna stato del led, STATE: on | off
+Dispatch updateDisplay: updateDisplay(MSG)      // aggiorna display
 
-event sonarcontainer  : sonarcontainer(D)   //notifica che c'è un container disponibile per il ritiro
-event sonarfault      : sonarfault(D)       //notifica che c'è un problema
-event sonarfree       : sonarfree(D)        //notifica che non ci sono container in attesa sulla porta
+Event sonarcontainer  : sonarcontainer(D)       // rileva container, D: distanza
+Event sonarfault      : sonarfault(D)           // problema al sonar -> guasto, D: distanza
 
-context ctxcargoservice ip [host="localhost" port=8050]
+
+Context ctxcargoservice ip [ host="localhost" port=8050 ]
 
 QActor cargoservice context ctxcargoservice {
-    // gestisce loadrequest, sonarcontainer, sonarfault, sonarfree,
-    // robotdone, markdone; orchestra il sistema
+    // gestisce loadrequest, sonarcontainer, sonarfault e orchestra il sistema
+    
+    State s0 initial{
+    	println("$name | inizio ") color magenta
+    }
 }
 
 QActor cargorobot context ctxcargoservice {
-    // riceve moveto/pick/place/halt/resume
-    // invia robotdone al termine di ogni operazione
+    // gestisce i movimenti del robot
+    
+    State s0 initial{
+    	println("$name | inizio ") color magenta
+    }
 }
 
 QActor sonar context ctxcargoservice {
-    // legge dati grezzi dal PicoW, emette sonarcontainer / sonarfault / sonarfree
+    // emette sonarcontainer / sonarfault
+    
+    State s0 initial{
+    	println("$name | inizio ") color magenta
+    }
 }
 
 QActor ioport context ctxcargoservice {
-    // legge eventi pushbutton, invia loadrequest a cargoservice
-    // riceve updateDisplay, aggiorna il display fisico
-}</pre>
+    // invia loadrequest a cargoservice
+    // riceve updateDisplay e aggiorna il display fisico
+    
+    State s0 initial{
+    	println("$name | inizio ") color magenta
+    }
+}
+</pre>
+
+<p>Nonostante il sistema sia composto da più nodi, abbiamo scelto per questa prima fase di rappresentare un unico <code>Context ctxcargoservice</code> per pura comodità e semplicità.
+La partizione reale in più Context, uno per nodo fisico, verrà introdotta negli Sprint successivi.</p>
 
 <!-- ══════════════════════════════════════════════════════ -->
 
@@ -670,23 +682,23 @@ QActor ioport context ctxcargoservice {
 }</pre>
 
 <!-- ══════════════════════════════════════════════════════ -->
-<h1 id="project">Project</h1>
 
-<p><em>(Da completare.)</em></p>
+<h1 id="definzionesprint1">Definizione dello Sprint1</h1>
 
-<!-- ══════════════════════════════════════════════════════ -->
-<h1 id="testing">Testing</h1>
+<p>Chiudiamo lo Sprint0 definendo il sottoinsieme di requisiti su cui basare lo Sprint1.</p>
 
-<p><em>(Da completare.)</em></p>
+<div class="req">
+<ul>
+    <li>Ricezione <code>loadrequest</code>, verifica stato del sistema (<em>retrylater</em> se occupato o <em>Out of service</em>), verifica hold piena, riserva del primo slot libero tramite <code>Hold</code>, avvio blink del LED.</li>
+    <li>Gli stati <strong>Idle</strong>, <strong>Engaged</strong>, <strong>Disengaged</strong>.</li>
+    <li>L'attore <code>cargoservice</code> come orchestratore che gestisce lo scambio <code>loadrequest</code> / <code>loadaccepted</code> / <code>loadrejected</code> verso un IOPort (ancora da implementare).</li>
+</ul>
+</div>
 
-<!-- ══════════════════════════════════════════════════════ -->
-<h1 id="deploy">Deployment</h1>
+<p><strong>Motivazione:</strong> questo sottoinsieme copre il core business del sistema (es. accettare o rifiutare una richiesta di carico), senza dipendere da altri componenti.</p>
 
-<p><em>(Da completare.)</em></p>
+<p><strong>Goal:</strong> un sistema minimo in cui <code>cargoservice</code> riceve <code>loadrequest</code>, applica la logica di <code>Hold</code>, risponde con <code>loadaccepted</code> o <code>loadrejected</code>, e gestisce correttamente le transizioni dei vari stati.</p>
 
-<h1>Maintenance</h1>
-
-<p><em>(Da completare.)</em></p>
 
 </div><!-- .body -->
 
