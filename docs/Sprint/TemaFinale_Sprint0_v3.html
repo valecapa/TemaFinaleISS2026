@@ -559,11 +559,7 @@ Per questo si adotta <a href='https://anatali.github.io/issLab2026/_static/docs/
 
 <h2>Modello qak (architettura logica)</h2>
 
-<p>Anche <code>RobotSmart26</code> espone comunque solo primitive di basso livello rispetto ai requisiti che richiedono invece operazioni di alto livello: raggiungere l'IOPort, prelevare il container, raggiungere slot5, etc.</p>
-
-<p>Questo <em>abstraction gap</em> viene colmato definendo un livello intermedio di navigazione, che traduce le operazioni di alto livello in sequenze di comandi primitivi, mantenendo la responsabilità di <em>cosa fare</em> nel <code>cargoservice</code> e quella di <em>come muoversi</em> nel <code>cargorobot</code>.</p>
-
-<p>Il modello qak del sistema è il seguente. Distinguiamo chiaramente i tipi di messaggio:</p>
+<p>Il modello qak del sistema è il seguente:</p>
 
 <pre>
 System sprint0
