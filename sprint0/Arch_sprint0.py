@@ -28,6 +28,6 @@ with Diagram('sprint0Arch', show=False, outformat='png', graph_attr=graphattr) a
      with Cluster('ctxcargoservice', graph_attr=nodeattr):
           cargoservice=Custom('cargoservice','./qakicons/symActorWithobjSmall.png')
           cargorobot=Custom('cargorobot','./qakicons/symActorWithobjSmall.png')
-          sonarproxy=Custom('sonarproxy','./qakicons/symActorWithobjSmall.png')
-          ioporthandler=Custom('ioporthandler','./qakicons/symActorWithobjSmall.png')
+          sonar=Custom('sonar','./qakicons/symActorWithobjSmall.png')
+          ioport=Custom('ioport','./qakicons/symActorWithobjSmall.png')
 diag

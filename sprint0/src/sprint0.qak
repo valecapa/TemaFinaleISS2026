@@ -29,7 +29,7 @@ QActor cargorobot context ctxcargoservice {
     }
 }
 
-QActor sonarproxy context ctxcargoservice {
+QActor sonar context ctxcargoservice {
     // emette sonarcontainer / sonarfault
     
     State s0 initial{
@@ -37,7 +37,7 @@ QActor sonarproxy context ctxcargoservice {
     }
 }
 
-QActor ioporthandler context ctxcargoservice {
+QActor ioport context ctxcargoservice {
     // invia loadrequest a cargoservice
     // riceve updateDisplay e aggiorna il display fisico
     

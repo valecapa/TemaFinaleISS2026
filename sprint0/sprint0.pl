@@ -14,7 +14,7 @@ context(ctxcargoservice, "localhost",  "TCP", "8050").
  static(cargoservice).
   qactor( cargorobot, ctxcargoservice, "it.unibo.cargorobot.Cargorobot").
  static(cargorobot).
-  qactor( sonarproxy, ctxcargoservice, "it.unibo.sonarproxy.Sonarproxy").
- static(sonarproxy).
-  qactor( ioporthandler, ctxcargoservice, "it.unibo.ioporthandler.Ioporthandler").
- static(ioporthandler).
+  qactor( sonar, ctxcargoservice, "it.unibo.sonar.Sonar").
+ static(sonar).
+  qactor( ioport, ctxcargoservice, "it.unibo.ioport.Ioport").
+ static(ioport).
