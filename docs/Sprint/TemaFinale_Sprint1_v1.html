@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cargoservice — Sprint1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --h1-bg:   #f0e6ff;
+    --h2-bg:   #fce4f0;
+    --h3-bg:   #f9e0f5;
+    --h4-bg:   #fdf0f8;
+    --req-bg:  #fef0fb;
+    --req-border: #d484b8;
+    --domanda-bg:  #d2e6f4;
+    --domanda-border: #5caaeb;
+    --rem-bg:  #f8eaff;
+    --rem-border: #c9a0e0;
+    --code-bg: #fdf8ff;
+    --code-border: #dfc8e8;
+    --text:    #1e1a2e;
+    --text-muted: #5a4a6a;
+    --accent:  #7b3fa0;
+    --link:    #6b3a8a;
+    --body-bg: #fdf9ff;
+    --radius:  8px;
+    --font-body: 'DM Sans', sans-serif;
+    --font-head: 'Lora', Georgia, serif;
+    --font-code: 'Source Code Pro', 'Consolas', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--body-bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.page-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 36px 60px;
+}
+
+/* ── top banner ── */
+#top {
+    background: linear-gradient(135deg, #7b2fa0 0%, #b060c8 45%, #e080b0 80%, #f4a8cc 100%);
+    padding: 32px 36px 28px;
+    margin-bottom: 0;
+    position: relative;
+    overflow: hidden;
+}
+#top::after {
+    content: '';
+    position: absolute;
+
+    top: -80px;
+    right: -20px;
+
+    width: 300px;
+    height: 300px;
+
+    background-image: url('../img/boat.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    opacity: 0.7;
+}
+#top h1 {
+    color: #fff;
+    font-family: var(--font-head);
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 12px rgba(80,0,60,0.25);
+}
+#top .subtitle {
+    color: rgba(255,255,255,0.80);
+    font-size: 0.85rem;
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* ── section nav strip ── */
+.toc-strip {
+    background: #fff;
+    border-bottom: 2px solid #e8c8f4;
+    padding: 10px 36px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.toc-strip a {
+    color: var(--accent);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+}
+.toc-strip a:hover { opacity: 1; text-decoration: underline; }
+
+/* ── typography ── */
+h1 {
+    font-family: var(--font-head);
+    font-size: 1.55rem;
+    font-weight: 700;
+    background: var(--h1-bg);
+    color: #3a1a5a;
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    margin: 36px 0 14px;
+    border-left: 5px solid #9a5fc8;
+    letter-spacing: 0.01em;
+}
+h2 {
+    font-family: var(--font-head);
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: var(--h2-bg);
+    color: #6a1a40;
+    border-radius: var(--radius);
+    margin: 24px 0 10px;
+    padding: 6px 15px;
+    line-height: 1.3;
+    border-left: 4px solid #d060a0;
+}
+h3 {
+    font-family: var(--font-head);
+    font-size: 1.05rem;
+    font-weight: 600;
+    background: var(--h3-bg);
+    color: #6a1860;
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    margin: 22px 0 10px;
+    border-left: 3px solid #c870b8;
+}
+h4 {
+    background: var(--h4-bg);
+    font-size: 0.97rem;
+    font-weight: 600;
+    border-radius: 5px;
+    padding: 5px 12px;
+    margin: 18px 0 8px;
+    width: 95%;
+    border-left: 3px solid #d890c0;
+}
+
+p { margin: 0 0 12px; }
+
+a, a:visited, a:active, a:link {
+    color: var(--link);
+    text-decoration: underline;
+    font-size: 93%;
+}
+a:hover { background: #f4e0f8; border-radius: 3px; }
+
+/* ── code blocks ── */
+pre {
+    font-family: var(--font-code);
+    font-size: 0.88rem;
+    background: #fff9fc;
+    color: #4a3b46;
+    border: 1px solid #f1d7ea;
+    border-left: 5px solid #d87bc4;
+    border-radius: 16px;
+    padding: 18px 22px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.55;
+    margin: 14px 0 22px;
+    box-shadow: 0 4px 14px rgba(216,123,196,0.08), inset 0 1px 2px rgba(255,255,255,0.7);
+}
+
+code {
+    font-family: var(--font-code);
+    font-size: 90%;
+    background: #fdf0fa;
+    color: #7a006a;
+    border-radius: 4px;
+    padding: 1px 5px;
+}
+
+/* ── requirement box ── */
+div.req {
+    background: var(--req-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--req-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.req::before {
+    content: 'Requisiti';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a3880;
+    margin-bottom: 8px;
+}
+
+/* ── domanda box ── */
+div.domanda {
+    background: var(--domanda-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--domanda-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.domanda::before {
+    content: 'Domanda al committente:';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #1a6aab;
+    margin-bottom: 6px;
+}
+
+
+
+/* ── tables ── */
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th { background: #f0e0f8; color: #3a1a5a; font-weight: 600; }
+th, td { border: 1px solid #e0c8ec; padding: 8px 12px; font-size: 0.9rem; }
+tr:nth-child(even) td { background: #fdf6ff; }
+
+img { border: 1.5px solid #e8d0f4; border-radius: 6px; max-width: 100%; }
+
+/* ── footer ── */
+.footer {
+    background: linear-gradient(90deg, rgba(140,50,180,0.85), rgba(200,90,150,0.75));
+    color: #fff;
+    padding: 18px 24px;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    margin-top: 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.footer-authors {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.footer-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.footer-author img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.footer-author-initials {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.footer-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,0.3);
+}
+.footer a { color: #f4d0ff; }
+
+div.body { font-size: 1rem; }
+hr { clear: both; height: 1px; background: #e8d0f0; border: none; margin: 24px 0; }
+ol, ul { margin: 0 0 12px 20px; padding: 0; }
+li { margin-bottom: 4px; }
+
+@media (max-width: 600px) {
+    .page-wrap { padding: 0 16px 40px; }
+    #top { padding: 22px 16px 18px; }
+    .toc-strip { padding: 8px 16px; gap: 12px; }
+    .footer-divider { display: none; }
+}
+
+@media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="top">
+    <h1>Cargoservice — Sprint1</h1>
+    <div class="subtitle">ISS 2026 — Valeria Capacci &amp; Ginevra Pentoli</div>
+</div>
+
+<div class="toc-strip">
+    <a href="#goal">Goal</a>
+    <a href="#problemanalysis">Problem Analysis</a>
+    <a href="#tests">Test Plan</a>
+</div>
+
+<div class="page-wrap">
+<div class="body">
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="goal">Goal</h1>
+
+<p>Realizzare il sottosistema minimo che gestisce l'accettazione/rifiuto di una richiesta di carico e la parte relativa al timeout dei 30&nbsp;secondi. <code>cargoservice</code> riceve <code>loadrequest</code>, interroga <code>Hold</code>, risponde con <code>loadaccepted</code>/<code>loadrejected</code>, e passa da Idle a Engaged; se il timeout scade torna a Idle liberando lo slot.</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="problemanalysis">Problem Analysis</h1>
+
+<h2>Architettura logica del sottosistema</h2>
+
+<p>Rispetto al modello qak di Sprint0, in questo sprint restano solo l'attore <code>cargoservice</code> e gli oggetti Java che usa internamente (<code>Hold</code>, <code>IOPortStatus</code>).
+    In questa fase del progetto, come già detto, ci occuperemo della logica di business e, pertanto, abbiamo scelto di rappresentare una classe <code>IOPortStatus</code> mock che simuli il comportamento dell'IOPort che andremo a sviluppare in futuro. 
+<pre>
+System sprint1
+
+Request loadrequest  : loadrequest(NONE)
+Reply   loadaccepted : loadaccepted(SLOT) for loadrequest
+Reply   loadrejected : loadrejected(REASON)   for loadrequest   // REASON = full | retrylater
+
+Dispatch blinkLed : blinkLed(STATE)   // STATE = on | off
+
+Context ctxcargoservice ip [host="localhost" port=8050]
+
+QActor cargoservice context ctxcargoservice
+    withobj hold using "utils.cargoservice.Hold()"
+    withobj ioport using "utils.cargoservice.IOPortStatus()" {
+
+    [# var Slot = -1 #]
+
+    State idle initial {
+        println("$name | idle, in attesa di richieste...") color magenta
+    }
+    Transition t0 whenRequest loadrequest -> handleRequest
+
+    State handleRequest {
+        onMsg(loadrequest : loadrequest(X)) {
+            if [# ioport.isOccupied() #] {
+                replyTo loadrequest with loadrejected : loadrejected(retrylater)
+            } else {
+                [# Slot = hold.reserveFirstFree() #]
+                if [# Slot != -1 #] {
+                    forward cargoservice -m blinkLed : blinkLed(on)
+                    replyTo loadrequest with loadaccepted : loadaccepted($Slot)
+                } else {
+                    replyTo loadrequest with loadrejected : loadrejected(full)
+                }
+            }
+        }
+    }
+    Goto engaged if [# Slot != -1 #] else idle
+
+    State engaged {
+        println("$name | engaged") color magenta
+    }
+    Transition t1 whenTime 30000 -> disengaged
+
+    State disengaged {
+        println("$name | timeout scaduto, libero lo slot e torno idle") color magenta
+		forward cargoservice -m blinkLed : blinkLed(off)        
+		[# hold.releaseReserved() #]
+        [# Slot = -1 #]
+    }
+    Goto idle
+}
+
+QActor cargoservicecaller context ctxcargoservice {
+
+    State s0 initial {
+        request cargoservice -m loadrequest : loadrequest(X)
+    }
+    Transition t0
+        whenReply loadaccepted -> handleAccepted
+        whenReply loadrejected -> handleRejected
+
+    State handleAccepted {
+        onMsg(loadaccepted : loadaccepted(SLOT)) {
+        	[# var S = payloadArg(0) #]
+            println("$name | richiesta accettata, slot=$S") color magenta
+        }
+    }
+
+    State handleRejected {
+        onMsg(loadrejected : loadrejected(REASON)) {
+        	[# var R = payloadArg(0) #]
+        	println("$name | richiesta rifiutata, reason=$R") color magenta
+        }
+    }
+}</pre>
+
+<h2>Modifiche alla classe <code>Hold</code></h2>
+<p>Rispetto alla <code>Hold</code> dello Sprint0, sono state apportate delle modifiche:</p>
+<ul>
+    <li>E' stato modificato il metodo <code>reserveFirstFree()</code>. Per esigenze legate a semplicità, abbiamo scelto di cambiare il suo tipo, passando da <code>String</code> a <code>int</code>. A ogni slot è quindi associato un numero intero da 1 a 4 e il <code>null</code> è stato sostituito con un -1 simbolico.</li>
+    <li>Nella <code>Hold</code> di Sprint0 non era previsto liberare uno slot RESERVED. Serve però per gestire R2: se il cliente non porta il container entro un tempo prefissato (in questo caso 30s), lo slot prenotato deve tornare libero e lo stato <em>disengaged</em>, altrimenti la hold si "intaserebbe" di prenotazioni fantasma.</li>
+</ul>
+
+<pre>public class Hold {
+    public static final int NUM_SLOTS = 4;       // slot1..slot4
+
+    public enum SlotState { FREE, RESERVED, OCCUPIED }
+
+    private SlotState[] slots = {
+        SlotState.FREE,
+        SlotState.FREE,
+        SlotState.FREE,
+        SlotState.FREE
+    };
+
+    private boolean slot5Occupied = false;
+
+    public boolean isSlot5Occupied() {
+        return slot5Occupied;
+    }
+
+    public void setSlot5Occupied(boolean occupied) {
+        slot5Occupied = occupied;
+    }
+
+    public int reserveFirstFree() {
+        for (int i = 0; i < NUM_SLOTS; i++) {
+            if (slots[i] == SlotState.RESERVED) {
+                return -1; // al più una prenotazione attiva alla volta
+            }
+        }
+        for (int i = 0; i < NUM_SLOTS; i++) {
+            if (slots[i] == SlotState.FREE) {
+                slots[i] = SlotState.RESERVED;
+                return (i + 1);
+            }
+        }
+        return -1; // piena
+    }
+
+    public void markReservedOccupied() {
+        for (int i = 0; i < NUM_SLOTS; i++) {
+            if (slots[i] == SlotState.RESERVED) {
+                slots[i] = SlotState.OCCUPIED;
+                return;
+            }
+        }
+    }
+
+    public void releaseReserved() {
+        for (int i = 0; i < NUM_SLOTS; i++) {
+            if (slots[i] == SlotState.RESERVED) {
+                slots[i] = SlotState.FREE;
+                return;
+            }
+        }
+    }
+
+    public boolean isFull() {
+        for (SlotState s : slots) {
+            if (s != SlotState.OCCUPIED) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public String displayStatus() {
+        int occupied = 0;
+        for (SlotState s : slots) {
+            if (s == SlotState.OCCUPIED) {
+                occupied++;
+            }
+        }
+        return occupied + "/" + NUM_SLOTS + " occupied";
+    }
+}</pre>
+
+<h2><code>IOPortStatus</code></h2>
+<p>Di seguito è riportata la classe mock <code>IOPortStatus</code></p>
+<pre>public class IOPortStatus {
+	
+	private boolean occupied = false;
+
+    public boolean isOccupied() {
+        return occupied;
+    }
+
+    public void setOccupied(boolean occupied) {
+        this.occupied = occupied;
+    }
+}</pre>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="tests">Test Plan</h1>
+
+<p><strong>T1.6</strong> Dopo <code>reserveFirstFree()</code>, una chiamata a <code>releaseReserved()</code> deve far tornare libero lo slot: una successiva <code>reserveFirstFree()</code> deve restituire lo stesso slot.</p>
+
+<p>Riportiamo qui sotto la classe HoldTest modificata, in quanto sono stati modificati alcuni metodi nella classe Hold.</p>
+
+<pre>class HoldTest {
+
+    Hold hold;
+
+    @BeforeEach
+    void setUp() { hold = new Hold(); }
+
+    @Test // T1.1
+    void reserveFromEmpty() {
+        assertEquals(1, hold.reserveFirstFree());
+    }
+
+    @Test // T1.2
+    void fullWhenAllOccupied() {
+        for (int i = 0; i < Hold.NUM_SLOTS; i++) {
+            hold.reserveFirstFree();
+            hold.markReservedOccupied();
+        }
+        assertTrue(hold.isFull());
+    }
+
+    @Test // T1.3
+    void reserveWhenFull() {
+        for (int i = 0; i < Hold.NUM_SLOTS; i++) {
+            hold.reserveFirstFree();
+            hold.markReservedOccupied();
+        }
+        assertEquals(-1, hold.reserveFirstFree());
+    }
+
+    @Test // T1.4
+    void markReservedBecomesOccupied() {
+        hold.reserveFirstFree();
+        hold.markReservedOccupied();
+        assertFalse(hold.isFull()); // 1/4, non piena
+        assertNotEquals(-1, hold.reserveFirstFree());
+    }
+
+    @Test // T1.5
+    void noDoubleReserve() {
+        hold.reserveFirstFree(); // slot1 → RESERVED
+        assertEquals(-1, hold.reserveFirstFree());
+    }
+
+    @Test // T1.6 
+    void releaseReservedFreesTheSlot() {
+        hold.reserveFirstFree(); // slot1 -> RESERVED
+        hold.releaseReserved();
+        assertEquals(1, hold.reserveFirstFree());
+    }
+}</pre>
+
+</div><!-- .body -->
+
+<div class="footer">
+    <div class="footer-authors">
+        <div class="footer-author">
+            <img src="../img/VC.jpg" alt="VC"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="footer-author-initials" style="display:none;">
+                VC
+            </div>
+            <div>
+                <strong>Valeria Capacci</strong><br>
+                <a href="mailto:valeria.capacci@studio.unibo.it">valeria.capacci@studio.unibo.it</a>
+            </div>
+        </div>
+        <div class="footer-divider"></div>
+        <div class="footer-author">
+            <img src="../img/GP.jpeg" alt="GP"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="footer-author-initials" style="display:none;">
+                GP
+            </div>
+            <div>
+                <strong>Ginevra Pentoli</strong><br>
+                <a href="mailto:ginevra.pentoli@studio.unibo.it">ginevra.pentoli@studio.unibo.it</a>
+            </div>
+        </div>
+    </div>
+    <div style="margin-left: auto; font-size: 0.8rem; opacity: 0.85;">
+        GIT: <a href="https://github.com/valecapa/TemaFinaleISS2026">github.com/valecapa/TemaFinaleISS2026</a>
+    </div>
+</div>
+
+</div><!-- .page-wrap -->
+</body>
+</html>

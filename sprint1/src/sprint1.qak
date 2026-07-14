@@ -1,0 +1,75 @@
+System sprint1
+
+Request loadrequest  : loadrequest(NONE)
+Reply   loadaccepted : loadaccepted(SLOT) for loadrequest
+Reply   loadrejected : loadrejected(REASON)   for loadrequest   // REASON = full | retrylater
+
+Dispatch blinkLed : blinkLed(STATE)   // STATE = on | off
+
+Context ctxcargoservice ip [host="localhost" port=8050]
+
+QActor cargoservice context ctxcargoservice
+    withobj hold using "utils.cargoservice.Hold()"
+    withobj ioport using "utils.cargoservice.IOPortStatus()" {
+
+    [# var Slot = -1 #]
+
+    State idle initial {
+        println("$name | idle, in attesa di richieste...") color magenta
+    }
+    Transition t0 whenRequest loadrequest -> handleRequest
+
+    State handleRequest {
+        onMsg(loadrequest : loadrequest(X)) {
+            if [# ioport.isOccupied() #] {
+                replyTo loadrequest with loadrejected : loadrejected(retrylater)
+            } else {
+                [# Slot = hold.reserveFirstFree() #]
+                if [# Slot != -1 #] {
+                    forward cargoservice -m blinkLed : blinkLed(on)
+                    replyTo loadrequest with loadaccepted : loadaccepted($Slot)
+                } else {
+                    replyTo loadrequest with loadrejected : loadrejected(full)
+                }
+            }
+        }
+    }
+    Goto engaged if [# Slot != -1 #] else idle
+
+    State engaged {
+        println("$name | engaged") color magenta
+    }
+    Transition t1 whenTime 30000 -> disengaged
+
+    State disengaged {
+        println("$name | timeout scaduto, libero lo slot e torno idle") color magenta
+		forward cargoservice -m blinkLed : blinkLed(off)        
+		[# hold.releaseReserved() #]
+        [# Slot = -1 #]
+    }
+    Goto idle
+}
+
+QActor cargoservicecaller context ctxcargoservice {
+
+    State s0 initial {
+        request cargoservice -m loadrequest : loadrequest(X)
+    }
+    Transition t0
+        whenReply loadaccepted -> handleAccepted
+        whenReply loadrejected -> handleRejected
+
+    State handleAccepted {
+        onMsg(loadaccepted : loadaccepted(SLOT)) {
+        	[# var S = payloadArg(0) #]
+            println("$name | richiesta accettata, slot=$S") color magenta
+        }
+    }
+
+    State handleRejected {
+        onMsg(loadrejected : loadrejected(REASON)) {
+        	[# var R = payloadArg(0) #]
+        	println("$name | richiesta rifiutata, reason=$R") color magenta
+        }
+    }
+}
