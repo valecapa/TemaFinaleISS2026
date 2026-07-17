@@ -27,7 +27,11 @@ with Diagram('sprint1Arch', show=False, outformat='png', graph_attr=graphattr) a
 ### see https://renenyffenegger.ch/notes/tools/Graphviz/attributes/label/HTML-like/index
      with Cluster('ctxcargoservice', graph_attr=nodeattr):
           cargoservice=Custom('cargoservice','./qakicons/symActorWithobjSmall.png')
+          ioport=Custom('ioport','./qakicons/symActorWithobjSmall.png')
+          testbutton=Custom('testbutton','./qakicons/symActorWithobjSmall.png')
           cargoservicecaller=Custom('cargoservicecaller','./qakicons/symActorWithobjSmall.png')
+     ioport >> Edge(color='magenta', style='solid', decorate='true', label='<loadrequest<font color="darkgreen"> loadaccepted loadrejected</font> &nbsp; >',  fontcolor='magenta') >> cargoservice
      cargoservicecaller >> Edge(color='magenta', style='solid', decorate='true', label='<loadrequest<font color="darkgreen"> loadaccepted loadrejected</font> &nbsp; >',  fontcolor='magenta') >> cargoservice
-     cargoservice >> Edge(color='blue', style='solid',  decorate='true', label='<blinkLed &nbsp; >',  fontcolor='blue') >> cargoservice
+     testbutton >> Edge(color='blue', style='solid',  decorate='true', label='<pushButton &nbsp; >',  fontcolor='blue') >> ioport
+     cargoservice >> Edge(color='blue', style='solid',  decorate='true', label='<blinkLed &nbsp; >',  fontcolor='blue') >> ioport
 diag

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IOPort — Cargoservice</title>
+<style>
+  :root {
+    --metal-1: #423c48;
+    --metal-2: #2c2732;
+    --metal-3: #55495e;
+    --accent: #c870b8;
+    --accent-dim: #7b3fa0;
+    --screen-bg: #1a1420;
+    --screen-text: #e880d0;
+    --screen-text-dim: #7a4f74;
+    --led-off: #4a3f4a;
+    --led-on: #ffb347;
+    --font-label: 'DM Sans', -apple-system, sans-serif;
+    --font-screen: 'Source Code Pro', 'Consolas', monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 0%, #3a3242 0%, #1c1720 70%);
+    font-family: var(--font-label);
+    padding: 32px 16px;
+  }
+
+  .device {
+    width: min(380px, 100%);
+    background: linear-gradient(155deg, var(--metal-1) 0%, var(--metal-2) 55%, var(--metal-1) 100%);
+    border-radius: 22px;
+    padding: 26px 24px 30px;
+    box-shadow:
+      0 30px 60px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.08),
+      inset 0 -1px 0 rgba(0,0,0,0.4);
+    position: relative;
+  }
+  .device::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border-radius: 17px;
+    border: 1px solid rgba(255,255,255,0.05);
+    pointer-events: none;
+  }
+
+  .plate {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+  }
+  .plate .name {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #d8c8e0;
+    font-weight: 700;
+  }
+  .plate .tag {
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #9a8aa4;
+  }
+
+  /* ── screen ── */
+  .screen {
+    background: var(--screen-bg);
+    border-radius: 8px;
+    padding: 16px 16px 14px;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(0,0,0,0.6);
+    font-family: var(--font-screen);
+    min-height: 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .screen .row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    color: var(--screen-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .screen .row span:last-child { color: var(--screen-text); font-weight: 600; }
+  .screen .msg {
+    margin-top: 4px;
+    font-size: 0.88rem;
+    color: var(--screen-text);
+    text-shadow: 0 0 8px rgba(232,128,208,0.45);
+    line-height: 1.4;
+    min-height: 2.6em;
+  }
+
+  /* ── led + status row ── */
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 4px 22px;
+  }
+  .led {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--led-off);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+    transition: background 0.15s;
+  }
+  .led.on {
+    background: var(--led-on);
+    box-shadow: 0 0 8px 2px rgba(255,179,71,0.7), inset 0 1px 2px rgba(0,0,0,0.3);
+    animation: blink 1s step-start infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .led.on { animation: none; opacity: 0.85; }
+  }
+  @keyframes blink { 50% { opacity: 0.25; } }
+  .status-row .label {
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #9a8aa4;
+  }
+
+  /* ── pushbutton ── */
+  .button-wrap { display: flex; justify-content: center; margin: 6px 0 24px; }
+  .pushbutton {
+    width: 108px;
+    height: 108px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: radial-gradient(circle at 38% 32%, #e896d4, var(--accent) 55%, var(--accent-dim) 100%);
+    box-shadow:
+      0 8px 0 #5a2a78,
+      0 14px 20px rgba(0,0,0,0.5);
+    color: #fff;
+    font-family: var(--font-label);
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: transform 0.06s, box-shadow 0.06s;
+  }
+  .pushbutton:active {
+    transform: translateY(6px);
+    box-shadow: 0 2px 0 #5a2a78, 0 4px 8px rgba(0,0,0,0.5);
+  }
+  .pushbutton:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 4px;
+  }
+  .pushbutton:disabled {
+    filter: grayscale(0.6) brightness(0.7);
+    cursor: not-allowed;
+  }
+
+  /* ── sensor toggle (maintenance) ── */
+  .sensor {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding-top: 16px;
+  }
+  .sensor .label {
+    font-size: 0.7rem;
+    color: #b8a8c0;
+  }
+  .sensor .label small {
+    display: block;
+    font-size: 0.6rem;
+    color: #7a6a84;
+    margin-top: 2px;
+  }
+  .switch {
+    width: 42px;
+    height: 22px;
+    border-radius: 20px;
+    background: var(--metal-2);
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.6);
+    position: relative;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    flex-shrink: 0;
+  }
+  .switch::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #8a7a92;
+    transition: left 0.15s, background 0.15s;
+  }
+  .switch.occupied { background: #5a2a4a; }
+  .switch.occupied::after { left: 23px; background: var(--accent); }
+
+  .footnote {
+    margin-top: 18px;
+    font-size: 0.62rem;
+    line-height: 1.5;
+    color: #7a6a84;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="device">
+  <div class="plate">
+    <span class="name">IOPort</span>
+    <span class="tag">nodo cargoservice</span>
+  </div>
+
+  <div class="screen">
+    <div class="row"><span>stato</span><span id="stateVal">IDLE</span></div>
+    <div class="row"><span>hold</span><span id="holdVal">0/4</span></div>
+    <div class="msg" id="msgVal">In attesa di richieste...</div>
+  </div>
+
+  <div class="status-row">
+    <div class="led" id="led"></div>
+    <span class="label">LED — engaged</span>
+  </div>
+
+  <div class="button-wrap">
+    <button class="pushbutton" id="pushBtn">Carica</button>
+  </div>
+
+  <div class="sensor">
+    <span class="label">Sensore occupato
+      <small>simula presenza container (test)</small>
+    </span>
+    <button class="switch" id="sensorSwitch" aria-pressed="false" aria-label="Simula sensore occupato"></button>
+  </div>
+
+  <p class="footnote">
+    GUI collegata all'attore qak <code>ioport</code> via WebSocket
+    (<code>IOPortWsAdapter</code>). Stato, hold e LED riflettono solo quello
+    che il server invia: nessuna logica di Hold/IOPort è più simulata qui.
+  </p>
+  <p class="footnote" id="connStatus">connessione in corso...</p>
+</div>
+
+<script>
+(function () {
+  const btn = document.getElementById('pushBtn');
+  const sensorSwitch = document.getElementById('sensorSwitch');
+  const led = document.getElementById('led');
+  const stateVal = document.getElementById('stateVal');
+  const holdVal = document.getElementById('holdVal');
+  const msgVal = document.getElementById('msgVal');
+  const connStatus = document.getElementById('connStatus');
+
+  let sensorOccupied = false;
+  let socket = null;
+  const RECONNECT_MS = 2000;
+
+  function setConnStatus(text, lost) {
+    connStatus.textContent = text;
+    connStatus.style.color = lost ? '#e88' : '';
+  }
+
+  function setControlsEnabled(enabled) {
+    btn.disabled = !enabled;
+    sensorSwitch.disabled = !enabled;
+  }
+
+  function connect() {
+    socket = new WebSocket('ws://' + window.location.host + '/ws/ioport');
+
+    socket.onopen = () => {
+      setConnStatus('connesso', false);
+      setControlsEnabled(true);
+    };
+
+    socket.onmessage = (event) => {
+      let msg;
+      try {
+        msg = JSON.parse(event.data);
+      } catch (e) {
+        console.warn('ioport_gui: messaggio non JSON ignorato:', event.data);
+        return;
+      }
+      if (msg.type === 'display') {
+        stateVal.textContent = msg.state;
+        holdVal.textContent = msg.hold;
+        msgVal.textContent = msg.msg;
+      } else if (msg.type === 'led') {
+        led.classList.toggle('on', !!msg.on);
+      } else if (msg.type === 'sensor') {
+        sensorOccupied = !!msg.occupied;
+        sensorSwitch.classList.toggle('occupied', sensorOccupied);
+        sensorSwitch.setAttribute('aria-pressed', String(sensorOccupied));
+      }
+    };
+
+    socket.onclose = () => {
+      setConnStatus('connessione persa, riprovo...', true);
+      setControlsEnabled(false);
+      setTimeout(connect, RECONNECT_MS);
+    };
+
+    socket.onerror = () => {
+      socket.close();
+    };
+  }
+
+  btn.addEventListener('click', () => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'pushButton' }));
+    }
+  });
+
+  sensorSwitch.addEventListener('click', () => {
+    if (!(socket && socket.readyState === WebSocket.OPEN)) return;
+    sensorOccupied = !sensorOccupied;
+    sensorSwitch.classList.toggle('occupied', sensorOccupied);
+    sensorSwitch.setAttribute('aria-pressed', String(sensorOccupied));
+    socket.send(JSON.stringify({ type: 'setOccupied', value: sensorOccupied }));
+  });
+
+  setControlsEnabled(false);
+  connect();
+})();
+</script>
+
+</body>
+</html>

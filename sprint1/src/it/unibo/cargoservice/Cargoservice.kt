@@ -30,8 +30,8 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 		//val interruptedStateTransitions = mutableListOf<Transition>()
 		//IF actor.withobj !== null val actor.withobj.name� = actor.withobj.method�ENDIF
 		val hold = utils.cargoservice.Hold()
-		val ioport = utils.cargoservice.IOPortStatus()
-		 var Slot = -1  
+		 var Slot = -1
+		     var Occupied = false  
 		return { //this:ActionBasciFsm
 				state("idle") { //this:State
 					action { //it:State
@@ -45,19 +45,22 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 				}	 
 				state("handleRequest") { //this:State
 					action { //it:State
-						if( checkMsgContent( Term.createTerm("loadrequest(NONE)"), Term.createTerm("loadrequest(X)"), 
+						if( checkMsgContent( Term.createTerm("loadrequest(OCCUPIED)"), Term.createTerm("loadrequest(X)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
-								if(  ioport.isOccupied()  
-								 ){answer("loadrequest", "loadrejected", "loadrejected(retrylater)"   )  
+								 Occupied = payloadArg(0).toBoolean()  
+								 var H = "'" + hold.displayStatus() + "'"  
+								if(  Occupied == true  
+								 ){answer("loadrequest", "loadrejected", "loadrejected(retrylater,$H)"   )  
 								}
 								else
 								 { Slot = hold.reserveFirstFree()  
 								 if(  Slot != -1  
-								  ){forward("blinkLed", "blinkLed(on)" ,"cargoservice" ) 
-								 answer("loadrequest", "loadaccepted", "loadaccepted($Slot)"   )  
+								  ){ var H2 = "'" + hold.displayStatus() + "'"  
+								 forward("blinkLed", "blinkLed(on,$H2)" ,"ioport" ) 
+								 answer("loadrequest", "loadaccepted", "loadaccepted($Slot,$H2)"   )  
 								 }
 								 else
-								  {answer("loadrequest", "loadrejected", "loadrejected(full)"   )  
+								  {answer("loadrequest", "loadrejected", "loadrejected(full,$H)"   )  
 								  }
 								 }
 						}
@@ -86,8 +89,9 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 				state("disengaged") { //this:State
 					action { //it:State
 						CommUtils.outmagenta("$name | timeout scaduto, libero lo slot e torno idle")
-						forward("blinkLed", "blinkLed(off)" ,"cargoservice" ) 
 						 hold.releaseReserved()  
+						 var H = "'" + hold.displayStatus() + "'"  
+						forward("blinkLed", "blinkLed(off,$H)" ,"ioport" ) 
 						 Slot = -1  
 						//genTimer( actor, state )
 					}

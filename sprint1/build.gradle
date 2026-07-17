@@ -54,7 +54,7 @@ dependencies {
 
     // Use the Kotlin JUnit integration.
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:1.9.22"
-
+    
     /* COROUTINES ******************************************************************************* */
     // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core
     implementation group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: "$kotlinVersion"   //, ext: 'pom'
@@ -103,6 +103,9 @@ dependencies {
  	//PLANNER  
     //implementation name: 'unibo.planner23-1.0'
     //implementation group: 'com.googlecode.aima-java', name: 'aima-core', version: '3.0.0'
+    /* javalin ******************************* */
+	implementation 'io.javalin:javalin-bundle:6.1.3'
+    
 
     /* UNIBO *********************************************************************************/
     implementation name: 'uniboInterfaces'

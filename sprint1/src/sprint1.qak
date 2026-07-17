@@ -1,18 +1,27 @@
 System sprint1
 
-Request loadrequest  : loadrequest(NONE)
-Reply   loadaccepted : loadaccepted(SLOT) for loadrequest
-Reply   loadrejected : loadrejected(REASON)   for loadrequest   // REASON = full | retrylater
+Request loadrequest  : loadrequest(OCCUPIED)                     // OCCUPIED = stato del sensore IOPort al momento della richiesta
+Reply   loadaccepted : loadaccepted(SLOT,HOLD) for loadrequest    // HOLD = stringa displayStatus() della Hold (es. "1/4 occupied")
+Reply   loadrejected : loadrejected(REASON,HOLD)   for loadrequest    // REASON = full | retrylater
 
-Dispatch blinkLed : blinkLed(STATE)   // STATE = on | off
+Dispatch blinkLed      : blinkLed(STATE,HOLD)      // STATE = on | off, inviato da cargoservice a ioport
+Dispatch pushButton    : pushButton(NONE)          // simula la pressione del pulsante fisico dello IOPort
+Dispatch setOccupied   : setOccupied(FLAG)         // supporto di test: forza lo stato del sensore IOPort (FLAG = true | false)
+Dispatch updateDisplay : updateDisplay(STATE,HOLD,MSG)
+    // Non viaggia sul bus qak: descrive la forma del payload che ioport spinge
+    // sul suo IOPortWsAdapter (vedi utils/cargoservice/IOPortWsAdapter.java) ogni
+    // volta che cambia qualcosa di visibile (accettazione, rifiuto, timeout).
+    // Tenerlo come Dispatch "di catalogo" serve solo a documentare il contratto;
+    // un giro forward-a-se-stesso non aggiungerebbe nulla dato che il chiamante
+    // e il ricevente coinciderebbero sempre.
 
 Context ctxcargoservice ip [host="localhost" port=8050]
 
 QActor cargoservice context ctxcargoservice
-    withobj hold using "utils.cargoservice.Hold()"
-    withobj ioport using "utils.cargoservice.IOPortStatus()" {
+    withobj hold using "utils.cargoservice.Hold()" {
 
-    [# var Slot = -1 #]
+    [# var Slot = -1
+     var Occupied = false #]
 
     State idle initial {
         println("$name | idle, in attesa di richieste...") color magenta
@@ -20,16 +29,23 @@ QActor cargoservice context ctxcargoservice
     Transition t0 whenRequest loadrequest -> handleRequest
 
     State handleRequest {
+        // HOLD viaggia come atomo Prolog quotato ('...'): displayStatus() contiene
+        // spazi e '/' che romperebbero il parsing del termine se non quotati
+        // (checkMsgContent fa unificazione Prolog vera sul contenuto del messaggio;
+        // payloadArg toglie poi gli apici in lettura, come per Plan="''" in robotsmart26.qak)
         onMsg(loadrequest : loadrequest(X)) {
-            if [# ioport.isOccupied() #] {
-                replyTo loadrequest with loadrejected : loadrejected(retrylater)
+            [# Occupied = payloadArg(0).toBoolean() #]
+            [# var H = "'" + hold.displayStatus() + "'" #]
+            if [# Occupied == true #] {
+                replyTo loadrequest with loadrejected : loadrejected(retrylater,$H)
             } else {
                 [# Slot = hold.reserveFirstFree() #]
                 if [# Slot != -1 #] {
-                    forward cargoservice -m blinkLed : blinkLed(on)
-                    replyTo loadrequest with loadaccepted : loadaccepted($Slot)
+                    [# var H2 = "'" + hold.displayStatus() + "'" #]
+                    forward ioport -m blinkLed : blinkLed(on,$H2)
+                    replyTo loadrequest with loadaccepted : loadaccepted($Slot,$H2)
                 } else {
-                    replyTo loadrequest with loadrejected : loadrejected(full)
+                    replyTo loadrequest with loadrejected : loadrejected(full,$H)
                 }
             }
         }
@@ -43,31 +59,114 @@ QActor cargoservice context ctxcargoservice
 
     State disengaged {
         println("$name | timeout scaduto, libero lo slot e torno idle") color magenta
-		forward cargoservice -m blinkLed : blinkLed(off)        
 		[# hold.releaseReserved() #]
+		[# var H = "'" + hold.displayStatus() + "'" #]
+		forward ioport -m blinkLed : blinkLed(off,$H)
         [# Slot = -1 #]
     }
     Goto idle
 }
 
-QActor cargoservicecaller context ctxcargoservice {
+QActor ioport context ctxcargoservice
+    withobj status using "utils.cargoservice.IOPortStatus()" {
 
+    // Bridge Javalin/WebSocket: espone /ws/ioport e serve ioport_gui.html.
+    // Riceve pushButton/setOccupied dal browser e li inietta come veri Dispatch
+    // in questo attore tramite sendMsgToMyself (nessuna chiamata diretta a
+    // Hold/IOPortStatus dal lato web: passa tutto da qui).
+    [# val wsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070) #]
+
+    State idle initial {
+        println("$name | idle, in attesa della pressione del pulsante...") color cyan
+    }
+    Transition t0
+        whenMsg pushButton  -> onButtonPressed
+        whenMsg setOccupied -> onSetOccupied
+        whenMsg blinkLed    -> onBlinkLed
+
+    State onButtonPressed {
+        onMsg(pushButton : pushButton(X)) {
+            println("$name | pulsante premuto, invio richiesta di carico") color cyan
+            [# var Occ = status.isOccupied() #]
+            request cargoservice -m loadrequest : loadrequest($Occ)
+        }
+    }
+    Transition t1
+        whenReply loadaccepted -> showAccepted
+        whenReply loadrejected -> showRejected
+        whenMsg   blinkLed     -> onBlinkLed
+
+    State showAccepted {
+        onMsg(loadaccepted : loadaccepted(SLOT,HOLD)) {
+        	[# var S = payloadArg(0) #]
+        	[# var H = payloadArg(1) #]
+            println("$name | display -> richiesta accettata, slot=$S") color cyan
+            [# wsAdapter.updateDisplay("ENGAGED", H, "Richiesta accettata - slot " + S) #]
+        }
+    }
+    Goto idle
+
+    State showRejected {
+        onMsg(loadrejected : loadrejected(REASON,HOLD)) {
+        	[# var R = payloadArg(0) #]
+        	[# var H = payloadArg(1) #]
+        	println("$name | display -> richiesta rifiutata, reason=$R") color cyan
+        	[# wsAdapter.updateDisplay("IDLE", H, "Richiesta rifiutata: " + R) #]
+        }
+    }
+    Goto idle
+
+    State onSetOccupied {
+        onMsg(setOccupied : setOccupied(FLAG)) {
+        	[# var F = payloadArg(0) #]
+        	[# status.setOccupied(F.toBoolean()) #]
+            println("$name | sensore IOPort forzato a occupied=$F") color cyan
+        	[# wsAdapter.notifySensor(F) #]
+        }
+    }
+    Goto idle
+
+    State onBlinkLed {
+        // arriva in modo asincrono da cargoservice: sia subito dopo un
+        // loadaccepted (LED on) sia 30s dopo, allo scadere del timeout (LED off)
+        onMsg(blinkLed : blinkLed(STATE,HOLD)) {
+        	[# var S = payloadArg(0) #]
+        	[# var H = payloadArg(1) #]
+        	println("$name | led -> $S") color cyan
+        	[# wsAdapter.setLed(S) #]
+        	if [# S == "off" #] {
+        		[# wsAdapter.updateDisplay("IDLE", H, "Timeout scaduto: slot liberato, torno idle") #]
+        	}
+        }
+    }
+    Goto idle
+}
+
+QActor testbutton context ctxcargoservice {
+    // simula il cliente che preme il pulsante fisico dello IOPort
     State s0 initial {
-        request cargoservice -m loadrequest : loadrequest(X)
+        forward ioport -m pushButton : pushButton(X)
+    }
+}
+
+QActor cargoservicecaller context ctxcargoservice {
+    // resta utile per testare cargoservice in isolamento, bypassando ioport
+    State s0 initial {
+        request cargoservice -m loadrequest : loadrequest(false)
     }
     Transition t0
         whenReply loadaccepted -> handleAccepted
         whenReply loadrejected -> handleRejected
 
     State handleAccepted {
-        onMsg(loadaccepted : loadaccepted(SLOT)) {
+        onMsg(loadaccepted : loadaccepted(SLOT,HOLD)) {
         	[# var S = payloadArg(0) #]
             println("$name | richiesta accettata, slot=$S") color magenta
         }
     }
 
     State handleRejected {
-        onMsg(loadrejected : loadrejected(REASON)) {
+        onMsg(loadrejected : loadrejected(REASON,HOLD)) {
         	[# var R = payloadArg(0) #]
         	println("$name | richiesta rifiutata, reason=$R") color magenta
         }
