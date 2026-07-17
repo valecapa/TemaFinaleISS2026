@@ -14,7 +14,3 @@ context(ctxcargoservice, "localhost",  "TCP", "8050").
  static(cargoservice).
   qactor( ioport, ctxcargoservice, "it.unibo.ioport.Ioport").
  static(ioport).
-  qactor( testbutton, ctxcargoservice, "it.unibo.testbutton.Testbutton").
- static(testbutton).
-  qactor( cargoservicecaller, ctxcargoservice, "it.unibo.cargoservicecaller.Cargoservicecaller").
- static(cargoservicecaller).

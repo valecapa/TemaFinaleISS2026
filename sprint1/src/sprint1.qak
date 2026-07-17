@@ -141,34 +141,3 @@ QActor ioport context ctxcargoservice
     }
     Goto idle
 }
-
-QActor testbutton context ctxcargoservice {
-    // simula il cliente che preme il pulsante fisico dello IOPort
-    State s0 initial {
-        forward ioport -m pushButton : pushButton(X)
-    }
-}
-
-QActor cargoservicecaller context ctxcargoservice {
-    // resta utile per testare cargoservice in isolamento, bypassando ioport
-    State s0 initial {
-        request cargoservice -m loadrequest : loadrequest(false)
-    }
-    Transition t0
-        whenReply loadaccepted -> handleAccepted
-        whenReply loadrejected -> handleRejected
-
-    State handleAccepted {
-        onMsg(loadaccepted : loadaccepted(SLOT,HOLD)) {
-        	[# var S = payloadArg(0) #]
-            println("$name | richiesta accettata, slot=$S") color magenta
-        }
-    }
-
-    State handleRejected {
-        onMsg(loadrejected : loadrejected(REASON,HOLD)) {
-        	[# var R = payloadArg(0) #]
-        	println("$name | richiesta rifiutata, reason=$R") color magenta
-        }
-    }
-}

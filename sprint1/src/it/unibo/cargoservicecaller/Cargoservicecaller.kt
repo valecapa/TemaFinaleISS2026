@@ -32,18 +32,18 @@ class Cargoservicecaller ( name: String, scope: CoroutineScope, isconfined: Bool
 		return { //this:ActionBasciFsm
 				state("s0") { //this:State
 					action { //it:State
-						request("loadrequest", "loadrequest(false)" ,"cargoservice" )  
+						request("loadrequest", "loadrequest(X)" ,"cargoservice" )  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t08",targetState="handleAccepted",cond=whenReply("loadaccepted"))
-					transition(edgeName="t09",targetState="handleRejected",cond=whenReply("loadrejected"))
+					 transition(edgeName="t02",targetState="handleAccepted",cond=whenReply("loadaccepted"))
+					transition(edgeName="t03",targetState="handleRejected",cond=whenReply("loadrejected"))
 				}	 
 				state("handleAccepted") { //this:State
 					action { //it:State
-						if( checkMsgContent( Term.createTerm("loadaccepted(SLOT,HOLD)"), Term.createTerm("loadaccepted(SLOT,HOLD)"), 
+						if( checkMsgContent( Term.createTerm("loadaccepted(SLOT)"), Term.createTerm("loadaccepted(SLOT)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
 								 var S = payloadArg(0)  
 								CommUtils.outmagenta("$name | richiesta accettata, slot=$S")
@@ -56,7 +56,7 @@ class Cargoservicecaller ( name: String, scope: CoroutineScope, isconfined: Bool
 				}	 
 				state("handleRejected") { //this:State
 					action { //it:State
-						if( checkMsgContent( Term.createTerm("loadrejected(REASON,HOLD)"), Term.createTerm("loadrejected(REASON,HOLD)"), 
+						if( checkMsgContent( Term.createTerm("loadrejected(REASON)"), Term.createTerm("loadrejected(REASON)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
 								 var R = payloadArg(0)  
 								CommUtils.outmagenta("$name | richiesta rifiutata, reason=$R")
