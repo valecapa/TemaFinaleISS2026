@@ -1,0 +1,7 @@
+DOMANDE AL COMMITTENTE:
+
+1) Cosa si intende per "stato della stiva"?
+
+2) ioport e cargoservice vanno messi in contesti diversi? meglio fare 2 file qak?
+
+3) su che nodo è situato il led? (a chi va mandato il messaggio "blinkled")

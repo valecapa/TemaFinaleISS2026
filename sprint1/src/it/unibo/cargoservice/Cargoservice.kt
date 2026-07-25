@@ -69,9 +69,9 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition( edgeName="goto",targetState="engaged", cond=doswitchGuarded({ Slot != -1  
+					 transition( edgeName="goto",targetState="engaged", cond=doswitchGuarded({ Slot != -1 && Occupied == false  
 					}) )
-					transition( edgeName="goto",targetState="idle", cond=doswitchGuarded({! ( Slot != -1  
+					transition( edgeName="goto",targetState="idle", cond=doswitchGuarded({! ( Slot != -1 && Occupied == false  
 					) }) )
 				}	 
 				state("engaged") { //this:State
