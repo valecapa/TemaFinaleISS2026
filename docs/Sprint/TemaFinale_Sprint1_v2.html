@@ -330,9 +330,14 @@ li { margin-bottom: 4px; }
 
 <div class="toc-strip">
     <a href="#goal">Goal</a>
-    <a href="#problemanalysis">Problem Analysis</a>
-    <a href="#ioport">IOPort</a>
+    <a href="#architettura">Architettura</a>
+    <a href="#qak">Modello qak</a>
+    <a href="#classi">Classi Java</a>
+    <a href="#ioport">IOPort e WebSocket</a>
+    <a href="#gui">Pannello web</a>
     <a href="#tests">Test Plan</a>
+    <a href="#riepilogo">Riepilogo</a>
+    <a href="#sprint2">Sprint2</a>
 </div>
 
 <div class="page-wrap">
@@ -341,31 +346,38 @@ li { margin-bottom: 4px; }
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="goal">Goal</h1>
 
-<p>Realizzare il sottosistema minimo che gestisce l'accettazione/rifiuto di una richiesta di carico e la parte relativa al timeout dei 30&nbsp;secondi. <code>cargoservice</code> riceve <code>loadrequest</code>, interroga <code>Hold</code>, risponde con <code>loadaccepted</code>/<code>loadrejected</code>, e passa da Idle a Engaged; se il timeout scade torna a Idle liberando lo slot.</p>
+<p>Realizzare il sottosistema che gestisce l'accettazione/rifiuto di una richiesta di carico, il timeout dei 30&nbsp;secondi, e l'interazione reale con lo <code>IOPort</code>: pulsante, sensore, display e LED. <code>cargoservice</code> riceve <code>loadrequest</code>, interroga <code>Hold</code>, risponde con <code>loadaccepted</code>/<code>loadrejected</code> e transita da Idle a Engaged; se il timeout scade torna a Idle liberando lo slot. Lo <code>IOPort</code> è realizzato come un secondo QActor, con un pannello di controllo web collegato via WebSocket che ne simula l'hardware fisico.</p>
 
 <!-- ══════════════════════════════════════════════════════ -->
-<h1 id="problemanalysis">Problem Analysis</h1>
+<h1 id="architettura">Architettura del sottosistema</h1>
 
-<h2>Architettura logica del sottosistema</h2>
+<p>Il sottosistema di Sprint1 è composto da due QActor che condividono lo stesso <code>Context ctxcargoservice</code> (per semplicità, come già in Sprint0): <code>cargoservice</code>, l'orchestratore che applica la logica di accettazione/rifiuto e gestisce il timeout, e <code>ioport</code>, che rappresenta il dispositivo fisico all'ingresso della stiva. Ciascuno dei due incapsula il proprio stato interno con <code>withobj</code>: <code>cargoservice</code> usa <code>Hold</code> per tenere traccia degli slot, <code>ioport</code> usa <code>IOPortStatus</code> per il flag del sensore di presenza container.</p>
 
-<p>Rispetto al modello qak di Sprint0, in questo sprint restano solo l'attore <code>cargoservice</code> e gli oggetti Java che usa internamente (<code>Hold</code>, <code>IOPortStatus</code>).
-    In questa fase del progetto, come già detto, ci occuperemo della logica di business e, pertanto, abbiamo scelto di rappresentare una classe <code>IOPortStatus</code> mock che simuli il comportamento dell'IOPort che andremo a sviluppare in futuro. 
-<pre>
-System sprint1
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="qak">Il modello qak</h1>
 
-Request loadrequest  : loadrequest(NONE)
-Reply   loadaccepted : loadaccepted(SLOT) for loadrequest
-Reply   loadrejected : loadrejected(REASON)   for loadrequest   // REASON = full | retrylater
+<p>Di seguito il modello <code>sprint1.qak</code> completo. <code>loadrequest</code> porta il parametro <code>OCCUPIED</code>, letto dal sensore di <code>ioport</code>; le risposte <code>loadaccepted</code>/<code>loadrejected</code> portano anche lo stato corrente della hold (<code>HOLD</code>), da mostrare sul display. I dispatch <code>pushButton</code> e <code>setOccupied</code> arrivano dalla GUI verso <code>ioport</code> (simulano rispettivamente la pressione del pulsante e il sensore fisico), mentre <code>blinkLed</code> viaggia da <code>cargoservice</code> a <code>ioport</code> ogni volta che il sistema entra o esce dallo stato <em>engaged</em>.</p>
 
-Dispatch blinkLed : blinkLed(STATE)   // STATE = on | off
+<p><code>ioport</code> nello stato <code>idle</code> attende uno dei tre dispatch in arrivo dalla GUI o da <code>cargoservice</code>. Alla pressione del pulsante (<code>onButtonPressed</code>) legge <code>status.isOccupied()</code> e apre una <code>request</code> verso <code>cargoservice</code>; ricevuta la risposta (<code>showAccepted</code>/<code>showRejected</code>) aggiorna il display tramite <code>wsAdapter</code>; <code>onSetOccupied</code> aggiorna il sensore interno e lo notifica alla GUI; <code>onBlinkLed</code> pilota il LED e, quando questo si spegne, aggiorna anche il display per segnalare che lo slot è stato liberato.</p>
+
+<pre>System sprint1
+
+Request loadrequest  : loadrequest(OCCUPIED)                     // fa richiesta di carico, OCCUPIED controlla se l'ingresso è libero o occupato da un container
+Reply   loadaccepted : loadaccepted(SLOT,HOLD) for loadrequest    // accetta il carico, assegna lo SLOT e mostra lo stato della HOLD
+Reply   loadrejected : loadrejected(REASON,HOLD)   for loadrequest    // rifiuta il carico, dà il motivo (REASON) e mostra lo stato della HOLD
+
+Dispatch blinkLed      : blinkLed(STATE,HOLD)      // STATE = on | off, inviato da cargoservice a ioport
+Dispatch pushButton    : pushButton(NONE)          // simula la pressione del pulsante fisico dello IOPort
+Dispatch setOccupied   : setOccupied(FLAG)         // simula il sensore
+Dispatch updateDisplay : updateDisplay(STATE,HOLD,MSG)
 
 Context ctxcargoservice ip [host="localhost" port=8050]
 
 QActor cargoservice context ctxcargoservice
-    withobj hold using "utils.cargoservice.Hold()"
-    withobj ioport using "utils.cargoservice.IOPortStatus()" {
+    withobj hold using "utils.cargoservice.Hold()" {
 
-    [# var Slot = -1 #]
+    [# var Slot = -1
+     var Occupied = false #]
 
     State idle initial {
         println("$name | idle, in attesa di richieste...") color magenta
@@ -374,20 +386,23 @@ QActor cargoservice context ctxcargoservice
 
     State handleRequest {
         onMsg(loadrequest : loadrequest(X)) {
-            if [# ioport.isOccupied() #] {
-                replyTo loadrequest with loadrejected : loadrejected(retrylater)
+            [# Occupied = payloadArg(0).toBoolean() #]
+            [# var H = "'" + hold.displayStatus() + "'" #]
+            if [# Occupied == true #] {
+                replyTo loadrequest with loadrejected : loadrejected(retrylater,$H)
             } else {
                 [# Slot = hold.reserveFirstFree() #]
                 if [# Slot != -1 #] {
-                    forward cargoservice -m blinkLed : blinkLed(on)
-                    replyTo loadrequest with loadaccepted : loadaccepted($Slot)
+                    [# var H2 = "'" + hold.displayStatus() + "'" #]
+                    forward ioport -m blinkLed : blinkLed(on,$H2)
+                    replyTo loadrequest with loadaccepted : loadaccepted($Slot,$H2)
                 } else {
-                    replyTo loadrequest with loadrejected : loadrejected(full)
+                    replyTo loadrequest with loadrejected : loadrejected(full,$H)
                 }
             }
         }
     }
-    Goto engaged if [# Slot != -1 #] else idle
+    Goto engaged if [# Slot != -1 && Occupied == false #] else idle
 
     State engaged {
         println("$name | engaged") color magenta
@@ -396,42 +411,91 @@ QActor cargoservice context ctxcargoservice
 
     State disengaged {
         println("$name | timeout scaduto, libero lo slot e torno idle") color magenta
-		forward cargoservice -m blinkLed : blinkLed(off)        
 		[# hold.releaseReserved() #]
+		[# var H = "'" + hold.displayStatus() + "'" #]
+		forward ioport -m blinkLed : blinkLed(off,$H)
         [# Slot = -1 #]
     }
     Goto idle
 }
 
-QActor cargoservicecaller context ctxcargoservice {
+QActor ioport context ctxcargoservice
+    withobj status using "utils.cargoservice.IOPortStatus()" {
 
-    State s0 initial {
-        request cargoservice -m loadrequest : loadrequest(X)
+    [# var WsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070) #]
+
+    State idle initial {
+        println("$name | idle, in attesa della pressione del pulsante...") color cyan
     }
     Transition t0
-        whenReply loadaccepted -> handleAccepted
-        whenReply loadrejected -> handleRejected
+        whenMsg pushButton  -> onButtonPressed
+        whenMsg setOccupied -> onSetOccupied
+        whenMsg blinkLed    -> onBlinkLed
 
-    State handleAccepted {
-        onMsg(loadaccepted : loadaccepted(SLOT)) {
+    State onButtonPressed {
+        onMsg(pushButton : pushButton(X)) {
+            println("$name | pulsante premuto, invio richiesta di carico") color cyan
+            [# var Occ = status.isOccupied() #]
+            request cargoservice -m loadrequest : loadrequest($Occ)
+        }
+    }
+    Transition t1
+        whenReply loadaccepted -> showAccepted
+        whenReply loadrejected -> showRejected
+        whenMsg   blinkLed     -> onBlinkLed
+
+    State showAccepted {
+        onMsg(loadaccepted : loadaccepted(SLOT,HOLD)) {
         	[# var S = payloadArg(0) #]
-            println("$name | richiesta accettata, slot=$S") color magenta
+        	[# var H = payloadArg(1) #]
+            println("$name | display -> richiesta accettata, slot=$S") color cyan
+            [# WsAdapter.updateDisplay("ENGAGED", H, "Richiesta accettata - slot " + S) #]
         }
     }
+    Goto idle
 
-    State handleRejected {
-        onMsg(loadrejected : loadrejected(REASON)) {
+    State showRejected {
+        onMsg(loadrejected : loadrejected(REASON,HOLD)) {
         	[# var R = payloadArg(0) #]
-        	println("$name | richiesta rifiutata, reason=$R") color magenta
+        	[# var H = payloadArg(1) #]
+        	println("$name | display -> richiesta rifiutata, reason=$R") color cyan
+        	[# WsAdapter.updateDisplay("IDLE", H, "Richiesta rifiutata: " + R) #]
         }
     }
+    Goto idle
+
+    State onSetOccupied {
+        onMsg(setOccupied : setOccupied(FLAG)) {
+        	[# var F = payloadArg(0) #]
+        	[# status.setOccupied(F.toBoolean()) #]
+            println("$name | sensore IOPort forzato a occupied=$F") color cyan
+        	[# WsAdapter.notifySensor(F) #]
+        }
+    }
+    Goto idle
+
+    State onBlinkLed {
+        onMsg(blinkLed : blinkLed(STATE,HOLD)) {
+        	[# var S = payloadArg(0) #]
+        	[# var H = payloadArg(1) #]
+        	println("$name | led -> $S") color cyan
+        	[# WsAdapter.setLed(S) #]
+        	if [# S == "off" #] {
+        		[# WsAdapter.updateDisplay("IDLE", H, "Timeout scaduto: slot liberato, torno idle") #]
+        	}
+        }
+    }
+    Goto idle
 }</pre>
 
-<h2>Modifiche alla classe <code>Hold</code></h2>
-<p>Rispetto alla <code>Hold</code> dello Sprint0, sono state apportate delle modifiche:</p>
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="classi">Classi Java</h1>
+
+<h2><code>Hold</code></h2>
+<p>Rispetto alla <code>Hold</code> di Sprint0 sono state necessarie due modifiche, entrambe legate a requisiti che in Sprint0 non erano ancora stati implementati:</p>
 <ul>
-    <li>E' stato modificato il metodo <code>reserveFirstFree()</code>. Per esigenze legate a semplicità, abbiamo scelto di cambiare il suo tipo, passando da <code>String</code> a <code>int</code>. A ogni slot è quindi associato un numero intero da 1 a 4 e il <code>null</code> è stato sostituito con un -1 simbolico.</li>
-    <li>Nella <code>Hold</code> di Sprint0 non era previsto liberare uno slot RESERVED. Serve però per gestire R2: se il cliente non porta il container entro un tempo prefissato (in questo caso 30s), lo slot prenotato deve tornare libero e lo stato <em>disengaged</em>, altrimenti la hold si "intaserebbe" di prenotazioni fantasma.</li>
+    <li><code>reserveFirstFree()</code> ora restituisce <code>int</code> invece di <code>String</code>: a ogni slot è associato un numero da 1 a 4, e <code>-1</code> è il valore sentinella che sostituisce il precedente <code>null</code> (assenza di slot disponibile).</li>
+    <li>È stato aggiunto <code>releaseReserved()</code>, necessario per R2: se il cliente non porta il container entro 30&nbsp;secondi, lo slot prenotato deve tornare libero e il sistema deve passare a <em>disengaged</em>, altrimenti la hold si riempirebbe di prenotazioni mai confermate.</li>
 </ul>
 
 <pre>public class Hold {
@@ -510,7 +574,7 @@ QActor cargoservicecaller context ctxcargoservice {
 }</pre>
 
 <h2><code>IOPortStatus</code></h2>
-<p>Di seguito è riportata la classe mock <code>IOPortStatus</code></p>
+<p><code>IOPortStatus</code> è un oggetto di stato che l'attore <code>ioport</code> incapsula con <code>withobj</code>. Tiene traccia del flag <code>occupied</code> letto dal sensore di presenza container, ancora non implementato.</p>
 <pre>public class IOPortStatus {
 	
 	private boolean occupied = false;
@@ -525,164 +589,9 @@ QActor cargoservicecaller context ctxcargoservice {
 }</pre>
 
 <!-- ══════════════════════════════════════════════════════ -->
-<h1 id="ioport">IOPort</h1>
+<h1 id="ioport">IOPort: integrazione WebSocket</h1>
 
-<p>Nella prima versione di questo documento lo <code>IOPort</code> non esisteva come componente autonomo: <code>cargoservice</code> interrogava sincronamente un oggetto mock, <code>IOPortStatus</code>, per sapere se l'ingresso fosse occupato. Quella scelta andava bene per validare la logica di accettazione/rifiuto e il timeout, ma lasciava fuori dal modello il vero e proprio dispositivo fisico che il committente descrive nei requisiti (pulsante, sensore, display, LED). In questa sezione completiamo il sottosistema realizzando lo <code>IOPort</code> come QActor a sé stante, dotato di un pannello di controllo web che ne simula l'hardware.</p>
-
-<h2>Perché un attore e non più una chiamata sincrona</h2>
-
-<p>Far interrogare a <code>cargoservice</code> un oggetto <code>IOPortStatus</code> condiviso avrebbe funzionato anche per il dispositivo reale, ma avrebbe rotto il modello a scambio di messaggi che regge tutto il resto del sistema: due attori non devono condividere stato mutabile, altrimenti si reintroducono gli stessi problemi di concorrenza che il paradigma ad attori vuole evitare (accessi concorrenti, letture di valori non aggiornati, accoppiamento stretto fra le classi). Abbiamo quindi promosso <code>IOPortStatus</code> a stato <em>interno</em> dell'attore <code>ioport</code>: è <code>ioport</code> stesso, nel momento in cui riceve la pressione del pulsante, a leggere il proprio sensore e a inoltrare l'informazione a <code>cargoservice</code> come parametro del messaggio <code>loadrequest</code>. Nessuno dei due attori accede più allo stato interno dell'altro.</p>
-
-<div class="req">
-Lo IOPort deve esporre: un pulsante che genera la richiesta di carico, un sensore che rileva la presenza di un container, un display che mostra lo stato della hold e l'esito delle richieste, un LED che lampeggia mentre il sistema è <em>engaged</em>.
-</div>
-
-<h2>Protocollo dei messaggi aggiornato</h2>
-
-<p>Rispetto alla versione precedente, <code>loadrequest</code> porta ora il parametro <code>OCCUPIED</code> (letto dal sensore di <code>ioport</code>), e le risposte <code>loadaccepted</code>/<code>loadrejected</code> portano anche lo stato corrente della hold (<code>HOLD</code>), da mostrare sul display. Sono stati aggiunti tre nuovi <code>Dispatch</code>: <code>pushButton</code> e <code>setOccupied</code> arrivano dalla GUI verso <code>ioport</code> (simulano rispettivamente la pressione del pulsante e il sensore), mentre <code>blinkLed</code> ora viaggia da <code>cargoservice</code> a <code>ioport</code> invece che restare interno a <code>cargoservice</code> com'era nel mock.</p>
-
-<h2>Il modello qak completo</h2>
-
-<p>Di seguito il modello <code>sprint1.qak</code> aggiornato con entrambi gli attori. <code>cargoservice</code> è concettualmente lo stesso automa a stati della versione precedente, con le firme dei messaggi aggiornate e il <code>forward</code> di <code>blinkLed</code> diretto a <code>ioport</code> anziché a se stesso. L'attore <code>ioport</code> è nuovo: nello stato <code>idle</code> attende uno dei tre dispatch provenienti dalla GUI o da <code>cargoservice</code>; alla pressione del pulsante (<code>onButtonPressed</code>) legge <code>status.isOccupied()</code> e apre una <code>request</code> verso <code>cargoservice</code>; ricevuta la risposta (<code>showAccepted</code>/<code>showRejected</code>) aggiorna il display via <code>wsAdapter</code>; <code>onSetOccupied</code> aggiorna il sensore mock e lo notifica alla GUI; <code>onBlinkLed</code> pilota il LED e, quando il LED si spegne, aggiorna anche il display per segnalare che lo slot è stato liberato.</p>
-
-<pre>System sprint1
-
-Request loadrequest  : loadrequest(OCCUPIED)                     // fa richiesta di carico, OCCUPIED controlla se l'ingresso è libero o occupato da un container
-Reply   loadaccepted : loadaccepted(SLOT,HOLD) for loadrequest    // accetta il carico, assegna lo SLOT e mostra lo stato della HOLD
-Reply   loadrejected : loadrejected(REASON,HOLD)   for loadrequest    // rifiuta il carico, dà il motivo (REASON) e mostra lo stato della HOLD
-
-Dispatch blinkLed      : blinkLed(STATE,HOLD)      // STATE = on | off, inviato da cargoservice a ioport
-Dispatch pushButton    : pushButton(NONE)          // simula la pressione del pulsante fisico dello IOPort
-Dispatch setOccupied   : setOccupied(FLAG)         // simula il sensore
-Dispatch updateDisplay : updateDisplay(STATE,HOLD,MSG)
-
-Context ctxcargoservice ip [host="localhost" port=8050]
-
-QActor cargoservice context ctxcargoservice
-    withobj hold using "utils.cargoservice.Hold()" {
-
-    [# var Slot = -1
-     var Occupied = false #]
-
-    State idle initial {
-        println("$name | idle, in attesa di richieste...") color magenta
-    }
-    Transition t0 whenRequest loadrequest -&gt; handleRequest
-
-    State handleRequest {
-        onMsg(loadrequest : loadrequest(X)) {
-            [# Occupied = payloadArg(0).toBoolean() #]
-            [# var H = "'" + hold.displayStatus() + "'" #]
-            if [# Occupied == true #] {
-                replyTo loadrequest with loadrejected : loadrejected(retrylater,$H)
-            } else {
-                [# Slot = hold.reserveFirstFree() #]
-                if [# Slot != -1 #] {
-                    [# var H2 = "'" + hold.displayStatus() + "'" #]
-                    forward ioport -m blinkLed : blinkLed(on,$H2)
-                    replyTo loadrequest with loadaccepted : loadaccepted($Slot,$H2)
-                } else {
-                    replyTo loadrequest with loadrejected : loadrejected(full,$H)
-                }
-            }
-        }
-    }
-    Goto engaged if [# Slot != -1 &amp;&amp; Occupied == false #] else idle
-
-    State engaged {
-        println("$name | engaged") color magenta
-    }
-    Transition t1 whenTime 30000 -&gt; disengaged
-
-    State disengaged {
-        println("$name | timeout scaduto, libero lo slot e torno idle") color magenta
-		[# hold.releaseReserved() #]
-		[# var H = "'" + hold.displayStatus() + "'" #]
-		forward ioport -m blinkLed : blinkLed(off,$H)
-        [# Slot = -1 #]
-    }
-    Goto idle
-}
-
-QActor ioport context ctxcargoservice
-    withobj status using "utils.cargoservice.IOPortStatus()" {
-
-    [# val wsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070) #]
-
-    State idle initial {
-        println("$name | idle, in attesa della pressione del pulsante...") color cyan
-    }
-    Transition t0
-        whenMsg pushButton  -&gt; onButtonPressed
-        whenMsg setOccupied -&gt; onSetOccupied
-        whenMsg blinkLed    -&gt; onBlinkLed
-
-    State onButtonPressed {
-        onMsg(pushButton : pushButton(X)) {
-            println("$name | pulsante premuto, invio richiesta di carico") color cyan
-            [# var Occ = status.isOccupied() #]
-            request cargoservice -m loadrequest : loadrequest($Occ)
-        }
-    }
-    Transition t1
-        whenReply loadaccepted -&gt; showAccepted
-        whenReply loadrejected -&gt; showRejected
-        whenMsg   blinkLed     -&gt; onBlinkLed
-
-    State showAccepted {
-        onMsg(loadaccepted : loadaccepted(SLOT,HOLD)) {
-        	[# var S = payloadArg(0) #]
-        	[# var H = payloadArg(1) #]
-            println("$name | display -&gt; richiesta accettata, slot=$S") color cyan
-            [# wsAdapter.updateDisplay("ENGAGED", H, "Richiesta accettata - slot " + S) #]
-        }
-    }
-    Goto idle
-
-    State showRejected {
-        onMsg(loadrejected : loadrejected(REASON,HOLD)) {
-        	[# var R = payloadArg(0) #]
-        	[# var H = payloadArg(1) #]
-        	println("$name | display -&gt; richiesta rifiutata, reason=$R") color cyan
-        	[# wsAdapter.updateDisplay("IDLE", H, "Richiesta rifiutata: " + R) #]
-        }
-    }
-    Goto idle
-
-    State onSetOccupied {
-        onMsg(setOccupied : setOccupied(FLAG)) {
-        	[# var F = payloadArg(0) #]
-        	[# status.setOccupied(F.toBoolean()) #]
-            println("$name | sensore IOPort forzato a occupied=$F") color cyan
-        	[# wsAdapter.notifySensor(F) #]
-        }
-    }
-    Goto idle
-
-    State onBlinkLed {
-        onMsg(blinkLed : blinkLed(STATE,HOLD)) {
-        	[# var S = payloadArg(0) #]
-        	[# var H = payloadArg(1) #]
-        	println("$name | led -&gt; $S") color cyan
-        	[# wsAdapter.setLed(S) #]
-        	if [# S == "off" #] {
-        		[# wsAdapter.updateDisplay("IDLE", H, "Timeout scaduto: slot liberato, torno idle") #]
-        	}
-        }
-    }
-    Goto idle
-}</pre>
-
-<h2>Il ponte WebSocket: <code>IOPortWsAdapter</code></h2>
-
-<p>L'attore <code>ioport</code> non parla direttamente HTTP/WebSocket: la comunicazione con il browser è delegata a <code>IOPortWsAdapter</code>, istanziato una sola volta all'ingresso nello stato <code>idle</code> con <code># val wsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070) #</code>. L'adapter incapsula un server <code>Javalin</code> che:</p>
-<ul>
-    <li>serve i file statici della GUI (<code>ioport_gui.html</code>, <code>style.css</code>, <code>wscontrol.js</code>) dalla cartella <code>resources/page</code>;</li>
-    <li>espone l'endpoint WebSocket <code>/ws/ioport</code>, a cui il browser si collega per inviare e ricevere eventi;</li>
-    <li>tiene traccia dei client connessi in un <code>Set&lt;WsContext&gt;</code> (un <code>CopyOnWriteArraySet</code>, per poter iterare in sicurezza anche se un client si connette o disconnette mentre si sta facendo il broadcast).</li>
-</ul>
-
-<p>Il verso GUI → attore passa da <code>handleClientMessage</code>: il JSON ricevuto sul socket viene tradotto in un <code>dispatch</code> qak (<code>toDispatch</code>) e recapitato con <code>sendMsgToMyself</code>, cioè l'adapter si comporta come se fosse un mittente esterno che manda un messaggio a <code>ioport</code>. Il verso attore → GUI è invece costituito dai tre metodi pubblici (<code>updateDisplay</code>, <code>setLed</code>, <code>notifySensor</code>) richiamati dal corpo del qak, che serializzano lo stato in JSON e lo inviano in broadcast a tutti i client connessi.</p>
+<p>Lo <code>IOPort</code> è un pannello di controllo servito via browser e collegato all'attore tramite WebSocket. L'integrazione segue il seguente schema: un handler HTTP/WebSocket (nel nostro caso <code>IOPortWsAdapter</code>, basato su Javalin) riceve nel costruttore un riferimento all'attore a cui è associato, e lo usa per tradurre i messaggi in arrivo dalla pagina in dispatch qak da recapitare all'attore stesso.</p>
 
 <pre>package utils.cargoservice;
 
@@ -800,13 +709,10 @@ public class IOPortWsAdapter {
     }
 }</pre>
 
-<div class="domanda">
-Il timer dei 30&nbsp;secondi è gestito lato server dall'automa <code>cargoservice</code> (<code>whenTime 30000</code>), ma per dare un riscontro visivo immediato la GUI avvia anche un proprio countdown locale (<code>TIMER_SECONDS = 30</code> in <code>wscontrol.js</code>). I due timer non sono sincronizzati da nessun messaggio esplicito: nell'uso normale scadono praticamente insieme, ma un ritardo di rete o un refresh della pagina potrebbero disallinearli. È accettabile che il conteggio mostrato sul pannello sia puramente indicativo, oppure il countdown dovrebbe essere pilotato dal server (ad es. inviando il tempo residuo nel messaggio <code>display</code>)?
-</div>
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="gui">Pannello di controllo web</h1>
 
-<h2>Pannello di controllo web</h2>
-
-<p>La GUI (<code>ioport_gui.html</code>) riproduce la faccia del dispositivo fisico descritto nei requisiti: uno "schermo" con stato/hold/timer/messaggio, un LED, il pulsante <code>Carica</code> e un interruttore che simula il sensore di presenza container, utile per i test manuali senza dover disporre dell'hardware reale.</p>
+<p>La GUI (<code>ioport_gui.html</code>) riproduce il dispositivo descritto nei requisiti: uno "schermo" con stato/hold/timer/messaggio, un LED, il pulsante <code>Carica</code> e un interruttore che simula il sensore occupato.</p>
 
 <pre>&lt;!DOCTYPE html&gt;
 &lt;html lang="it"&gt;
@@ -854,7 +760,7 @@ Il timer dei 30&nbsp;secondi è gestito lato server dall'automa <code>cargoservi
 &lt;/body&gt;
 &lt;/html&gt;</pre>
 
-<p><code>wscontrol.js</code> è racchiuso in una <abbr title="Immediately Invoked Function Expression">IIFE</abbr> — <code>(function () { ... })()</code> — proprio per non lasciare le variabili (<code>socket</code>, <code>sensorOccupied</code>, i riferimenti al DOM) nello scope globale della pagina: tutto lo stato del pannello resta privato al modulo, ed è visibile solo alle funzioni definite al suo interno. Lo script apre la connessione WebSocket, gestisce la riconnessione automatica in caso di caduta (<code>onclose</code> richiama <code>connect</code> dopo <code>RECONNECT_MS</code>), e traduce i messaggi JSON in aggiornamenti del DOM. Per LED e sensore si usa <code>classList.toggle('on', condizione)</code>/<code>classList.toggle('occupied', condizione)</code>: passando un secondo argomento booleano, la classe CSS viene aggiunta o rimossa in base al valore, invece di essere semplicemente invertita a ogni chiamata — una singola riga che tiene sempre la vista sincronizzata con lo stato ricevuto dal server, anche se lo stesso messaggio arrivasse due volte.</p>
+<p>Lo script <code>wscontrol.js</code> apre la connessione WebSocket, gestisce la riconnessione automatica in caso di caduta (<code>onclose</code> richiama <code>connect</code> dopo <code>RECONNECT_MS</code>), e traduce i messaggi JSON in aggiornamenti del DOM. </p>
 
 <pre>(function () {
   const btn = document.getElementById('pushBtn');
@@ -963,79 +869,35 @@ Il timer dei 30&nbsp;secondi è gestito lato server dall'automa <code>cargoservi
 })();</pre>
 
 <!-- ══════════════════════════════════════════════════════ -->
-<h1 id="tests">Test Plan</h1>
+<h1 id="riepilogo">Riepilogo di avanzamento</h1>
 
-<p><strong>T1.6</strong> Dopo <code>reserveFirstFree()</code>, una chiamata a <code>releaseReserved()</code> deve far tornare libero lo slot: una successiva <code>reserveFirstFree()</code> deve restituire lo stesso slot.</p>
-
-<p>Riportiamo qui sotto la classe HoldTest modificata, in quanto sono stati modificati alcuni metodi nella classe Hold.</p>
-
-<pre>class HoldTest {
-
-    Hold hold;
-
-    @BeforeEach
-    void setUp() { hold = new Hold(); }
-
-    @Test // T1.1
-    void reserveFromEmpty() {
-        assertEquals(1, hold.reserveFirstFree());
-    }
-
-    @Test // T1.2
-    void fullWhenAllOccupied() {
-        for (int i = 0; i < Hold.NUM_SLOTS; i++) {
-            hold.reserveFirstFree();
-            hold.markReservedOccupied();
-        }
-        assertTrue(hold.isFull());
-    }
-
-    @Test // T1.3
-    void reserveWhenFull() {
-        for (int i = 0; i < Hold.NUM_SLOTS; i++) {
-            hold.reserveFirstFree();
-            hold.markReservedOccupied();
-        }
-        assertEquals(-1, hold.reserveFirstFree());
-    }
-
-    @Test // T1.4
-    void markReservedBecomesOccupied() {
-        hold.reserveFirstFree();
-        hold.markReservedOccupied();
-        assertFalse(hold.isFull()); // 1/4, non piena
-        assertNotEquals(-1, hold.reserveFirstFree());
-    }
-
-    @Test // T1.5
-    void noDoubleReserve() {
-        hold.reserveFirstFree(); // slot1 → RESERVED
-        assertEquals(-1, hold.reserveFirstFree());
-    }
-
-    @Test // T1.6 
-    void releaseReservedFreesTheSlot() {
-        hold.reserveFirstFree(); // slot1 -> RESERVED
-        hold.releaseReserved();
-        assertEquals(1, hold.reserveFirstFree());
-    }
-}</pre>
-
-<h2>Test manuali del pannello IOPort</h2>
-
-<p>La parte WebSocket/GUI non si presta a test JUnit tradizionali (richiede un server Javalin attivo e un client connesso), quindi la validiamo con una checklist manuale da eseguire con l'applicazione avviata e il browser puntato su <code>http://localhost:7070/ioport_gui.html</code>.</p>
+<p>Rispetto alle macro-entità individuate in Sprint0, questa tabella riassume cosa è stato effettivamente realizzato in Sprint1 e cosa resta da fare.</p>
 
 <table>
-<tr><th>ID</th><th>Scenario</th><th>Esito atteso</th></tr>
-<tr><td>T2.1</td><td>Apertura della pagina GUI a sistema avviato</td><td>La label di connessione passa da "connessione in corso..." a "connesso"; pulsante e interruttore sensore si abilitano</td></tr>
-<tr><td>T2.2</td><td>Click su <em>Carica</em> con sensore libero e hold non piena</td><td>Il display mostra stato <code>ENGAGED</code> e il numero di slot assegnato; il LED si accende; parte il countdown a 30&nbsp;s lato client</td></tr>
-<tr><td>T2.3</td><td>Click su <em>Carica</em> con interruttore sensore impostato su occupato</td><td>Il display mostra <code>loadrejected</code> con motivo <code>retrylater</code>; il LED resta spento</td></tr>
-<tr><td>T2.4</td><td>Quattro richieste accettate consecutive (hold piena), poi una quinta</td><td>La quinta richiesta viene rifiutata con motivo <code>full</code></td></tr>
-<tr><td>T2.5</td><td>Attesa dei 30&nbsp;s dopo una richiesta accettata, senza ulteriori azioni</td><td>Il LED si spegne, il display torna a mostrare stato <code>IDLE</code> con il messaggio di timeout scaduto, e lo slot torna disponibile per una nuova richiesta</td></tr>
-<tr><td>T2.6</td><td>Toggle dell'interruttore sensore mentre il pannello è connesso</td><td>Il pulsante grafico dell'interruttore riflette immediatamente lo stato (classe <code>occupied</code>), coerentemente con quanto inviato al server</td></tr>
-<tr><td>T2.7</td><td>Riavvio del processo server mentre la GUI è aperta</td><td>La label di connessione mostra "connessione persa, riprovo..."; pulsante e interruttore si disabilitano; alla ripartenza del server la connessione si ristabilisce da sola entro <code>RECONNECT_MS</code></td></tr>
-<tr><td>T2.8</td><td>Due browser connessi contemporaneamente al pannello</td><td>Ogni aggiornamento di stato (display, LED, sensore) viene ricevuto in broadcast da entrambi i client, non solo da quello che ha generato l'azione</td></tr>
+<tr><th>Componente</th><th>Stato</th><th>Note</th></tr>
+<tr><td><code>cargoservice</code></td><td><span class="badge badge-done">Fatto</span></td><td>QActor completo: stati Idle/Engaged/Disengaged, logica di accettazione/rifiuto, timeout 30&nbsp;s</td></tr>
+<tr><td><code>Hold</code></td><td><span class="badge badge-done">Fatto</span></td><td>Slot 1–4 con FREE/RESERVED/OCCUPIED</td></tr>
+<tr><td><code>ioport</code> (attore)</td><td><span class="badge badge-done">Fatto</span></td><td>QActor, gestisce pulsante, sensore, LED e display</td></tr>
+<tr><td>Pannello web / WebSocket</td><td><span class="badge badge-done">Fatto</span></td><td><code>IOPortWsAdapter</code> + GUI HTML/CSS/JS, simula pulsante, sensore, display, LED</td></tr>
+<tr><td>Sonar</td><td><span class="badge badge-todo">Da fare</span></td><td>Attore <code>sonar</code>, firmware; stato <em>Out of service</em> da gestire</td></tr>
+<tr><td><code>cargorobot</code></td><td><span class="badge badge-todo">Da fare</span></td><td>Logica di orchestrazione dei movimenti</td></tr>
+<tr><td>Marker (slot5)</td><td><span class="badge badge-todo">Da fare</span></td><td>Stazione di marcatura temporanea</td></tr>
+<tr><td>Multi-Context</td><td><span class="badge badge-todo">Da fare</span></td><td>Tutti gli attori condividono ancora un unico <code>ctxcargoservice</code>; necessaria separazione in nodi fisici distinti.</td></tr>
 </table>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="sprint2">Definizione dello Sprint2</h1>
+
+<p>Lo Sprint1 ha chiuso il core business (accettazione/rifiuto, timeout, IOPort come attore reale collegato a una GUI). Lo Sprint2 dovrà estendere il sistema con i componenti rimasti fuori da Sprint1:</p>
+
+<div class="req">
+<ul>
+    <li>Introdurre l'attore <code>sonar</code>: emissione degli eventi <code>sonarcontainer</code>/<code>sonarfault</code> a partire dalle letture di distanza, e gestione dello stato <em>Out of service</em> (D&nbsp;&gt;&nbsp;DFREE per almeno 3&nbsp;s) sul display dello IOPort.</li>
+    <li>Progettare e realizzare l'attore <code>cargorobot</code>, che orchestra il movimento del DDR appoggiandosi al servizio esterno <code>RobotSmart26</code>: raggiungere l'IOPort, prelevare il container, passare da <code>slot5</code> (marcatura) allo slot riservato, tornare in HOME.</li>
+    <li>Modellare il <code>marker</code>: segnalazione (interna al nodo <code>cargoservice</code>) del completamento della marcatura in <code>slot5</code>, prima che il robot possa prelevare il container.</li>
+    <li>Separare i Context per nodo fisico (<code>cargoservice</code>, <code>cargorobot</code>, <code>sonar</code>, <code>ioport</code>), oggi ancora unificati in <code>ctxcargoservice</code> per semplicità.</li>
+</ul>
+</div>
 
 </div><!-- .body -->
 

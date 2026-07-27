@@ -60,7 +60,7 @@ QActor cargoservice context ctxcargoservice
 QActor ioport context ctxcargoservice
     withobj status using "utils.cargoservice.IOPortStatus()" {
 
-    [# val wsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070) #]
+    [# var WsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070) #]
 
     State idle initial {
         println("$name | idle, in attesa della pressione del pulsante...") color cyan
@@ -87,7 +87,7 @@ QActor ioport context ctxcargoservice
         	[# var S = payloadArg(0) #]
         	[# var H = payloadArg(1) #]
             println("$name | display -> richiesta accettata, slot=$S") color cyan
-            [# wsAdapter.updateDisplay("ENGAGED", H, "Richiesta accettata - slot " + S) #]
+            [# WsAdapter.updateDisplay("ENGAGED", H, "Richiesta accettata - slot " + S) #]
         }
     }
     Goto idle
@@ -97,7 +97,7 @@ QActor ioport context ctxcargoservice
         	[# var R = payloadArg(0) #]
         	[# var H = payloadArg(1) #]
         	println("$name | display -> richiesta rifiutata, reason=$R") color cyan
-        	[# wsAdapter.updateDisplay("IDLE", H, "Richiesta rifiutata: " + R) #]
+        	[# WsAdapter.updateDisplay("IDLE", H, "Richiesta rifiutata: " + R) #]
         }
     }
     Goto idle
@@ -107,7 +107,7 @@ QActor ioport context ctxcargoservice
         	[# var F = payloadArg(0) #]
         	[# status.setOccupied(F.toBoolean()) #]
             println("$name | sensore IOPort forzato a occupied=$F") color cyan
-        	[# wsAdapter.notifySensor(F) #]
+        	[# WsAdapter.notifySensor(F) #]
         }
     }
     Goto idle
@@ -117,9 +117,9 @@ QActor ioport context ctxcargoservice
         	[# var S = payloadArg(0) #]
         	[# var H = payloadArg(1) #]
         	println("$name | led -> $S") color cyan
-        	[# wsAdapter.setLed(S) #]
+        	[# WsAdapter.setLed(S) #]
         	if [# S == "off" #] {
-        		[# wsAdapter.updateDisplay("IDLE", H, "Timeout scaduto: slot liberato, torno idle") #]
+        		[# WsAdapter.updateDisplay("IDLE", H, "Timeout scaduto: slot liberato, torno idle") #]
         	}
         }
     }
