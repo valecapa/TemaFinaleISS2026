@@ -1,7 +1,7 @@
 package utils.cargoservice;
 
 public class Hold {
-    public static final int NUM_SLOTS = 4;       // slot1..slot4
+    public static final int NUM_SLOTS = 4;
 
     public enum SlotState { FREE, RESERVED, OCCUPIED }
 
@@ -25,7 +25,7 @@ public class Hold {
     public int reserveFirstFree() {
         for (int i = 0; i < NUM_SLOTS; i++) {
             if (slots[i] == SlotState.RESERVED) {
-                return -1; // al più una prenotazione attiva alla volta
+                return -1; 
             }
         }
         for (int i = 0; i < NUM_SLOTS; i++) {
@@ -34,7 +34,7 @@ public class Hold {
                 return (i + 1);
             }
         }
-        return -1; // piena
+        return -1;
     }
 
     public void markReservedOccupied() {
