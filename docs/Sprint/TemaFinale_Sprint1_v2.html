@@ -760,6 +760,11 @@ public class IOPortWsAdapter {
 &lt;/body&gt;
 &lt;/html&gt;</pre>
 
+<img src="../img/ioport.png"
+     alt="ioport"
+     width="350"
+     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+
 <p>Lo script <code>wscontrol.js</code> apre la connessione WebSocket, gestisce la riconnessione automatica in caso di caduta (<code>onclose</code> richiama <code>connect</code> dopo <code>RECONNECT_MS</code>), e traduce i messaggi JSON in aggiornamenti del DOM. </p>
 
 <pre>(function () {
