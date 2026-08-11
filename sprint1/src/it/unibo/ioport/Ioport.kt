@@ -30,7 +30,7 @@ class Ioport ( name: String, scope: CoroutineScope, isconfined: Boolean=false, i
 		//val interruptedStateTransitions = mutableListOf<Transition>()
 		//IF actor.withobj !== null val actor.withobj.name� = actor.withobj.method�ENDIF
 		val status = utils.cargoservice.IOPortStatus()
-		 val wsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070)  
+		 var WsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070)  
 		return { //this:ActionBasciFsm
 				state("idle") { //this:State
 					action { //it:State
@@ -42,7 +42,7 @@ class Ioport ( name: String, scope: CoroutineScope, isconfined: Boolean=false, i
 					}	 	 
 					 transition(edgeName="t02",targetState="onButtonPressed",cond=whenDispatch("pushButton"))
 					transition(edgeName="t03",targetState="onSetOccupied",cond=whenDispatch("setOccupied"))
-					transition(edgeName="t04",targetState="onBlinkLed",cond=whenDispatch("blinkLed"))
+					transition(edgeName="t04",targetState="onUpdateDisplay",cond=whenDispatch("updateDisplay"))
 				}	 
 				state("onButtonPressed") { //this:State
 					action { //it:State
@@ -59,7 +59,7 @@ class Ioport ( name: String, scope: CoroutineScope, isconfined: Boolean=false, i
 					}	 	 
 					 transition(edgeName="t15",targetState="showAccepted",cond=whenReply("loadaccepted"))
 					transition(edgeName="t16",targetState="showRejected",cond=whenReply("loadrejected"))
-					transition(edgeName="t17",targetState="onBlinkLed",cond=whenDispatch("blinkLed"))
+					transition(edgeName="t17",targetState="onUpdateDisplay",cond=whenDispatch("updateDisplay"))
 				}	 
 				state("showAccepted") { //this:State
 					action { //it:State
@@ -68,7 +68,7 @@ class Ioport ( name: String, scope: CoroutineScope, isconfined: Boolean=false, i
 								 var S = payloadArg(0)  
 								 var H = payloadArg(1)  
 								CommUtils.outcyan("$name | display -> richiesta accettata, slot=$S")
-								 wsAdapter.updateDisplay("ENGAGED", H, "Richiesta accettata - slot " + S)  
+								 WsAdapter.updateDisplay("ENGAGED", H, "Richiesta accettata - slot " + S)  
 						}
 						//genTimer( actor, state )
 					}
@@ -84,7 +84,7 @@ class Ioport ( name: String, scope: CoroutineScope, isconfined: Boolean=false, i
 								 var R = payloadArg(0)  
 								 var H = payloadArg(1)  
 								CommUtils.outcyan("$name | display -> richiesta rifiutata, reason=$R")
-								 wsAdapter.updateDisplay("IDLE", H, "Richiesta rifiutata: " + R)  
+								 WsAdapter.updateDisplay("IDLE", H, "Richiesta rifiutata: " + R)  
 						}
 						//genTimer( actor, state )
 					}
@@ -100,7 +100,7 @@ class Ioport ( name: String, scope: CoroutineScope, isconfined: Boolean=false, i
 								 var F = payloadArg(0)  
 								 status.setOccupied(F.toBoolean())  
 								CommUtils.outcyan("$name | sensore IOPort forzato a occupied=$F")
-								 wsAdapter.notifySensor(F)  
+								 WsAdapter.notifySensor(F)  
 						}
 						//genTimer( actor, state )
 					}
@@ -109,17 +109,15 @@ class Ioport ( name: String, scope: CoroutineScope, isconfined: Boolean=false, i
 					}	 	 
 					 transition( edgeName="goto",targetState="idle", cond=doswitch() )
 				}	 
-				state("onBlinkLed") { //this:State
+				state("onUpdateDisplay") { //this:State
 					action { //it:State
-						if( checkMsgContent( Term.createTerm("blinkLed(STATE,HOLD)"), Term.createTerm("blinkLed(STATE,HOLD)"), 
+						if( checkMsgContent( Term.createTerm("updateDisplay(STATE,HOLD,MSG)"), Term.createTerm("updateDisplay(STATE,HOLD,MSG)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
 								 var S = payloadArg(0)  
 								 var H = payloadArg(1)  
-								CommUtils.outcyan("$name | led -> $S")
-								 wsAdapter.setLed(S)  
-								if(  S == "off"  
-								 ){ wsAdapter.updateDisplay("IDLE", H, "Timeout scaduto: slot liberato, torno idle")  
-								}
+								 var M = payloadArg(2)  
+								CommUtils.outcyan("$name | display -> $M")
+								 WsAdapter.updateDisplay(S, H, M)  
 						}
 						//genTimer( actor, state )
 					}

@@ -4,7 +4,6 @@
 request( loadrequest, loadrequest(OCCUPIED) ).
 reply( loadaccepted, loadaccepted(SLOT,HOLD) ).  %%for loadrequest
 reply( loadrejected, loadrejected(REASON,HOLD) ).  %%for loadrequest
-dispatch( blinkLed, blinkLed(STATE,HOLD) ).
 dispatch( pushButton, pushButton(NONE) ).
 dispatch( setOccupied, setOccupied(FLAG) ).
 dispatch( updateDisplay, updateDisplay(STATE,HOLD,MSG) ).

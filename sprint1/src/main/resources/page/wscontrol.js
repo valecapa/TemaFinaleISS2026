@@ -1,7 +1,6 @@
 (function () {
   const btn = document.getElementById('pushBtn');
   const sensorSwitch = document.getElementById('sensorSwitch');
-  const led = document.getElementById('led');
   const stateVal = document.getElementById('stateVal');
   const holdVal = document.getElementById('holdVal');
   const msgVal = document.getElementById('msgVal');
@@ -65,8 +64,6 @@
         stateVal.textContent = msg.state;
         holdVal.textContent = msg.hold;
         msgVal.textContent = msg.msg;
-      } else if (msg.type === 'led') {
-        led.classList.toggle('on', !!msg.on);
       } else if (msg.type === 'sensor') {
         sensorOccupied = !!msg.occupied;
         sensorSwitch.classList.toggle('occupied', sensorOccupied);

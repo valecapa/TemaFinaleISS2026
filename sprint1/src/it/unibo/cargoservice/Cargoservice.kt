@@ -56,7 +56,7 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 								 { Slot = hold.reserveFirstFree()  
 								 if(  Slot != -1  
 								  ){ var H2 = "'" + hold.displayStatus() + "'"  
-								 forward("blinkLed", "blinkLed(on,$H2)" ,"ioport" ) 
+								 CommUtils.outmagenta("$name | LED PicoW -> on (hold=$H2)")
 								 answer("loadrequest", "loadaccepted", "loadaccepted($Slot,$H2)"   )  
 								 }
 								 else
@@ -91,7 +91,10 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 						CommUtils.outmagenta("$name | timeout scaduto, libero lo slot e torno idle")
 						 hold.releaseReserved()  
 						 var H = "'" + hold.displayStatus() + "'"  
-						forward("blinkLed", "blinkLed(off,$H)" ,"ioport" ) 
+						 var S = "'IDLE'"  
+						 var M = "'Timeout scaduto: slot liberato, torno idle'"  
+						CommUtils.outmagenta("$name | LED PicoW -> off (hold=$H)")
+						forward("updateDisplay", "updateDisplay($S,$H,$M)" ,"ioport" ) 
 						 Slot = -1  
 						//genTimer( actor, state )
 					}

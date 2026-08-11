@@ -4,7 +4,6 @@ Request loadrequest  : loadrequest(OCCUPIED)                     // fa richiesta
 Reply   loadaccepted : loadaccepted(SLOT,HOLD) for loadrequest    // accetta il carico, assegna lo SLOT e mostra lo stato della HOLD
 Reply   loadrejected : loadrejected(REASON,HOLD)   for loadrequest    // rifiuta il carico, dà il motivo (REASON) e mostra lo stato della HOLD
 
-Dispatch blinkLed      : blinkLed(STATE,HOLD)      // STATE = on | off, inviato da cargoservice a ioport
 Dispatch pushButton    : pushButton(NONE)          // simula la pressione del pulsante fisico dello IOPort
 Dispatch setOccupied   : setOccupied(FLAG)         // simula il sensore
 Dispatch updateDisplay : updateDisplay(STATE,HOLD,MSG)
@@ -32,7 +31,7 @@ QActor cargoservice context ctxcargoservice
                 [# Slot = hold.reserveFirstFree() #]
                 if [# Slot != -1 #] {
                     [# var H2 = "'" + hold.displayStatus() + "'" #]
-                    forward ioport -m blinkLed : blinkLed(on,$H2)
+                    println("$name | LED PicoW -> on (hold=$H2)") color magenta          
                     replyTo loadrequest with loadaccepted : loadaccepted($Slot,$H2)
                 } else {
                     replyTo loadrequest with loadrejected : loadrejected(full,$H)
@@ -51,7 +50,10 @@ QActor cargoservice context ctxcargoservice
         println("$name | timeout scaduto, libero lo slot e torno idle") color magenta
 		[# hold.releaseReserved() #]
 		[# var H = "'" + hold.displayStatus() + "'" #]
-		forward ioport -m blinkLed : blinkLed(off,$H)
+		[# var S = "'IDLE'" #]
+		[# var M = "'Timeout scaduto: slot liberato, torno idle'" #]
+		println("$name | LED PicoW -> off (hold=$H)") color magenta
+		forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
         [# Slot = -1 #]
     }
     Goto idle
@@ -68,7 +70,7 @@ QActor ioport context ctxcargoservice
     Transition t0
         whenMsg pushButton  -> onButtonPressed
         whenMsg setOccupied -> onSetOccupied
-        whenMsg blinkLed    -> onBlinkLed
+        whenMsg   updateDisplay -> onUpdateDisplay
 
     State onButtonPressed {
         onMsg(pushButton : pushButton(X)) {
@@ -80,7 +82,7 @@ QActor ioport context ctxcargoservice
     Transition t1
         whenReply loadaccepted -> showAccepted
         whenReply loadrejected -> showRejected
-        whenMsg   blinkLed     -> onBlinkLed
+        whenMsg   updateDisplay -> onUpdateDisplay
 
     State showAccepted {
         onMsg(loadaccepted : loadaccepted(SLOT,HOLD)) {
@@ -112,15 +114,13 @@ QActor ioport context ctxcargoservice
     }
     Goto idle
 
-    State onBlinkLed {
-        onMsg(blinkLed : blinkLed(STATE,HOLD)) {
+    State onUpdateDisplay {
+        onMsg(updateDisplay : updateDisplay(STATE,HOLD,MSG)) {
         	[# var S = payloadArg(0) #]
         	[# var H = payloadArg(1) #]
-        	println("$name | led -> $S") color cyan
-        	[# WsAdapter.setLed(S) #]
-        	if [# S == "off" #] {
-        		[# WsAdapter.updateDisplay("IDLE", H, "Timeout scaduto: slot liberato, torno idle") #]
-        	}
+        	[# var M = payloadArg(2) #]
+        	println("$name | display -> $M") color cyan
+        	[# WsAdapter.updateDisplay(S, H, M) #]
         }
     }
     Goto idle

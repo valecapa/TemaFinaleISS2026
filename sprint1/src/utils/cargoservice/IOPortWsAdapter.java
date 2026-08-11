@@ -65,9 +65,6 @@ public class IOPortWsAdapter {
         broadcast(displayJson(state, hold, msg));
     }
 
-    public void setLed(String onOff) {
-        broadcast(ledJson(onOff));
-    }
 
     public void notifySensor(String flag) {
         broadcast(sensorJson(flag));
@@ -96,13 +93,6 @@ public class IOPortWsAdapter {
         json.put("state", state);
         json.put("hold", hold);
         json.put("msg", msg);
-        return json.toJSONString();
-    }
-
-    static String ledJson(String onOff) {
-        JSONObject json = new JSONObject();
-        json.put("type", "led");
-        json.put("on", "on".equals(onOff));
         return json.toJSONString();
     }
 
