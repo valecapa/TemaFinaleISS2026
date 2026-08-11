@@ -15,7 +15,7 @@ import unibo.basicomm23.utils.CommUtils;
 public class IOPortWsAdapter {
 
     private static final String SENDER = "ioportws";
-    private static final String IOPORT_NAME = "ioport"; // nome dell'attore nel .qak, non generico di proposito
+    private static final String IOPORT_NAME = "ioport";
 
     private final ActorBasic ioport;
     private final Set<WsContext> clients = new CopyOnWriteArraySet<>();
