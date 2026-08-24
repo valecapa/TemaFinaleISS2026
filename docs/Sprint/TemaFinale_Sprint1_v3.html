@@ -352,9 +352,9 @@ li { margin-bottom: 4px; }
 <div class="toc-strip">
     <a href="#goal">Goal</a>
     <a href="#problem-analysis">Problem analysis</a>
+    <a href="#test-plans">Test plans</a>
     <a href="#project">Project</a>
     <a href="#deployment">Deployment</a>
-    <a href="#riepilogo">Riepilogo</a>
     <a href="#sprint2">Sprint2</a>
 </div>
 
@@ -364,13 +364,10 @@ li { margin-bottom: 4px; }
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="goal">Goal</h1>
 
-<p>Realizzare il sottosistema che gestisce l'accettazione/rifiuto di una richiesta di carico, il timeout dei 30&nbsp;secondi, e l'interazione reale con lo <code>IOPort</code>: pulsante, sensore, display e LED. <code>cargoservice</code> riceve <code>loadrequest</code>, interroga <code>Hold</code>, risponde con <code>loadaccepted</code>/<code>loadrejected</code> e transita da Idle a Engaged; se il timeout scade torna a Idle liberando lo slot. Lo <code>IOPort</code> è realizzato come un secondo QActor, con un pannello di controllo web collegato via WebSocket che ne simula l'hardware fisico.</p>
+<p>Realizzare il sottosistema che gestisce l'accettazione/rifiuto di una richiesta di carico, il timeout dei 30&nbsp;secondi, e l'interazione reale con lo <code>IOPort</code>: pulsante, sensore, display e LED. <code>cargoservice</code> riceve <code>loadrequest</code>, interroga <code>Hold</code>, risponde con <code>loadaccepted</code>/<code>loadrejected</code> e transita da Idle a Engaged; se il timeout scade torna a Idle liberando lo slot.</p>
 
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="problem-analysis">Problem analysis</h1>
-<h2 id="ioport-qak">IOPort come QActor</h2>
-
-<p>È stata adottata la modellazione dello IOPort come <code>QActor</code> indipendente (vedi <a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint1.qak">sprint1.qak</a>): pressione del pulsante, variazione del sensore e aggiornamento del display sono espressi come messaggi (<code>pushButton</code>, <code>setOccupied</code>, <code>updateDisplay</code>) depositati nella coda dell'attore, riproducendo lo stesso modello di interazione che si avrebbe con un firmware reale su PicoW e non richiedendo modifiche strutturali quando l'hardware fisico verrà integrato.</p>
 
 <h2 id="websocket-gui">Scelta del canale WebSocket per la GUI</h2>
 <p>L'interfaccia web deve soddisfare un requisito bidirezionale: inviare comandi verso il sistema e ricevere aggiornamenti di stato in tempo reale (stato, hold, messaggio). Il protocollo WebSocket, che stabilisce un canale full-duplex su una singola connessione TCP, risulta funzionalmente adeguato a un caso d'uso di tipo dashboard/notifica live, come in questo caso, in quanto stato della hold e delle richieste deve essere da requisito visualizzabile da più utenti contemporaneamente.
@@ -417,7 +414,20 @@ li { margin-bottom: 4px; }
 <h2 id="context-unico">Context unico per Sprint1</h2>
 
 <p><code>cargoservice</code> e <code>ioport</code> sono stati mantenuti all'interno dello stesso <code>Context ctxcargoservice</code>, scelta di semplificazione esplicitamente temporanea: la separazione dei Context per nodo fisico è demandata allo Sprint2.</p>
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="test-plans">Test plans</h1>
 
+<p>Per lo Sprint1 ci concentriamo sul verificare che, a fronte di un input noto (un messaggio inviato all'attore), il sistema produca l'output atteso (una reply o un aggiornamento del display), indipendentemente da come è implementato internamente. Ogni caso di test corrisponde quindi a una sequenza osservabile di messaggi qak, verificabile leggendo la reply ricevuta da <code>cargoservice</code> o il payload broadcast da <code>IOPortWsAdapter</code> verso i client WebSocket.</p>
+
+<table>
+<tr><th>Caso</th><th>Precondizione</th><th>Azione</th><th>Risultato atteso</th></tr>
+<tr><td>Richiesta accettata</td><td>almeno uno slot <code>FREE</code> in <code>hold</code>; sensore non occupato</td><td><code>pushButton</code> su <code>ioport</code></td><td><code>cargoservice</code> risponde <code>loadaccepted(SLOT,HOLD)</code> con uno <code>SLOT</code> valido; transita da <code>idle</code> a <code>engaged</code>; il display mostra "Richiesta accettata - slot X"</td></tr>
+<tr><td>Rifiuto: retrylater</td><td>sensore forzato a occupato (<code>setOccupied(true)</code>)</td><td><code>pushButton</code></td><td><code>loadrejected(retrylater,HOLD)</code>; il display mostra "Richiesta rifiutata: retrylater"</td></tr>
+<tr><td>Rifiuto: full</td><td>tutti e 4 gli slot già <code>RESERVED</code>/<code>OCCUPIED</code> (4 richieste precedenti accettate)</td><td><code>pushButton</code> con sensore libero</td><td><code>loadrejected(full,HOLD)</code></td></tr>
+<tr><td>Timeout dei 30&nbsp;s</td><td>richiesta appena accettata, <code>cargoservice</code> nello stato <code>engaged</code></td><td>nessuna interazione per 30000&nbsp;ms (<code>Transition t1 whenTime</code>)</td><td><code>cargoservice</code> rilascia lo slot (<code>hold.releaseReserved()</code>), torna <code>idle</code> e invia a <code>ioport</code> un <code>updateDisplay</code> con stato <code>IDLE</code> e messaggio "Timeout scaduto: slot liberato, torno idle"</td></tr>
+</table>
+
+<p>Trattandosi di un sistema che espone la propria interazione tramite un pannello GUI, i casi sono al momento eseguibili manualmente dal pannello di controllo, osservando le reply e i log colorati prodotti dagli attori.</p>
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="project">Project</h1>
 
@@ -448,22 +458,6 @@ li { margin-bottom: 4px; }
      width="350"
      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
 
-<!-- ══════════════════════════════════════════════════════ -->
-<h1 id="riepilogo">Riepilogo di avanzamento</h1>
-
-<p>Rispetto alle macro-entità individuate in Sprint0, questa tabella riassume cosa è stato effettivamente realizzato in Sprint1 e cosa resta da fare.</p>
-
-<table>
-<tr><th>Componente</th><th>Stato</th><th>Note</th></tr>
-<tr><td><code>cargoservice</code></td><td><span class="badge badge-done">Fatto</span></td><td>QActor completo: stati Idle/Engaged/Disengaged, logica di accettazione/rifiuto, timeout 30&nbsp;s</td></tr>
-<tr><td><code>Hold</code></td><td><span class="badge badge-done">Fatto</span></td><td>Slot 1–4 con FREE/RESERVED/OCCUPIED</td></tr>
-<tr><td><code>ioport</code> (attore)</td><td><span class="badge badge-done">Fatto</span></td><td>QActor, gestisce pulsante, sensore, LED e display</td></tr>
-<tr><td>Pannello web / WebSocket</td><td><span class="badge badge-done">Fatto</span></td><td><code>IOPortWsAdapter</code> + GUI HTML/CSS/JS, simula pulsante, sensore, display, LED</td></tr>
-<tr><td>Sonar</td><td><span class="badge badge-todo">Da fare</span></td><td>Attore <code>sonar</code>, firmware; stato <em>Out of service</em> da gestire</td></tr>
-<tr><td><code>cargorobot</code></td><td><span class="badge badge-todo">Da fare</span></td><td>Logica di orchestrazione dei movimenti</td></tr>
-<tr><td>Marker (slot5)</td><td><span class="badge badge-todo">Da fare</span></td><td>Stazione di marcatura temporanea</td></tr>
-<tr><td>Multi-Context</td><td><span class="badge badge-todo">Da fare</span></td><td>Tutti gli attori condividono ancora un unico <code>ctxcargoservice</code>; necessaria separazione in nodi fisici distinti.</td></tr>
-</table>
 
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="sprint2">Definizione dello Sprint2</h1>
