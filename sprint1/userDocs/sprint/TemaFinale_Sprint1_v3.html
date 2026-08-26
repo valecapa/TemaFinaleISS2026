@@ -368,30 +368,33 @@ li { margin-bottom: 4px; }
 
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="problem-analysis">Problem analysis</h1>
-<h2 id="tecnologia-ioport">Scelta della tecnologia di implementazione dello IOPort</h2>
-<p>Lo IOPort è stato individuato, fin dalla fase di analisi iniziale, come nodo architetturale a sé stante rispetto a <code>cargoservice</code>: espone un pulsante, un sensore, un display e comunica con l'utente finale, ma la sua implementazione non deve necessariamente ricalcare lo stack tecnologico del resto del sistema. Le due alternative concretamente valutate sono state un dispositivo dedicato con touchscreen fisico (pannello embedded, con firmware proprio) oppure una WebGUI fruibile da browser su hardware commodity.</p>
+<h2 id="tecnologia-ioport">Scelta della tecnologia di implementazione dell'IOPort</h2>
+<p>L'IOPort è stato individuato, fin dalla fase di analisi dei requisiti iniziale, come nodo architetturale a sé stante rispetto a <code>cargoservice</code>: comunica con l'utente finale, ma la sua implementazione non deve necessariamente ricalcare lo stack tecnologico del resto del sistema. Le due alternative concretamente valutate sono state un dispositivo dedicato con touchscreen fisico (pannello embedded, con firmware proprio) oppure una WebGUI fruibile da browser.</p>
+<p>Dopo averne discusso con il committente, questo ha indicato una preferenza esplicita per la WebGUI. La scelta è comunque coerente con l'analisi svolta: a fronte di una minore possibilità di intervenire direttamente sull'hardware, la WebGUI riduce i costi di manutenzione, evita di introdurre un secondo stack tecnologico nel sistema e permette che lo stato della hold e delle richieste (come richiesto) sia visualizzabile da più utenti contemporaneamente, senza vincolare la soluzione a un singolo dispositivo fisico installato all'IOPort.</p>
 
+<h2 id="tcp-qak-websocket-gui">TCP come protocollo di trasporto interno di qak e scelta del canale WebSocket per la GUI</h2>
+<p>Qak adotta TCP come protocollo di trasporto per la comunicazione tra attori su <code>Context</code> distinti: ogni <code>Context</code> apre un socket TCP in ascolto sulla porta dichiarata (<code>host=localhost port=8050</code> per <code>ctxcargoservice</code>, vedi Deployment), e la infrastruttura di runtime serializza gli <code>IApplMessage</code> scambiati tra attori in un formato proprio, li trasmette sul socket e li deserializza a destinazione, ricostruendo l'invocazione sull'attore ricevente. Questo protocollo di serializzazione/framing è interno al runtime e opera esclusivamente al livello di astrazione offerto dal modello ad attori, tramite primitive come <code>sendMsgToMyself</code>: lo sviluppatore non vede mai il socket sottostante.</p>
+
+<p>Proprio perché il TCP di qak è mascherato dietro questa astrazione, non è un canale riutilizzabile da un client qualsiasi: è un protocollo applicativo pensato per far dialogare tra loro istanze del runtime, con un formato di serializzazione noto solo alle due estremità qak-qak. Un browser non può costruire né interpretare un <code>IApplMessage</code> in questo formato. </p>
+
+<img src="../img/qak.jpeg"
+     alt="ioport"
+     width="350"
+     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+
+<p>Il canale verso il browser va quindi progettato a parte, e deve soddisfare un requisito bidirezionale: inviare comandi verso il sistema e ricevere aggiornamenti di stato in tempo reale (stato, hold, messaggio). Sono state valutate, e di conseguenza scartate, le seguenti alternative di trasporto disponibili per una comunicazione lato browser:</p>
 <table>
-<tr><th>Aspetto</th><th>Dispositivo dedicato</th><th>WebGUI</th></tr>
-<tr><td>Costo hardware</td><td>Alto, richiede pannello/touchscreen certificato</td><td>Basso, qualunque dispositivo con browser</td></tr>
-<tr><td>Aggiornamento</td><td>Deploy firmware sul dispositivo fisico</td><td>Centralizzato lato server</td></tr>
-<tr><td>Coerenza con l'architettura</td><td>Introduce uno stack embedded aggiuntivo</td><td>Si allinea al modello client-server già adottato per la GUI</td></tr>
-<tr><td>Visibilità multi-utente</td><td>Limitata al singolo dispositivo installato</td><td>Più client possono connettersi allo stesso endpoint</td></tr>
+<tr><th>Alternativa</th><th>Limite rispetto al caso d'uso</th></tr>
+<tr><td>TCP puro</td><td>fornisce solo il trasporto a stream di byte, senza semantica di messaggio: andrebbe reimplementato da zero il framing dei messaggi applicativi</td></tr>
+<tr><td>CoAP</td><td>pensato per dispositivi IoT vincolati con un modello prevalentemente request/response leggero; non adatto a una comunicazione bidirezionale continua con un browser</td></tr>
+<tr><td>MQTT</td><td>supporta publish/subscribe bidirezionale, ma richiede un broker come componente architetturale aggiuntivo e non è nativamente supportato dai browser senza un bridge (es. MQTT over WebSocket)</td></tr>
 </table>
 
-<div class="domanda">
-Il committente preferisce che lo IOPort sia realizzato come dispositivo fisico dedicato (pannello con touchscreen) o come interfaccia web (WebGUI) raggiungibile da un browser?
-</div>
-
-<p>Il committente ha indicato una preferenza esplicita per la WebGUI. La scelta è comunque coerente con l'analisi svolta: a fronte di una minore possibilità di intervenire direttamente sull'hardware, la WebGUI riduce i costi di manutenzione, evita di introdurre un secondo stack tecnologico nel sistema e permette che lo stato della hold e delle richieste — come richiesto — sia visualizzabile da più utenti contemporaneamente, senza vincolare la soluzione a un singolo dispositivo fisico installato all'IOPort.</p>
-
-<h2 id="websocket-gui">Scelta del canale WebSocket per la GUI</h2>
-<p>L'interfaccia web deve soddisfare un requisito bidirezionale: inviare comandi verso il sistema e ricevere aggiornamenti di stato in tempo reale (stato, hold, messaggio). Il protocollo WebSocket, che stabilisce un canale full-duplex su una singola connessione TCP, risulta funzionalmente adeguato a un caso d'uso di tipo dashboard/notifica live, come in questo caso, in quanto stato della hold e delle richieste deve essere da requisito visualizzabile da più utenti contemporaneamente.
-     Per questo motivo <code>IOPortWsAdapter</code> espone un endpoint <code>/ws/ioport</code> tramite un server Javalin dedicato (vedi <a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/utils/cargoservice/IOPortWsAdapter.java">IOPortWsAdapter.java</a>), con broadcast verso l'insieme dei client connessi.</p>
-
+<p>Il protocollo WebSocket, che stabilisce un canale full-duplex su una singola connessione TCP, è nativamente supportato da qualunque browser senza componenti intermedi, e risulta quindi funzionalmente adeguato a un caso d'uso di tipo dashboard/notifica live, come in questo caso, in quanto stato della hold e delle richieste deve essere da requisito visualizzabile da più utenti contemporaneamente. Per questo motivo <code>IOPortWsAdapter</code> espone un endpoint <code>/ws/ioport</code> tramite un server Javalin dedicato (vedi <a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/utils/cargoservice/IOPortWsAdapter.java">IOPortWsAdapter.java</a>), con broadcast verso l'insieme dei client connessi.</p>
 <h2 id="instradamento-messaggi">Instradamento dei messaggi</h2>
-<p> Nel protocollo WebSocket un messaggio è una sequenza di byte o testo priva di header applicativi. Poiché la GUI deve poter inviare più tipi di comando sulla stessa connessione, è stato adottato un envelope JSON con campo discriminante <code>type</code>, decodificato da <code>toDispatch()</code> per determinare il messaggio qak da generare. Questa soluzione, standard per il routing su protocolli privi di semantica applicativa, riduce la complessità sia lato client sia lato server mantenendo un'unica connessione persistente per l'intero dispositivo simulato.</p>
-
+<p>Nel protocollo WebSocket un messaggio è una sequenza di byte o testo priva di header applicativi: WebSocket fornisce il canale, non la semantica di ciò che vi transita. Poiché la GUI deve poter inviare più tipi di comando sulla stessa connessione, serve che le due parti si accordino su un formato condiviso in cui codificare tipo di messaggio e payload.</p>
+<p>A livello di implementazione tale formato è stato realizzato in JSON, con un envelope che porta un campo discriminante <code>type</code>. La scelta di JSON rispetto ad alternative è motivata dalla leggerezza, dalla natura testuale nativamente compatibile con WebSocket, e dalla facilità di parsing sia lato client (<code>JSON.parse</code> in JavaScript, senza librerie aggiuntive) sia lato server (<code>JSONParser</code> già disponibile). </p>
+<p>L'envelope JSON viene decodificato da <code>toDispatch()</code> per determinare il messaggio qak da generare. Questa soluzione, standard per il routing su protocolli privi di semantica applicativa, riduce la complessità sia lato client sia lato server mantenendo un'unica connessione persistente per l'intero dispositivo simulato.</p>
 <div class="code-wrapper">
     <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/utils/cargoservice/IOPortWsAdapter.java">IOPortWsAdapter.java</a></div>
     <pre>static String[] toDispatch(String raw) throws Exception {

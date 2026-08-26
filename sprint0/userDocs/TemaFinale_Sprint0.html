@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cargoservice</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --h1-bg:   #f0e6ff;
+    --h2-bg:   #fce4f0;
+    --h3-bg:   #f9e0f5;
+    --h4-bg:   #fdf0f8;
+    --req-bg:  #fef0fb;
+    --req-border: #d484b8;
+    --domanda-bg:  #d2e6f4;
+    --domanda-border: #5caaeb;
+    --rem-bg:  #f8eaff;
+    --rem-border: #c9a0e0;
+    --code-bg: #fdf8ff;
+    --code-border: #dfc8e8;
+    --text:    #1e1a2e;
+    --text-muted: #5a4a6a;
+    --accent:  #7b3fa0;
+    --link:    #6b3a8a;
+    --body-bg: #fdf9ff;
+    --radius:  8px;
+    --font-body: 'DM Sans', sans-serif;
+    --font-head: 'Lora', Georgia, serif;
+    --font-code: 'Source Code Pro', 'Consolas', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--body-bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.page-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 36px 60px;
+}
+
+/* ── top banner ── */
+#top {
+    background: linear-gradient(135deg, #7b2fa0 0%, #b060c8 45%, #e080b0 80%, #f4a8cc 100%);
+    padding: 32px 36px 28px;
+    margin-bottom: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+#top::after {
+    content: '';
+    position: absolute;
+
+    top: -80px;
+    right: -20px;
+
+    width: 300px;
+    height: 300px;
+
+    background-image: url('../img/boat.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    opacity: 0.7;
+}
+#top h1 {
+    color: #fff;
+    font-family: var(--font-head);
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 12px rgba(80,0,60,0.25);
+}
+#top .subtitle {
+    color: rgba(255,255,255,0.80);
+    font-size: 0.85rem;
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* ── section nav strip ── */
+.toc-strip {
+    background: #fff;
+    border-bottom: 2px solid #e8c8f4;
+    padding: 10px 36px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.toc-strip a {
+    color: var(--accent);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+}
+.toc-strip a:hover { opacity: 1; text-decoration: underline; }
+
+/* ── typography ── */
+h1 {
+    font-family: var(--font-head);
+    font-size: 1.55rem;
+    font-weight: 700;
+    background: var(--h1-bg);
+    color: #3a1a5a;
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    margin: 36px 0 14px;
+    border-left: 5px solid #9a5fc8;
+    letter-spacing: 0.01em;
+}
+h2 {
+    font-family: var(--font-head);
+    font-size: 1rem;
+    font-weight: 600;
+    background: var(--h2-bg);
+    color: #6a1a40;
+    border-radius: var(--radius);
+    margin: 0;
+    padding: 6px 15px;
+    line-height: 1.1;
+    border-left: 4px solid #d060a0;
+}
+h3 {
+    font-family: var(--font-head);
+    font-size: 1.05rem;
+    font-weight: 600;
+    background: var(--h3-bg);
+    color: #6a1860;
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    margin: 22px 0 10px;
+    border-left: 3px solid #c870b8;
+}
+h4 {
+    background: var(--h4-bg);
+    font-size: 0.97rem;
+    font-weight: 600;
+    border-radius: 5px;
+    padding: 5px 12px;
+    margin: 18px 0 8px;
+    width: 95%;
+    border-left: 3px solid #d890c0;
+}
+
+p { margin: 0 0 12px; }
+
+/* ── links ── */
+a, a:visited, a:active, a:link {
+    color: var(--link);
+    text-decoration: underline;
+    font-size: 93%;
+}
+a:hover { background: #f4e0f8; border-radius: 3px; }
+
+/* ── text blocks ── */
+pre {
+    font-family: var(--font-main);
+    font-size: 0.95rem;
+
+    background: #fff9fc;
+    color: #4a3b46;
+
+    border: 1px solid #f1d7ea;
+    border-left: 5px solid #d87bc4;
+    border-radius: 16px;
+
+    padding: 18px 22px;
+
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+
+    line-height: 1.45;
+
+    margin: 14px 0 22px;
+
+    box-shadow:
+        0 4px 14px rgba(216,123,196,0.08),
+        inset 0 1px 2px rgba(255,255,255,0.7);
+}
+
+
+tt  { font-family: var(--font-code); font-size: 90%; color: #7a006a; }
+em  { font-family: var(--font-body); font-size: 80%; font-weight: 700;
+      border: 1px solid #e8a8d4; color: #8a3090; border-radius: 3px; padding: 0 3px; }
+bc  { font-family: var(--font-body); font-size: 90%; font-weight: 700;
+      color: #990060; background: #fdf0f8; border-radius: 3px; padding: 0 3px; }
+ks  { font-family: var(--font-body); font-weight: 700; color: #7030a0; font-size: 90%; }
+kc  { font-family: var(--font-body); font-weight: 700; color: #a0306a; font-size: 90%; }
+k   { color: #990060; font-weight: 700; font-size: 90%; }
+
+/* ── requirement box ── */
+div.req {
+    background: var(--req-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--req-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.req::before {
+    content: 'Requisiti';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a3880;
+    margin-bottom: 8px;
+}
+/* ── domanda box ── */
+div.domanda {
+    background: var(--domanda-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--domanda-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 0;
+    position: relative;
+}
+div.domanda::before {
+    content: 'Domanda al committente:';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #5caaeb;
+}
+
+/* ── remark box ── */
+div.remark {
+    background: var(--rem-bg);
+    border: 1.5px solid var(--rem-border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin: 10px 0 18px;
+}
+
+/* ── tables ── */
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th { background: #f0e0f8; color: #3a1a5a; font-weight: 600; }
+th, td { border: 1px solid #e0c8ec; padding: 8px 12px; font-size: 0.9rem; }
+tr:nth-child(even) td { background: #fdf6ff; }
+
+/* ── images ── */
+img { border: 1.5px solid #e8d0f4; border-radius: 6px; max-width: 100%; }
+
+/* ── footer ── */
+.footer {
+    background: linear-gradient(90deg, rgba(140,50,180,0.85), rgba(200,90,150,0.75));
+    color: #fff;
+    padding: 18px 24px;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    margin-top: 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.footer-authors {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.footer-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.footer-author img {
+    border: 2px solid rgba(255,255,255,0.55);
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    object-fit: cover;
+}
+.footer-author-initials {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.footer-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,0.3);
+}
+.footer a { color: #f4d0ff; }
+
+/* ── body content wrapper ── */
+div.body { font-size: 1rem; }
+div.wrapdesc { width: 90%; margin: auto; }
+div.imagedesc { width: 85%; margin: auto; }
+
+hr { clear: both; height: 1px; background: #e8d0f0; border: none; margin: 24px 0; }
+
+ol, ul, li { margin: 0 0 0 18px; padding: 0 0 5px; }
+
+@media (max-width: 600px) {
+    .page-wrap { padding: 0 16px 40px; }
+    #top { padding: 22px 16px 18px; }
+    .toc-strip { padding: 8px 16px; gap: 12px; }
+    .footer-divider { display: none; }
+}
+
+@media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="top">
+    <h1>Cargoservice</h1>
+    <div class="subtitle">ISS 2026 — Valeria Capacci &amp; Ginevra Pentoli</div>
+</div>
+
+<div class="toc-strip">
+    <a href="#intro">Introduction</a>
+    <a href="#req">Requirements</a>
+    <a href="#reqanalysis">Req. Analysis</a>
+    <a href="#probanalysis">Problem Analysis</a>
+    <a href="#tests">Test Plans</a>
+    <a href="#project">Project</a>
+    <a href="#testing">Testing</a>
+    <a href="#deploy">Deployment</a>
+</div>
+
+<div class="page-wrap">
+<div class="body">
+
+<h1 id="intro">Introduction</h1>
+<strong>Goal</strong>: Costruire un sistema software <code>cargoservice</code> che gestisce automaticamente il carico in stiva di beni.
+
+<h1 id="req">Requirements</h1>
+The company asks us to build a software systems (named cargoservice) that: <br>
+<div class="req">
+<strong>R1</strong> &nbsp; is able to receive the request to load on the cargo a product container already registered in the productservice. The request is rejected when: <br>
+- the product-weight is evaluated too high, since the ship can carry a maximum load of MaxLoad>0 kg .<br>
+- the hold is already full, i.e. the 4 slots are alrready occupied. <br>
+If the request is accepted, the cargoservice associates a slot to the product PID and returns the name of the reserved
+slot. Afttwerds, it waits that the product container is delivered to the ioport. In the meantime, other requests are not
+elaborated.<br><br>
+<strong>R2</strong> &nbsp; is able to detect (by means of the sonar sensor ) the presence of the product container at the ioport <br><br>
+<strong>R3</strong> &nbsp; is able to ensure that the product container is placed by the cargorobot within its reserved slot. At the end of the work: <br>
+- the cargorobot should returns to its HOME location.<br>
+- the cargoservice can process another load-request <br> <br>
+<strong>R4</strong> &nbsp; is able to show the current state of the hold, by mesans of a dynamically updated web-gui <br><br>
+<strong>R5</strong> &nbsp; interrupts any activity and turns on a led if the sonar sensor measures a distance D > DFREE for at least 3 secs (per‐
+haps a sonar failure). The service continues its activities as soon as the sonar measures a distance D <= DFREE . <br><br>
+</div>
+
+<h1 id="reqanalysis">Requirement Analysis</h1>
+<pre data-lang="analisi">
+<h2> Sistema cargoservice</h2>
+Diamo il nome <code>cargoservice</code> al sistema software da realizzare, per distinguerlo dalle entità che lo compongono.  Si tratta di un sistema distribuito su più nodi computazionali, i cui componenti operano tramite scambio di messaggi.
+Il sistema comprende le seguenti macro-entità:
+
+    - il <strong>cargorobot</strong> <code>(DDR)</code>,
+    - il <code>productservice</code>, servizio già esistente per la registrazione dei prodotti
+    - il sensore <code>sonar</code>, dispositivo fisico da integrare 
+    - la <strong>stiva</strong> (<code>hold</code>), con i suoi slot di posizionamento 
+    - il <code>LED</code> di allarme, attuatore fisico
+    - la <code>web-gui</code>, interfaccia utente a aggiornamento dinamico
+
+<h2><code>cargorobot</code> (DDR)</h2>
+Il DDR robot che può muoversi in avanti, indietro, ruotare su se stesso, fermarsi. Ovviamente queste azioni sono da intendersi come comandi, ma occorre specificare meglio. <br>
+<div class="domanda">
+    <strong>Domanda: </strong> Il software che rappresenta il DDR è già disponibile o dobbiamo costruirlo noi? 
+     <strong> Risposta: </strong> è disponibile il simulatore <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.1'>VirtualRobot26</a>, che definisce un insieme di <a href="https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.25.4">comandi-base per il robot in cril. </a> Questo simulatore si presenta come un servizio
+</div>
+//essenza di un'entita software: come dico alla macchina cos'è l'entita software. è un service: lo uso con dei comandi/messaggi via socket che possono essere o http (sincrono) o via WebSocket la cui interazione puo essere anche asincrona. privilegio l'interazione asincrona. 
+//apro un clientsocket per cui devo sapere solo la porta del servizio (8091). va descritto il linguaggio con cui vengono comnicati imessaggi
+Occorre esaminare se il servizio fornito:
+    - sia sufficiente per risolvere il problema (posizionare un container in uno slot specifico e tornare in HOME)
+    - sia adeguato per essere usato direttamente a livello di codice senza modifiche
+
+    //qual è i lpercorsomilgiore che puo fare per passare dalla posizione A alla posizione B? c'è un enorme abstraction gap. analizzando il problema, ho capito il problema piu grosso 8LO SPOSTAMENT9. VEDIamo se riesco a fattorizzare lo spostamento con un componente che mi aiuta a farlo (analisi del problema)
+<code>
+public interface ICargoRobot {
+    void moveToIOPort() throws Exception;       // raggiunge lo IOPort
+    void pickContainer() throws Exception;      // preleva il container
+    void moveToSlot(String slotName) throws Exception; // raggiunge lo slot
+    void placeContainer() throws Exception;     // deposita il container
+    void returnHome() throws Exception;         // torna in HOME
+    void halt() throws Exception;               // si ferma immediatamente
+}</code>
+//cos'è il cargorobot? devo dire al committente cos'è per me. o è un pojo o è un attore. prima di nominare la parola attore prima, perche mentre pojo lo capisce cjìhiunque la parole attore la conosciamo solo noi. nel momento in cui viene detto che si vuole modellare come atore cosa intendimao per attore. ci vuole il link
+<h2><code>productservice</code></h2>
+//il committente con productservice ci da ance l'entita di pordotto. devo anceh capire cosa intende con database. ottica  microservizi: ciascuno miscroservizio puo avere il suo database
+Il <code>productservice</code> è un servizio già disponibile che gestisce un registro di prodotti. Ad ogni prodotto è associato un peso (in kg). Dopo la registrazione di un prodotto, il servizio restituisce un identificatore univoco PID (numero naturale, PID > 0). <br>
+<div class="domanda">
+    <strong>Domanda:</strong> Il software che rappresenta il productservice è già raggiungibile in rete, oppure deve essere avviato localmente? Il cargoservice lo interroga attivamente (pull) o riceve notifiche (push)?
+</div>
+
+Notiamo come occorra verificare se il servizio esistente fornisce effettivamente un'operazione per recuperare il peso dato un PID.
+
+<h2>Hold <code>(stiva)</code></h2>
+//come formalizzo la hold? devo trDURRE UN aerea rettangolare, come al solito ci sono edlle dimensine ma anchde un input port che va formalizzare. 
+//formalizziamo dove va l'input port: è una cella con certe coordinate, va fatta come la home
+//vanno formalizzat gli slot: in che posizione sono? come sono fatti?
+//la hold sara fatta di celle, ma io parto dalla macrostruttura: l'entta hold che bestia computazionale è? un pojo, quindi ci saranno gli slot
+//modello anche gli slot come pojo, lo slot è un pojo con uno stato
+//lo slot ha delle coordinate? o ce l'ha la hold? ha nelle oordinate una porta d'ingresso
+//le porte di ingresso è comodo metterle a nord o a ovest
+//le coordinate sono nella stiva, non sono una sua porprieta intrinseca. 
+
+La stiva è un'area rettangolare e piatta con un unico punto di ingresso/uscita denominato <code>IOPort</code>. Fornisce 4 slot per container di prodotti. Lo <code>slot5</code> è permanentemente occupato; gli altri slot sono inizialmente vuoti.
+Formalizziamo la stiva come una classe Java <code>Hold:</code>
+<code>
+    public class Hold {
+    public static final int NUM_SLOTS = 4; // slot5 permanente
+    public static final int MAX_LOAD_KG = ...; // parametro di configurazione
+
+    public enum SlotState { FREE, RESERVED, OCCUPIED } 
+    //stato RESERVED per gestire la situazione di accettazione della richiesta,
+    //se uno slot è RESERVED, non si elaborano altre richieste.
+
+    private SlotState[] slots = {
+        SlotState.FREE,
+        SlotState.FREE, 
+        SlotState.FREE,
+        SlotState.FREE
+    };
+
+    private int[] slotPID = new int[NUM_SLOTS]; // PID associato a ogni slot
+    private float currentLoad = 0.0f;           // peso totale corrente in kg
+}
+</code>
+
+//request per il maxload??  con actor qak va fatta
+//test per vedere se è troppo piena o se è vuota o se gli metto un prodotto che non è registrato nel productservice
+<div class="domanda">
+Il testo dice che il cargoservice "associa uno slot al prodotto PID", ma non specifica con quale criterio. Possibili strategie:
+    - primo libero
+    - ottimizzazione del percorso del robot (minima distanza dallo IOPort) <br>
+    <strong>Domanda:</strong> quale strategia di assegnazione degli slot deve essere adottata?
+</div>
+<h2>Sonar sensor</h2>
+Il sonar è un sensore fisico collocato davanti all'<code>IOPort</code>. Misura continuamente una distanza <code>D</code> Il valore <code>DFREE</code> è una costante di configurazione che rappresenta la distanza libera attesa (area vuota davanti al sensore).
+Due soglie operative:
+    - <code>D < DFREE/2 </code>per almeno 3 secondi → presenza di un container allo IOPort
+    - <code>D > DFREE</code> per almeno 3 secondi → possibile guasto del sensore
+
+<div class="domanda">
+    Ambiguità: il testo dice che il sistema "interrompe ogni attività" se D > DFREE per 3 secondi. Ma non è specificato cosa accade se il guasto si verifica mentre il cargorobot è già in movimento.
+    Due interpretazioni possibili:
+    - Interpretazione A: il robot si ferma immediatamente (halt), il container rimane dove si trova, e il sistema resta sospeso finché il sonar non si riprende. Al ripristino, il robot riprende l'operazione interrotta.
+    - Interpretazione B: il robot completa l'operazione corrente (posiziona il container), poi il sistema si mette in attesa prima di accettare nuove richieste.
+    
+    <strong>Domanda:</strong> quale delle due interpretazioni è quella corretta? In caso di Interpretazione A: il robot deve riprendere dal punto in cui era, o deve tornare in HOME e ricominciare?
+</div>
+    <div class="domanda">
+    <strong>Domanda:</strong> Il software che gestisce il sonar è già disponibile, oppure dobbiamo costruirlo noi?
+    <strong>Risposta:</strong> in attesa di uno strumento più evoluto, viene fornito un dispositivo fisico basato su un RaspBerry PicoW, ma senza software di supporto.
+</div>
+<div class="domanda">
+    <strong>Domanda:</strong> in quale formato ci aspettiamo di ricevere i dati dal sonar?
+    <strong>Risposta:</strong> stringhe della forma <code>distance(DIRECTION, D)</code>, dove <code>D</code> è la distanza misurata (intero, in cm o mm).
+</div>
+Occorre esaminare se basti scrivere software sul microcontrollore per integrare compiutamente il sonar nel sistema, oppure se serva un componente intermediario (proxy/adapter) che traduca i messaggi grezzi in eventi comprensibili al <code>cargoservice</code>. <br>
+<h2><code>HOME</code></h2>
+<code>HOME</code> è la posizione iniziale del cargorobot nella stiva. Il robot deve tornare in <code>HOME</code> al termine di ogni operazione di carico.
+<code>HOME</code> non può essere un punto matematico ma deve essere una zona, correlata alla dimensione fisica del robot. Tuttavia, dato che il cargorobot è già fornito come servizio preconfigurato, è probabile che la posizione <code>HOME</code> sia già nota internamente al servizio. <br>
+<h2>Struttura del sistema</h2>
+Il <code>cargoservice</code> non può essere eseguito sul nodo del <code>cargorobot</code> (che deve rimanere un componente autonomo), né sul microcontrollore del sonar. Il sistema è quindi logicamente distribuito su almeno tre nodi:
+    - il nodo applicativo principale, <code>cargoservice</code>
+    - il nodo robot, <code>cargorobot</code>
+    - il sonar sensor
+    - il nodo esterno, <code>productservice</code>, già esistente da requisiti.
+
+Trattandosi di un sistema distribuito in cui i componenti comunicano a scambio di messaggi, la struttura del sistema può essere formalizzata con un linguaggio di modellazione a messaggi (come qak), in modo da distinguere chiaramente:
+    - <code>dispatch</code> (messaggi punto-a-punto)
+    - <code>emit</code> (eventi broadcast, es. lettura sonar)
+    - <code>request/response</code> (interazioni sincrone con productservice e cargorobot)
+</pre>
+
+
+<h1 id="probanalysis">Problem Analysis</h1>
+
+<pre data-lang="analisi">
+
+</pre>
+
+<p></p>
+
+<h2></h2>
+<p></p>
+
+<pre data-lang="QAK">
+
+</pre>
+
+<h2></h2>
+
+<pre data-lang="QAK">
+
+</pre>
+
+<h1 id="tests">Test Plans</h1>
+
+<h1 id="project">Project</h1>
+
+<h1 id="testing">Testing</h1>
+
+<h1 id="deploy">Deployment</h1>
+
+<h1>Maintenance</h1>
+
+</div><!-- .body -->
+
+<div class="footer">
+    <div class="footer-authors">
+        <div class="footer-author">
+            <img src="../img/VC.jpg" alt="VC" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="footer-author-initials" style="display:none">VC</div>
+            <div>
+                <strong>Valeria Capacci</strong><br>
+                <a href="mailto:valeria.capacci@studio.unibo.it">valeria.capacci@studio.unibo.it</a>
+            </div>
+        </div>
+        <div class="footer-divider"></div>
+        <div class="footer-author">
+            <img src="../img/GP.jpeg" alt="GP" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="footer-author-initials" style="display:none">GP</div>
+            <div>
+                <strong>Ginevra Pentoli</strong><br>
+                <a href="mailto:ginevra.pentoli@studio.unibo.it">ginevra.pentoli@studio.unibo.it</a>
+            </div>
+        </div>
+    </div>
+    <div style="margin-left: auto; font-size: 0.8rem; opacity: 0.85;">
+        GIT: <a href="https://github.com/valecapa/TemaFinaleISS2026">github.com/valecapa/TemaFinaleISS2026</a>
+    </div>
+</div>
+
+</div><!-- .page-wrap -->
+</body>
+</html>
