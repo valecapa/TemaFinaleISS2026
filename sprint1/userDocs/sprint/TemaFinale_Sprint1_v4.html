@@ -364,7 +364,7 @@ li { margin-bottom: 4px; }
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="goal">Goal</h1>
 
-<p>Realizzare il sottosistema che gestisce l'accettazione/rifiuto di una richiesta di carico, il timeout dei 30&nbsp;secondi, e l'interazione reale con lo <code>IOPort</code>: pulsante, sensore, display e LED. <code>cargoservice</code> riceve <code>loadrequest</code>, interroga <code>Hold</code>, risponde con <code>loadaccepted</code>/<code>loadrejected</code> e transita da Idle a Engaged; se il timeout scade torna a Idle liberando lo slot.</p>
+<p>Realizzare il sottosistema che gestisce l'accettazione/rifiuto di una richiesta di carico, il timeout dei 30&nbsp;secondi, e l'interazione reale con lo <code>IOPort</code>. <code>cargoservice</code> riceve <code>loadrequest</code>, interroga <code>Hold</code>, risponde con <code>loadaccepted</code>/<code>loadrejected</code> e transita da Idle a Engaged; se il timeout scade torna a Idle liberando lo slot.</p>
 
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="problem-analysis">Problem analysis</h1>
@@ -375,27 +375,43 @@ li { margin-bottom: 4px; }
 <h2 id="tcp-qak-websocket-gui">TCP come protocollo di trasporto interno di qak e scelta del canale WebSocket per la GUI</h2>
 <p>Qak adotta TCP come protocollo di trasporto per la comunicazione tra attori su <code>Context</code> distinti: ogni <code>Context</code> apre un socket TCP in ascolto sulla porta dichiarata (<code>host=localhost port=8050</code> per <code>ctxcargoservice</code>, vedi Deployment), e la infrastruttura di runtime serializza gli <code>IApplMessage</code> scambiati tra attori in un formato proprio, li trasmette sul socket e li deserializza a destinazione, ricostruendo l'invocazione sull'attore ricevente. Questo protocollo di serializzazione/framing è interno al runtime e opera esclusivamente al livello di astrazione offerto dal modello ad attori, tramite primitive come <code>sendMsgToMyself</code>: lo sviluppatore non vede mai il socket sottostante.</p>
 
-<p>Proprio perché il TCP di qak è mascherato dietro questa astrazione, non è un canale riutilizzabile da un client qualsiasi: è un protocollo applicativo pensato per far dialogare tra loro istanze del runtime, con un formato di serializzazione noto solo alle due estremità qak-qak. Un browser non può costruire né interpretare un <code>IApplMessage</code> in questo formato. </p>
-
-<img src="../img/qak.jpeg"
-     alt="ioport"
-     width="350"
-     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+<p>Proprio perché il TCP di qak è mascherato dietro questa astrazione, non è un canale riutilizzabile da un client qualsiasi: è un protocollo applicativo pensato per far dialogare tra loro istanze del runtime, secondo un formato di messaggio (<code>IApplMessage</code>) noto solo alle due estremità qak-qak. Un browser non può costruire né interpretare un <code>IApplMessage</code> come oggetto Java, ma può farlo se il messaggio è rappresentato come stringa, ad esempio in formato JSON. </p>
 
 <p>Il canale verso il browser va quindi progettato a parte, e deve soddisfare un requisito bidirezionale: inviare comandi verso il sistema e ricevere aggiornamenti di stato in tempo reale (stato, hold, messaggio). Sono state valutate, e di conseguenza scartate, le seguenti alternative di trasporto disponibili per una comunicazione lato browser:</p>
+
 <table>
-<tr><th>Alternativa</th><th>Limite rispetto al caso d'uso</th></tr>
-<tr><td>TCP puro</td><td>fornisce solo il trasporto a stream di byte, senza semantica di messaggio: andrebbe reimplementato da zero il framing dei messaggi applicativi</td></tr>
-<tr><td>CoAP</td><td>pensato per dispositivi IoT vincolati con un modello prevalentemente request/response leggero; non adatto a una comunicazione bidirezionale continua con un browser</td></tr>
-<tr><td>MQTT</td><td>supporta publish/subscribe bidirezionale, ma richiede un broker come componente architetturale aggiuntivo e non è nativamente supportato dai browser senza un bridge (es. MQTT over WebSocket)</td></tr>
+  <thead>
+    <tr>
+      <th>Alternativa</th>
+      <th>Limite rispetto al caso d'uso</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>TCP puro</td>
+      <td>Fornisce solo il trasporto a stream di byte, senza semantica di messaggio: andrebbe reimplementato da zero il framing dei messaggi applicativi. Non è inoltre accessibile nativamente da un browser, che non espone API per socket TCP grezzi.</td>
+    </tr>
+    <tr>
+      <td>CoAP</td>
+      <td>Pensato per dispositivi IoT vincolati, con un modello prevalentemente request/response leggero; non adatto a una comunicazione bidirezionale continua con un browser, che comunque non lo supporta nativamente.</td>
+    </tr>
+    <tr>
+      <td>MQTT</td>
+      <td>Supporta publish/subscribe bidirezionale ed è in linea di principio utilizzabile anche da un browser tramite MQTT over WebSocket; tuttavia richiede un broker come componente architetturale aggiuntivo, introducendo un elemento infrastrutturale non necessario rispetto alla soluzione scelta.</td>
+    </tr>
+  </tbody>
 </table>
 
-<p>Il protocollo WebSocket, che stabilisce un canale full-duplex su una singola connessione TCP, è nativamente supportato da qualunque browser senza componenti intermedi, e risulta quindi funzionalmente adeguato a un caso d'uso di tipo dashboard/notifica live, come in questo caso, in quanto stato della hold e delle richieste deve essere da requisito visualizzabile da più utenti contemporaneamente. Per questo motivo <code>IOPortWsAdapter</code> espone un endpoint <code>/ws/ioport</code> tramite un server Javalin dedicato (vedi <a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/utils/cargoservice/IOPortWsAdapter.java">IOPortWsAdapter.java</a>), con broadcast verso l'insieme dei client connessi.</p>
+<p>Il protocollo WebSocket, che stabilisce un canale full-duplex su una singola connessione TCP, è nativamente supportato dai browser senza componenti intermedi, e risulta quindi funzionalmente adeguato a un canale live come in questo caso, in quanto stato della hold e delle richieste deve raggiungere più utenti contemporaneamente.</p>
+
+<p>Tra WebSocket e MQTT (le uniche due alternative realisticamente compatibili con un client browser) la scelta è ricaduta su WebSocket proprio perché non richiede alcun componente infrastrutturale aggiuntivo: la comunicazione avviene direttamente tra client e server applicativo, mentre MQTT presupporrebbe l'introduzione e la gestione di un broker dedicato (con relativi problemi di deployment, configurazione e point of failure in più), a fronte di un modello publish/subscribe che, per il caso d'uso in oggetto, non offre vantaggi sufficienti a giustificarne il costo architetturale.</p>
+
 <h2 id="instradamento-messaggi">Instradamento dei messaggi</h2>
-<p>Nel protocollo WebSocket un messaggio è una sequenza di byte o testo priva di header applicativi: WebSocket fornisce il canale, non la semantica di ciò che vi transita. Poiché la GUI deve poter inviare più tipi di comando sulla stessa connessione, serve che le due parti si accordino su un formato condiviso in cui codificare tipo di messaggio e payload.</p>
-<p>A livello di implementazione tale formato è stato realizzato in JSON, con un envelope che porta un campo discriminante <code>type</code>. La scelta di JSON rispetto ad alternative è motivata dalla leggerezza, dalla natura testuale nativamente compatibile con WebSocket, e dalla facilità di parsing sia lato client (<code>JSON.parse</code> in JavaScript, senza librerie aggiuntive) sia lato server (<code>JSONParser</code> già disponibile). </p>
-<p>L'envelope JSON viene decodificato da <code>toDispatch()</code> per determinare il messaggio qak da generare. Questa soluzione, standard per il routing su protocolli privi di semantica applicativa, riduce la complessità sia lato client sia lato server mantenendo un'unica connessione persistente per l'intero dispositivo simulato.</p>
-<div class="code-wrapper">
+<p>Nel protocollo WebSocket un messaggio è una sequenza di byte o testo priva di header applicativi: WebSocket fornisce il canale, non la semantica di ciò che vi transita. Poiché la GUI deve poter inviare più tipi di comando sulla stessa connessione, il sistema deve poter distinguere, per ogni messaggio in arrivo, di quale tipo di comando si tratti e instradarlo di conseguenza verso l'elaborazione corretta lato server.</p>
+
+<p>Questa responsabilità richiede l'introduzione di un componente dedicato lato IOPort, che chiamiamo <a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/utils/cargoservice/IOPortWsAdapter.java">IOPortWsAdapter.java</a>. Il suo ruolo, dal punto di vista dell'analisi del problema, è quello di fare da tramite tra il canale di comunicazione verso il browser e il resto del sistema: riceve i messaggi grezzi in arrivo dalla GUI, li interpreta secondo un formato condiviso concordato tra le due parti, e per ciascun tipo di comando individua l'azione o il messaggio applicativo qak corrispondente da generare verso <code>cargoservice</code>.</p>
+
+<p><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/utils/cargoservice/IOPortWsAdapter.java">IOPortWsAdapter.java</a> mantiene inoltre una connessione persistente per l'intero dispositivo simulato, permettendo così alla GUI di inviare più comandi diversi nel tempo su un unico canale condiviso.</p><div class="code-wrapper">
     <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/utils/cargoservice/IOPortWsAdapter.java">IOPortWsAdapter.java</a></div>
     <pre>static String[] toDispatch(String raw) throws Exception {
             JSONObject json = (JSONObject) new JSONParser().parse(raw);
@@ -411,8 +427,11 @@ li { margin-bottom: 4px; }
     </pre>
 </div>
 <h2 id="iniezione-messaggio">Iniezione del messaggio nell'attore</h2>
-<p><code>IOPortWsAdapter</code> opera sul thread Jetty associato alla connessione WebSocket, distinto dal thread di esecuzione dell'attore. L'invocazione diretta di metodi che modificano lo stato interno dell'attore da tale thread violerebbe il principio di non condivisione della memoria su cui si fonda il modello ad attori di qak. La soluzione adottata prevede che l'adapter, ricevuto un riferimento all'attore alla propria creazione (<code>IOPortWsAdapter(this, 7070)</code>), costruisca un <code>IApplMessage</code> e lo instradi tramite <code>sendMsgToMyself</code> nella coda dell'attore stesso.</p>
-<div class="code-wrapper">
+<p>Il canale WebSocket verso il browser è gestito da un thread separato rispetto a quello su cui gira l'attore che rappresenta il dispositivo. Questo introduce un problema di consistenza: se i comandi ricevuti dal browser modificassero direttamente lo stato interno dell'attore da quel thread esterno, si violerebbe il principio di non condivisione della memoria su cui si fonda il modello ad attori di qak, con il rischio di accessi concorrenti non controllati allo stato del dispositivo.</p>
+
+<p>È necessario quindi un componente che faccia da tramite tra il canale verso il browser e l'attore, con la responsabilità di ricevere i comandi in arrivo dal thread esterno e farli pervenire all'attore rispettando il suo modello di esecuzione, cioè senza mai agire direttamente sul suo stato interno da un thread diverso dal proprio. In altre parole, il componente non deve invocare metodi dell'attore, ma limitarsi a recapitargli i comandi ricevuti, lasciando che sia l'attore stesso, nel proprio flusso di esecuzione, a elaborarli e ad aggiornare di conseguenza il proprio stato.</p>
+
+<p>Questa relazione tra il componente e l'attore va quindi pensata non come una chiamata diretta, ma come un canale a senso unico attraverso cui i comandi provenienti dal browser vengono fatti confluire nella normale coda di elaborazione dell'attore, alla pari degli altri messaggi che esso already gestisce nel proprio ciclo di vita.</p><div class="code-wrapper">
     <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint1.qak">sprint1.qak</a></div>
     <pre>
     QActor ioport context ctxcargoservice
@@ -480,8 +499,6 @@ li { margin-bottom: 4px; }
 
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="sprint2">Definizione dello Sprint2</h1>
-
-<p>Lo Sprint1 ha chiuso il core business (accettazione/rifiuto, timeout, IOPort come attore reale collegato a una GUI). Lo Sprint2 dovrà estendere il sistema con i componenti rimasti fuori da Sprint1:</p>
 
 <div class="req">
 <ul>
