@@ -253,7 +253,7 @@ div.domanda {
     position: relative;
 }
 div.domanda::before {
-    content: 'Domanda al committente:';
+    content: 'Nota';
     display: block;
     font-weight: 700;
     font-size: 0.78rem;
@@ -374,57 +374,61 @@ li { margin-bottom: 4px; }
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="goal">Goal</h1>
 
+<p>Una volta che <code>cargoservice</code> ha accettato la richiesta, occorre progettare e realizzare <code>cargorobot</code>, il componente che orchestra il movimento del DDR appoggiandosi al servizio esterno <code>RobotSmart26</code> per portare il container dall'IOPort a <code>slot5</code> (dove avviene la marcatura), e da lì allo slot riservato, per poi tornare in HOME (requisito <strong>R3</strong> del committente). Il goal comprende inoltre la separazione dei Context per nodo fisico.</p>
+
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="problem-analysis">Problem analysis</h1>
 
-<h2 id="cargorobot-requisiti">CargoRobot come componente intermedio verso RobotSmart26</h2>
-<p>Come stabilito già in Sprint0, <code>RobotSmart26</code> è il servizio, fornito dal committente, che <code>cargorobot</code> utilizza come servizio esterno per il movimento del DDR; <code>cargorobot</code> resta comunque un'entità applicativa da progettare e realizzare, distinta da RobotSmart26, con la responsabilità di orchestrare le operazioni (raggiungere l'IOPort, prelevare il container, raggiungere slot5, ecc.). Esso è quindi un componente intermedio tra <code>RobotSmart26</code> e <code>cargoservice</code>. Essendo RobotSmart26 esso stesso realizzato in qak, può essere referenziato direttamente come <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#page=222'><code>ExternalQActor</code></a> senza alcun livello di conversione dei messaggi.</p>
+<h2 id="cargorobot-requisiti">Cargorobot come componente intermedio verso RobotSmart26</h2>
+<p>Come stabilito già in Sprint0, <code>RobotSmart26</code> è il servizio, fornito dal committente, che <code>cargorobot</code> utilizza come servizio esterno per il movimento del DDR, scelto fra le alternative disponibili (<code>RobotObj26</code>, <code>RobotService26</code>, <code>RobotSmart26</code>) perché è quella che riduce maggiormente l'abstraction gap: calcola autonomamente il percorso verso un punto, dato solo l'obiettivo.  <code>cargorobot</code> resta comunque un'entità applicativa da progettare e realizzare, distinta da RobotSmart26, con la responsabilità di orchestrare la sequenza di operazioni. È quindi un componente intermedio fra il servizio esterno e <code>cargoservice</code>, e per progettarlo occorre stabilire due cose distinte: <em>con quale canale</em> raggiunge RobotSmart26, e <em>quale vocabolario di comandi</em>, fra quelli che RobotSmart26 espone, gli conviene usare.</p>
 
-<h2 id="cargorobot-alternative">Comunicazione fra cargorobot e RobotSmart26</h2>
-
-<p>RobotSmart26 espone il proprio comportamento tramite messaggi qak. I comandi rilevanti sono:</p>
-<ul>
-<li><code>buildPlan(PX,PY,TX,TY)</code> → <code>buildPlanDone(PLAN)</code>: calcola un piano di movimento dal punto corrente a un punto target;</li>
-<li><code>moverobot(TARGETX,TARGETY,STEPTIME)</code> → <code>moverobotok(ARG)</code> / <code>moverobotfailed(PLANDONE,PLANTODO)</code>: muove il robot verso una coppia di coordinate assolute, calcolando autonomamente il percorso: è il comando di livello più alto e riduce significativamente l'abstraction gap. Proprio per questo motivo, come discusso nello Sprint0, è stato scelto RobotSmart26;</li>
-<li><code>doplan(PLAN,STEPTIME)</code> → <code>doplandone(ARG)</code> / <code>doplanfailed(PLANTODO)</code>: esegue un piano di movimento già calcolato;</li>
-<li><code>step(TIME)</code> → <code>stepdone(V)</code> / <code>stepfailed(DURATION,CAUSE)</code>: avanza per un intervallo di tempo, fermandosi in caso di ostacolo. Utile per scenari di esplorazione, ma non per il caso d'uso di cargoservice, che lavora su coordinate di slot note a priori;</li>
-<li><code>move(M)</code> (dispatch, M = l|r|a|d|h): comando di movimento elementare sincrono (svolta, avanti, indietro, stop);</li>
-<li><code>dir(D)</code> → <code>pos(PX,PY)</code>, <code>tuneAtHome(X)</code> → <code>tuneDone(X)</code>, <code>getrobotstate(ARG)</code> → <code>robotstate(POS,DIR)</code>: comandi di posizionamento del robot e richiesta del suo stato.</li>
-</ul>
-
-<p>Valutiamo ora tre possibili alternative per la comunicazione fra <code>cargorobot</code> e RobotSmart26:</p>
+<h2 id="canale-comunicazione">Quale canale verso RobotSmart26?</h2>
+<p>RobotSmart26 non è un servizio raggiungibile solo in un modo: il committente lo rende disponibile su più canali contemporaneamente. Il problema di analisi è quindi scegliere, fra i canali che il servizio realmente espone, quale usare per far comunicare <code>cargorobot</code> con esso:</p>
 
 <table>
 <tr><th>Alternativa</th><th>Considerazioni</th></tr>
-<tr><td>ExternalQActor</td><td>si dichiara un <code>ExternalQActor</code> che punta al nodo su cui gira RobotSmart26. Da quel momento <code>cargorobot</code> può inviare <code>request</code>/<code>dispatch</code>/<code>event</code> verso <code>robotsmart</code> esattamente come farebbe con un attore locale: la serializzazione dei messaggi e il loro instradamento in rete sono gestiti automaticamente dall'infrastruttura qak.</td></tr>
-<tr><td>MQTT</td><td>richiede un broker MQTT come componente architetturale aggiuntivo. RobotSmart26 pubblica/sottoscrive su un topic fisso e le risposte/eventi generati vengono pubblicati su un topic "gemello". A differenza del canale ExternalQActor, qui il sistema chiamante non beneficia della mappatura automatica request/reply del framework: i payload dei messaggi vanno costruiti esplicitamente prima di essere pubblicati sul topic.</td></tr>
-<tr><td>CoAP</td><td>protocollo request/response leggero su UDP. RobotSmart26 mette a disposizione un client CoAP dedicato, ma usarlo richiederebbe di reimplementare da zero sia il mapping dei comandi sia la logica di correlazione tra richiesta e risposta, senza nessun beneficio rispetto alle altre due alternative nel contesto di cargoservice</td></tr>
+<tr><td>ExternalQActor</td><td>si dichiara un <code>ExternalQActor</code> che punta al Context su cui gira RobotSmart26 (porta 8020). Da quel momento <code>cargorobot</code> può inviare <code>request</code>/<code>dispatch</code> verso <code>robotsmart</code> esattamente come farebbe con un attore locale: la serializzazione dei messaggi e il loro instradamento in rete sono gestiti automaticamente dall'infrastruttura qak, che usa TCP come trasporto di default.</td></tr>
+<tr><td>MQTT</td><td>RobotSmart26 può essere raggiunto anche pubblicando sulla topic <code>robotsmart26in</code> di un broker Mosquitto; gli eventi/reply generati vengono ripubblicati sulla topic gemella <code>robotsmart26in_out</code>. Introduce un broker come componente architetturale aggiuntivo, e soprattutto, a differenza del canale ExternalQActor, il chiamante non beneficia della mappatura automatica request/reply del framework: i payload vanno costruiti e correlati esplicitamente.</td></tr>
+<tr><td>CoAP</td><td>RobotSmart26 espone anche un client CoAP dedicato, pensato però per l'osservazione delle risorse (lo stato di <code>robotmnemo</code>) piuttosto che per l'invio di comandi; usarlo per pilotare il robot richiederebbe di reimplementare da zero sia il mapping dei comandi sia la logica di correlazione fra richiesta e risposta, senza alcun beneficio rispetto alle altre due alternative nel contesto di cargoservice.</td></tr>
 </table>
 
-<p>In base a quanto detto, per <code>cargorobot</code> si decide di adottare l'<code>ExternalQActor</code> nativo qak come canale primario verso RobotSmart26.</p>
+<p>Le tre alternative sono equivalenti dal punto di vista del contratto, quindi la scelta ricade sul costo di integrazione: si decide di adottare l'<code>ExternalQActor</code> nativo qak come canale primario fra <code>cargorobot</code> e RobotSmart26, perché non introduce componenti aggiuntivi (a differenza di MQTT) e non richiede logica di correlazione scritta a mano (a differenza di CoAP). Essendo RobotSmart26 esso stesso realizzato in qak, questo canale non richiede inoltre alcun livello di conversione dei messaggi.</p>
 
-<h2 id="cargorobot-modelli">Due modelli separati: caso nominale e caso di guasto</h2>
-<p>Come discusso, il rapporto <code>cargorobot</code>–<code>cargoservice</code> non va modellato con un unico diagramma che gestisce "eccezionalmente" anche i guasti, ma con due modelli distinti, ciascuno verificabile separatamente.</p>
+<h2 id="livello-comando">Quale tipo di comando usare?</h2>
+<p>Stabilito il canale, resta un secondo problema: RobotSmart26 espone il proprio comportamento a più livelli di astrazione, non uno solo, e va scelto quale usare per orchestrare la sequenza IOPort→slot5→slot riservato→HOME. I comandi rilevanti sono:</p>
+<ul>
+<li><code>moverobot(TARGETX,TARGETY,STEPTIME)</code> → <code>moverobotok(ARG)</code> / <code>moverobotfailed(PLANDONE,PLANTODO)</code>: muove il robot verso una coppia di coordinate assolute, calcolando autonomamente il percorso (pianificazione A* interna) e orientandosi verso l'obiettivo prima di partire;</li>
+<li><code>buildPlan(PX,PY,TX,TY)</code> → <code>buildPlanDone(PLAN)</code> seguito da <code>doplan(PLAN,STEPTIME)</code> → <code>doplandone(ARG)</code> / <code>doplanfailed(PLANTODO)</code>: separa il calcolo del piano dalla sua esecuzione, lasciando al chiamante la possibilità di ispezionare o modificare il piano fra i due passi;</li>
+<li><code>step(TIME)</code> → <code>stepdone(V)</code> / <code>stepfailed(DURATION,CAUSE)</code> e <code>move(M)</code> (dispatch, M = l|r|a|d|h): comandi elementari di singolo passo/rotazione, pensati per scenari di esplorazione in cui la mappa non è nota a priori.</li>
+</ul>
 
-<h3 id="caso-nominale">Caso nominale</h3>
-<p>Descrive, a titolo puramente esplicativo e non come implementazione, lo schema di scambio messaggi quando il movimento del robot si completa senza errori: dal ricevimento dell'incarico da parte di <code>cargoservice</code> fino al ritorno in HOME.</p>
+<table>
+<tr><th>Alternativa</th><th>Considerazioni rispetto al caso d'uso</th></tr>
+<tr><td><code>moverobot</code></td><td>massima riduzione dell'abstraction gap: <code>cargorobot</code> chiede solo "vai in (X,Y)", senza occuparsi di pianificazione. Adatta quando l'ambiente (posizione di IOPort, slot5, slot1-4) è nota a priori, come nel nostro caso.</td></tr>
+<tr><td><code>buildPlan</code> + <code>doplan</code></td><td>utile se occorre ispezionare o adattare il piano prima di eseguirlo (ad esempio per evitare una zona); introduce però in <code>cargorobot</code> una responsabilità di orchestrazione del piano che, per le nostre tratte fisse, non ha controparte in alcun requisito.</td></tr>
+<tr><td><code>step</code> / <code>move</code></td><td>livello più basso, pensato per l'esplorazione di un ambiente non ancora mappato; nel nostro caso l'ambiente è già interamente noto (le coordinate degli slot sono un dato di progetto), quindi usarlo significherebbe reimplementare in <code>cargorobot</code> una logica di path-planning che RobotSmart26 offre già.</td></tr>
+</table>
 
-<div class="code-wrapper">
-<pre>cargoservice -> cargorobot: assignTask(slot5, targetSlot)
-cargorobot <-> RobotSmart26: pickup container @ IOPORT
-cargorobot -> cargoservice: waitMarker()
-cargoservice -> cargorobot: markerCompleted
-cargorobot <-> RobotSmart26: rilascio container @ targetSlot, ritorno HOME
-cargorobot -> cargoservice: taskCompleted</pre>
+<p>Si sceglie <code>moverobot</code> come comando primario di movimento: le quattro tratte che <code>cargorobot</code> deve percorrere (HOME→IOPort, IOPort→slot5, slot5→slot riservato, slot riservato→HOME) sono verso coordinate fisse e note in anticipo, per cui non c'è alcun bisogno di intervenire sul piano calcolato. <code>cargorobot</code> si riduce così, per la parte di movimento, a un semplice invocatore sequenziale di <code>moverobot</code>, coerentemente con la scelta di RobotSmart26 fatta in Sprint0 proprio per minimizzare la logica di movimentazione a carico nostro.</p>
+
+<h2 id="marker-sincronizzazione">Il marker</h2>
+<p>Come già stabilito in Sprint0, il <code>marker</code> è logicamente parte del nodo <code>cargoservice</code>: quando <code>cargorobot</code> deposita il container in <code>slot5</code>, il marker applica il barcode e, dopo qualche secondo, segnala il completamento con un messaggio interno al nodo. Il problema di analisi è: come evitare che <code>cargorobot</code> prelevi il container da <code>slot5</code> prima che la marcatura sia completata?</p>
+
+<div class="domanda">
+    <strong>Domanda al committente:</strong> il marker è un'entità reattiva a sé stante, con un proprio comportamento (attende, poi segnala), oppure è più corretto modellarlo come dato passivo gestito da <code>cargoservice</code>, analogamente a <code>Hold</code>?<br>
+    <strong>Risposta:</strong> come per <code>sonar</code> e <code>ioport</code> già in Sprint0, la natura del marker è di reagire autonomamente al trascorrere del tempo di marcatura e di generare una notifica di propria iniziativa, senza che nulla lo solleciti a farlo: per lo stesso criterio di classificazione già usato in Sprint0 (entità reattive → QActor, dati passivi → POJO), il marker va modellato come QActor a sé stante all'interno del nodo <code>cargoservice</code>, non come struttura dati passiva incapsulata come <code>Hold</code>.
 </div>
 
-<h3 id="caso-guasto">Caso di guasto</h3>
-<p>Descrive, sempre a titolo di modello esplicativo, come evolve lo scambio quando RobotSmart26 segnala un malfunzionamento in una fase qualunque della sequenza nominale, invece di proseguire silenziosamente o di essere gestito come ramo eccezionale del diagramma nominale.</p>
+<p>Restano quindi da valutare le alternative con cui <code>cargorobot</code> può accertarsi che la marcatura sia conclusa:</p>
+<table>
+<tr><th>Alternativa</th><th>Considerazioni</th></tr>
+<tr><td>Polling</td><td><code>cargorobot</code> interroga periodicamente lo stato del marker prima di prelevare. Introduce un'attesa attiva e un accoppiamento diretto fra un componente esterno alla logica del nodo <code>cargoservice</code> (il marker vive lì) e <code>cargorobot</code>, che dovrebbe conoscerne i dettagli interni.</td></tr>
+<tr><td>Notifica su richiesta bloccante</td><td><code>cargorobot</code>, una volta depositato il container, invia una <code>request waitMarker()</code> e resta nel proprio automa in attesa della <code>reply</code> corrispondente: nessuna azione da parte sua finché la marcatura non è conclusa, nessuna conoscenza della logica interna del marker.</td></tr>
+</table>
+<p>Si adotta la notifica su richiesta bloccante: coerentemente con il modello ad attori (Sprint0), ogni entità reagisce a messaggi sulla propria coda senza polling attivo, ed è naturale che sia <code>cargoservice</code> (che racchiude il marker) a notificare <code>cargorobot</code> quando pronto, piuttosto che <code>cargorobot</code> debba indagare direttamente lo stato di un componente che non gli appartiene concettualmente e che vive fisicamente in un altro nodo (si veda la separazione dei Context più sotto).</p>
 
-<div class="code-wrapper">
-<pre>cargorobot <-> RobotSmart26: fault(reason) durante un movimento
-cargorobot -> cargoservice: taskFailed(reason)</pre>
-</div>
+<h2 id="cargorobot-modelli">Caso nominale e caso di guasto per cargorobot</h2>
+<p>Considerando il problema su come si rappresenta il comportamento di <code>cargorobot</code> quando RobotSmart26 segnala un guasto (<code>moverobotfailed</code>), si valuta una soluzione a due modelli distinti, ciascuno verificabile separatamente. Il caso nominale resta leggibile come sequenza lineare, mentre il caso di guasto risulta un modello a parte che intercetta l'evento di fallimento indipendentemente dal punto della sequenza in cui si manifesta.</p>
 
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="test-plans">Test plans</h1>
