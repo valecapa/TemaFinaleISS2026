@@ -364,7 +364,7 @@ li { margin-bottom: 4px; }
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="goal">Goal</h1>
 
-<p>Realizzare il sottosistema che gestisce l'accettazione/rifiuto di una richiesta di carico, il timeout dei 30&nbsp;secondi, e l'interazione reale con lo <code>IOPort</code>: pulsante, sensore, display e LED. <code>cargoservice</code> riceve <code>loadrequest</code>, interroga <code>Hold</code>, risponde con <code>loadaccepted</code>/<code>loadrejected</code> e transita da Idle a Engaged; se il timeout scade torna a Idle liberando lo slot.</p>
+<p>Realizzare il sottosistema che gestisce l'accettazione/rifiuto di una richiesta di carico, il timeout dei 30&nbsp;secondi, e l'interazione reale con l' <code>IOPort</code>. <code>cargoservice</code> riceve <code>loadrequest</code>, interroga <code>Hold</code>, risponde con <code>loadaccepted</code>/<code>loadrejected</code> e transita da Idle a Engaged; se il timeout scade torna a Idle liberando lo slot.</p>
 
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="problem-analysis">Problem analysis</h1>
@@ -374,11 +374,11 @@ li { margin-bottom: 4px; }
 <p>A questi componenti essenziali occorre poi analizzare e valutare se è necessario aggiungerne altri.</p>
 
 <h2 id="tecnologia-ioport">Scelta della tecnologia di implementazione dell'IOPort</h2>
-<p>L'IOPort è un nodo architetturale a sé stante rispetto a <code>cargoservice</code>: comunica con l'utente finale, e la sua implementazione non deve necessariamente ricalcare lo stack tecnologico del resto del sistema. Le alternative concretamente valutate per realizzarlo sono state un pannello embedded con touchscreen e firmware proprio, oppure una WebGUI fruibile da browser. Il committente ha indicato una preferenza esplicita per la seconda. La scelta resta comunque coerente: rispetto al pannello, riduce i costi di manutenzione e permette che lo stato della hold sia visualizzabile da più utenti contemporaneamente, senza vincolare la soluzione a un singolo dispositivo fisico.</p>
+<p>L'IOPort è un nodo architetturale a sé stante rispetto a <code>cargoservice</code>: comunica con l'utente finale e la sua implementazione non deve necessariamente ricalcare lo stack tecnologico del resto del sistema. Le alternative concretamente valutate per realizzarlo sono state un pannello embedded con touchscreen e firmware proprio, oppure una WebGUI fruibile da browser. Il committente ha indicato una preferenza esplicita per la seconda. La scelta resta comunque coerente: rispetto al pannello, riduce i costi di manutenzione e permette che lo stato della hold sia visualizzabile da più utenti contemporaneamente, senza vincolare la soluzione a un singolo dispositivo fisico.</p>
 <p>Il costo di questa scelta è una disomogeneità tecnologica che il pannello embedded non avrebbe introdotto: mentre <code>cargoservice</code> e <code>ioport</code> vivono nello stack Kotlin/qak, l'interfaccia utente è codice JavaScript/HTML in esecuzione nel browser, un ambiente che, come discusso di seguito, non parla lo stesso protocollo né lo stesso linguaggio del resto del sistema. Questa eterogeneità viene quindi accettata come costo del requisito multi-utente.</p>
 
-<h2 id="canale-verso-browser">Perché il canale interno di qak non basta, e perché non si fa polling</h2>
-<p>Qak usa TCP come trasporto tra <code>Context</code>: ogni <code>Context</code> apre un socket in ascolto, e il runtime serializza/deserializza gli <code>IApplMessage</code> scambiati tra attori in un formato interno, noto solo alle due estremità qak-qak. Un browser non può costruire né interpretare questo formato, né, più in generale, aprire un socket TCP grezzo: per motivi di sicurezza, il sandboxing dei browser espone a JavaScript solo un insieme ristretto di API di rete (richieste HTTP/HTTPS, WebSocket, e ciò che vi si costruisce sopra), non l'accesso diretto a socket TCP o UDP. È per questo che anche CoAP, che si appoggia su UDP, non è utilizzabile da una pagina web. 
+<h2 id="canale-verso-browser">Perché il canale interno di qak non basta e perché non si fa polling</h2>
+<p>Qak usa TCP come trasporto tra <code>Context</code>: ogni <code>Context</code> apre una socket in ascolto, e il runtime serializza/deserializza gli <code>IApplMessage</code> scambiati tra attori in un formato interno, noto solo alle due estremità qak-qak. Un browser non può costruire né interpretare questo formato, né, più in generale, aprire un socket TCP grezzo: per motivi di sicurezza, il sandboxing dei browser espone a JavaScript solo un insieme ristretto di API di rete (richieste HTTP/HTTPS, WebSocket, e ciò che vi si costruisce sopra), non l'accesso diretto a socket TCP o UDP. È per questo che anche CoAP, che si appoggia su UDP, non è utilizzabile da una pagina web. 
     MQTT è invece raggiungibile da browser solo se il broker espone un bridge MQTT-over-WebSocket: il vero canale attraversato resta comunque una WebSocket.</p>
 <p>Il canale verso il browser va quindi progettato a parte, e deve soddisfare un requisito di aggiornamento in tempo reale: più utenti devono vedere lo stato della hold e l'esito delle richieste non appena cambia. Una prima alternativa scartata è il polling HTTP (il client richiede periodicamente lo stato): introduce latenza tra il cambiamento di stato e la sua visualizzazione, e un carico crescente con il numero di client connessi che interroga il server anche quando nulla è cambiato, inadeguato a un pannello che più clienti potrebbero osservare contemporaneamente. Restano da confrontare i due protocolli effettivamente push e raggiungibili da un browser:</p>
 <table>
@@ -389,12 +389,12 @@ li { margin-bottom: 4px; }
 <p>La scelta ricade su WebSocket proprio perché non introduce un broker: la comunicazione avviene direttamente tra client e server applicativo.</p>
 
 <h2 id="formato-messaggi">Formato dei messaggi</h2>
-<p>L'infrastruttura qak sa già trasformare una stringa ricevuta su una connessione in un messaggio applicativo (<code>IApplMessage</code>): è esattamente ciò che fa quando due attori comunicano via TCP. A rigore, quindi, non è la traduzione in sé il problema di analisi: se il browser inviasse messaggi già nello stesso formato riconosciuto dall'infrastruttura, servirebbe solo un componente che li accolga sulla connessione WebSocket e li consegni alla coda dell'attore, senza alcuna conversione di vocabolario.</p>
+<p>L'infrastruttura qak sa già trasformare una stringa ricevuta su una connessione in un messaggio applicativo (<code>IApplMessage</code>): è esattamente ciò che fa quando due attori comunicano via TCP. A rigore, quindi, non è la traduzione in sé il problema: se il browser inviasse messaggi già nello stesso formato riconosciuto dall'infrastruttura, servirebbe solo un componente che li accolga sulla connessione WebSocket e li consegni alla coda dell'attore, senza alcuna conversione.</p>
 <p>Ciò che l'analisi deve garantire è che le due estremità del canale (la pagina web e <code>ioport</code>) si accordino su un formato condiviso in cui rappresentare i comandi che la GUI può inviare. Se questo formato condiviso coincide con quello nativo di qak non serve alcuna conversione; se invece si adotta, per il lato browser, un vocabolario applicativo più minimale, diventa necessario un passo di mappatura tra i due.</p>
 
 <h2 id="componente-ponte">Il componente ponte tra WebSocket e attore</h2>
 <p>Il protocollo WebSocket introduce un vincolo indipendente dal formato dei messaggi: la libreria che lo implementa gestisce ogni connessione sul proprio thread, distinto da quello su cui gira il ciclo di esecuzione di <code>ioport</code>. Il modello ad attori di qak richiede che lo stato di un attore sia modificato esclusivamente dal thread dell'attore stesso, in risposta ai messaggi sulla propria coda: nessun altro thread può invocare direttamente metodi che ne alterino lo stato. Un messaggio WebSocket in arrivo sul thread del server non può quindi tradursi in una chiamata diretta su <code>ioport</code>. 
-    Serve dunque un componente dedicato che riceva l'evento sul proprio thread e lo consegni alla coda dell'attore tramite <code>sendMsgToMyself</code>, l'unico canale ammesso. Questo componente, <code>IOPortWsAdapter</code>, non è un attore qak: è un oggetto Java di proprietà esclusiva di <code>ioport</code>, che lo istanzia alla propria creazione passandogli un riferimento a se stesso. Esso vive interamente dentro il nodo <code>ioport</code> e non comunica in alcun modo, né diretto né indiretto, con <code>cargoservice</code> o con altri attori: è <code>ioport</code>, come già discusso, a occuparsi dello scambio dei messaggi.</p>
+    Serve dunque un componente dedicato che riceva l'evento sul proprio thread e lo consegni alla coda dell'attore tramite <code>sendMsgToMyself</code>, l'unico canale ammesso. Questo componente, <a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/utils/cargoservice/IOPortWsAdapter.java"><code>IOPortWsAdapter</code></a>, non è un attore qak: è un oggetto Java di proprietà esclusiva di <code>ioport</code>, che lo istanzia alla propria creazione passandogli un riferimento a se stesso. Esso vive interamente dentro il nodo <code>ioport</code> e non comunica in alcun modo, né diretto né indiretto, con <code>cargoservice</code> o con altri attori: è <code>ioport</code>, come già discusso, a occuparsi dello scambio dei messaggi.</p>
 
 <h2 id="context-unico">Context unico per Sprint1</h2>
 <p><code>cargoservice</code> e <code>ioport</code> sono stati mantenuti all'interno dello stesso <code>Context ctxcargoservice</code>, scelta di semplificazione esplicitamente temporanea: la separazione dei Context per nodo fisico è demandata allo Sprint2.</p>
@@ -416,7 +416,7 @@ li { margin-bottom: 4px; }
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="project">Project</h1>
 
-<p>Il sistema è descritto interamente da <a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint1.qak">sprint1.qak</a>, unica fonte da cui il toolchain qak genera il codice Kotlin degli attori — le classi in <code>it.unibo.cargoservice</code>/<code>it.unibo.ioport</code> non sono scritte a mano.</p>
+<p>Il sistema è descritto interamente da <a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint1.qak">sprint1.qak</a>, unica fonte da cui il toolchain qak genera il codice Kotlin degli attori; le classi in <code>it.unibo.cargoservice</code>/<code>it.unibo.ioport</code> non sono scritte a mano.</p>
 <div class="code-wrapper">
     <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint1.qak">sprint1.qak</a></div>
     <pre>Request loadrequest  : loadrequest(OCCUPIED)
@@ -432,7 +432,7 @@ Context ctxcargoservice ip [host="localhost" port=8050]</pre>
 <p><code>loadrequest</code> è la request/reply tra <code>ioport</code> e <code>cargoservice</code>; <code>pushButton</code> e <code>setOccupied</code> sono i dispatch che l'adapter inietta in <code>ioport</code> per conto del browser; <code>updateDisplay</code> è l'unico dispatch con cui <code>cargoservice</code> comunica a <code>ioport</code> un aggiornamento da mostrare, qualunque ne sia l'origine.</p>
 
 <h2 id="proj-cargoservice">cargoservice</h2>
-<p>Incapsula la stiva tramite <code>withobj hold using "utils.cargoservice.Hold()"</code>. Alla ricezione di <code>loadrequest</code>: rifiuta <code>retrylater</code> se occupato, altrimenti tenta <code>hold.reserveFirstFree()</code> e se riesce risponde <code>loadaccepted</code>. <code>Transition t1 whenTime 30000 -> disengaged</code> è il timeout che rilascia lo slot inoltra esplicitamente a <code>ioport</code> un <code>updateDisplay</code>; il timeout è un'iniziativa autonoma (dispatch) di <code>cargoservice</code>, non una risposta (reply)a qualcosa che <code>ioport</code> ha chiesto.</p>
+<p>Incapsula la <code>Hold</code> tramite <code>withobj hold using "utils.cargoservice.Hold()"</code>. Alla ricezione di <code>loadrequest</code>: rifiuta <code>retrylater</code> se occupato, altrimenti tenta <code>hold.reserveFirstFree()</code> e se riesce risponde <code>loadaccepted</code>. <code>Transition t1 whenTime 30000 -> disengaged</code> è il timeout che rilascia lo slot e inoltra esplicitamente a <code>ioport</code> un <code>updateDisplay</code>; il timeout è un'iniziativa autonoma (dispatch) di <code>cargoservice</code>, non una risposta (reply)a qualcosa che <code>ioport</code> ha chiesto.</p>
 <div class="code-wrapper">
     <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint1.qak">sprint1.qak</a></div>
     <pre>State handleRequest {
@@ -567,14 +567,13 @@ private void sendToActor(String msgId, String content) {
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="sprint2">Definizione dello Sprint2</h1>
 
-<p>Lo Sprint1 ha chiuso il core business (accettazione/rifiuto, timeout, IOPort come attore reale collegato a una GUI). Lo Sprint2 dovrà estendere il sistema con i componenti rimasti fuori da Sprint1:</p>
+<p>Lo Sprint2 dovrà:</p>
 
 <div class="req">
 <ul>
-    <li>Introdurre l'attore <code>sonar</code>: emissione degli eventi <code>sonarcontainer</code>/<code>sonarfault</code> a partire dalle letture di distanza, e gestione dello stato <em>Out of service</em> (D&nbsp;&gt;&nbsp;DFREE per almeno 3&nbsp;s) sul display dello IOPort.</li>
     <li>Progettare e realizzare l'attore <code>cargorobot</code>, che orchestra il movimento del DDR appoggiandosi al servizio esterno <code>RobotSmart26</code>: raggiungere l'IOPort, prelevare il container, passare da <code>slot5</code> (marcatura) allo slot riservato, tornare in HOME.</li>
     <li>Modellare il <code>marker</code>: segnalazione (interna al nodo <code>cargoservice</code>) del completamento della marcatura in <code>slot5</code>, prima che il robot possa prelevare il container.</li>
-    <li>Separare i Context per nodo fisico (<code>cargoservice</code>, <code>cargorobot</code>, <code>sonar</code>, <code>ioport</code>), oggi ancora unificati in <code>ctxcargoservice</code> per semplicità.</li>
+    <li>Separare i Context per nodo fisico (<code>cargoservice</code>, <code>cargorobot</code>, <code>ioport</code>), oggi ancora unificati in <code>ctxcargoservice</code> per semplicità.</li>
 </ul>
 </div>
 
