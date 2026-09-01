@@ -411,13 +411,11 @@ li { margin-bottom: 4px; }
 
 <p>Si sceglie <code>moverobot</code> come comando primario di movimento: le quattro tratte che <code>cargorobot</code> deve percorrere (HOME→IOPort, IOPort→slot5, slot5→slot riservato, slot riservato→HOME) sono verso coordinate fisse e note in anticipo, per cui non c'è alcun bisogno di intervenire sul piano calcolato. <code>cargorobot</code> si riduce così, per la parte di movimento, a un semplice invocatore sequenziale di <code>moverobot</code>, coerentemente con la scelta di RobotSmart26 fatta in Sprint0 proprio per minimizzare la logica di movimentazione a carico nostro.</p>
 
+<h2 id="cargorobot-modelli">Caso nominale e caso di guasto per cargorobot</h2>
+<p>Considerando il problema su come si rappresenta il comportamento di <code>cargorobot</code> quando RobotSmart26 segnala un guasto (<code>moverobotfailed</code>), si valuta una soluzione a due modelli distinti, ciascuno verificabile separatamente. Il caso nominale resta leggibile come sequenza lineare, mentre il caso di guasto risulta un modello a parte che intercetta l'evento di fallimento indipendentemente dal punto della sequenza in cui si manifesta.</p>
+
 <h2 id="marker-sincronizzazione">Il marker</h2>
 <p>Come già stabilito in Sprint0, il <code>marker</code> è logicamente parte del nodo <code>cargoservice</code>: quando <code>cargorobot</code> deposita il container in <code>slot5</code>, il marker applica il barcode e, dopo qualche secondo, segnala il completamento con un messaggio interno al nodo. Il problema di analisi è: come evitare che <code>cargorobot</code> prelevi il container da <code>slot5</code> prima che la marcatura sia completata?</p>
-
-<div class="domanda">
-    <strong>Domanda al committente:</strong> il marker è un'entità reattiva a sé stante, con un proprio comportamento (attende, poi segnala), oppure è più corretto modellarlo come dato passivo gestito da <code>cargoservice</code>, analogamente a <code>Hold</code>?<br>
-    <strong>Risposta:</strong> come per <code>sonar</code> e <code>ioport</code> già in Sprint0, la natura del marker è di reagire autonomamente al trascorrere del tempo di marcatura e di generare una notifica di propria iniziativa, senza che nulla lo solleciti a farlo: per lo stesso criterio di classificazione già usato in Sprint0 (entità reattive → QActor, dati passivi → POJO), il marker va modellato come QActor a sé stante all'interno del nodo <code>cargoservice</code>, non come struttura dati passiva incapsulata come <code>Hold</code>.
-</div>
 
 <p>Restano quindi da valutare le alternative con cui <code>cargorobot</code> può accertarsi che la marcatura sia conclusa:</p>
 <table>
@@ -426,9 +424,6 @@ li { margin-bottom: 4px; }
 <tr><td>Notifica su richiesta bloccante</td><td><code>cargorobot</code>, una volta depositato il container, invia una <code>request waitMarker()</code> e resta nel proprio automa in attesa della <code>reply</code> corrispondente: nessuna azione da parte sua finché la marcatura non è conclusa, nessuna conoscenza della logica interna del marker.</td></tr>
 </table>
 <p>Si adotta la notifica su richiesta bloccante: coerentemente con il modello ad attori (Sprint0), ogni entità reagisce a messaggi sulla propria coda senza polling attivo, ed è naturale che sia <code>cargoservice</code> (che racchiude il marker) a notificare <code>cargorobot</code> quando pronto, piuttosto che <code>cargorobot</code> debba indagare direttamente lo stato di un componente che non gli appartiene concettualmente e che vive fisicamente in un altro nodo (si veda la separazione dei Context più sotto).</p>
-
-<h2 id="cargorobot-modelli">Caso nominale e caso di guasto per cargorobot</h2>
-<p>Considerando il problema su come si rappresenta il comportamento di <code>cargorobot</code> quando RobotSmart26 segnala un guasto (<code>moverobotfailed</code>), si valuta una soluzione a due modelli distinti, ciascuno verificabile separatamente. Il caso nominale resta leggibile come sequenza lineare, mentre il caso di guasto risulta un modello a parte che intercetta l'evento di fallimento indipendentemente dal punto della sequenza in cui si manifesta.</p>
 
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="test-plans">Test plans</h1>
