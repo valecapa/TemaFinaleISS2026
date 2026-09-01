@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cargoservice — Sprint1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --h1-bg:   #f0e6ff;
+    --h2-bg:   #fce4f0;
+    --h3-bg:   #f9e0f5;
+    --h4-bg:   #fdf0f8;
+    --req-bg:  #fef0fb;
+    --req-border: #d484b8;
+    --domanda-bg:  #d2e6f4;
+    --domanda-border: #5caaeb;
+    --rem-bg:  #f8eaff;
+    --rem-border: #c9a0e0;
+    --code-bg: #fdf8ff;
+    --code-border: #dfc8e8;
+    --text:    #1e1a2e;
+    --text-muted: #5a4a6a;
+    --accent:  #7b3fa0;
+    --link:    #6b3a8a;
+    --body-bg: #fdf9ff;
+    --radius:  8px;
+    --font-body: 'DM Sans', sans-serif;
+    --font-head: 'Lora', Georgia, serif;
+    --font-code: 'Source Code Pro', 'Consolas', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--body-bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.page-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 36px 60px;
+}
+
+/* ── top banner ── */
+#top {
+    background: linear-gradient(135deg, #7b2fa0 0%, #b060c8 45%, #e080b0 80%, #f4a8cc 100%);
+    padding: 32px 36px 28px;
+    margin-bottom: 0;
+    position: relative;
+    overflow: hidden;
+}
+#top::after {
+    content: '';
+    position: absolute;
+
+    top: -80px;
+    right: -20px;
+
+    width: 300px;
+    height: 300px;
+
+    background-image: url('../img/boat.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    opacity: 0.7;
+}
+#top h1 {
+    color: #fff;
+    font-family: var(--font-head);
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 12px rgba(80,0,60,0.25);
+}
+#top .subtitle {
+    color: rgba(255,255,255,0.80);
+    font-size: 0.85rem;
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* ── section nav strip ── */
+.toc-strip {
+    background: #fff;
+    border-bottom: 2px solid #e8c8f4;
+    padding: 10px 36px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.toc-strip a {
+    color: var(--accent);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+}
+.toc-strip a:hover { opacity: 1; text-decoration: underline; }
+
+/* ── typography ── */
+h1 {
+    font-family: var(--font-head);
+    font-size: 1.55rem;
+    font-weight: 700;
+    background: var(--h1-bg);
+    color: #3a1a5a;
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    margin: 36px 0 14px;
+    border-left: 5px solid #9a5fc8;
+    letter-spacing: 0.01em;
+}
+h2 {
+    font-family: var(--font-head);
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: var(--h2-bg);
+    color: #6a1a40;
+    border-radius: var(--radius);
+    margin: 24px 0 10px;
+    padding: 6px 15px;
+    line-height: 1.3;
+    border-left: 4px solid #d060a0;
+}
+h3 {
+    font-family: var(--font-head);
+    font-size: 1.05rem;
+    font-weight: 600;
+    background: var(--h3-bg);
+    color: #6a1860;
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    margin: 22px 0 10px;
+    border-left: 3px solid #c870b8;
+}
+h4 {
+    background: var(--h4-bg);
+    font-size: 0.97rem;
+    font-weight: 600;
+    border-radius: 5px;
+    padding: 5px 12px;
+    margin: 18px 0 8px;
+    width: 95%;
+    border-left: 3px solid #d890c0;
+}
+
+p { margin: 0 0 12px; }
+
+a, a:visited, a:active, a:link {
+    color: var(--link);
+    text-decoration: underline;
+    font-size: 93%;
+}
+a:hover { background: #f4e0f8; border-radius: 3px; }
+
+/* ── code blocks ── */
+pre {
+    font-family: var(--font-code);
+    font-size: 0.88rem;
+    background: #fff9fc;
+    color: #4a3b46;
+    border: 1px solid #f1d7ea;
+    border-left: 5px solid #d87bc4;
+    border-radius: 16px;
+    padding: 18px 22px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.55;
+    margin: 14px 0 22px;
+    box-shadow: 0 4px 14px rgba(216,123,196,0.08), inset 0 1px 2px rgba(255,255,255,0.7);
+}
+
+code {
+    font-family: var(--font-code);
+    font-size: 90%;
+    background: #fdf0fa;
+    color: #7a006a;
+    border-radius: 4px;
+    padding: 1px 5px;
+}
+.code-wrapper {
+    position: relative;
+    margin: 14px 0 22px;
+}
+
+.code-source {
+    position: absolute;
+    top: 8px;
+    right: 14px;
+    font-family: var(--font-code);
+    font-size: 0.72rem;
+    color: #8a6a8f;
+    background: #fff9fc;
+    padding: 2px 6px;
+    border-radius: 4px;
+    z-index: 1;
+}
+
+.code-wrapper pre {
+    margin: 0;
+    padding-top: 38px;
+}
+/* ── requirement box ── */
+div.req {
+    background: var(--req-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--req-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.req::before {
+    content: 'Requisiti';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a3880;
+    margin-bottom: 8px;
+}
+
+/* ── domanda box ── */
+div.domanda {
+    background: var(--domanda-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--domanda-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.domanda::before {
+    content: 'Domanda al committente:';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #1a6aab;
+    margin-bottom: 6px;
+}
+
+
+
+/* ── tables ── */
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th { background: #f0e0f8; color: #3a1a5a; font-weight: 600; }
+th, td { border: 1px solid #e0c8ec; padding: 8px 12px; font-size: 0.9rem; }
+tr:nth-child(even) td { background: #fdf6ff; }
+
+img { border: 1.5px solid #e8d0f4; border-radius: 6px; max-width: 100%; }
+
+/* ── footer ── */
+.footer {
+    background: linear-gradient(90deg, rgba(140,50,180,0.85), rgba(200,90,150,0.75));
+    color: #fff;
+    padding: 18px 24px;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    margin-top: 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.footer-authors {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.footer-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.footer-author img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.footer-author-initials {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.footer-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,0.3);
+}
+.footer a { color: #f4d0ff; }
+
+div.body { font-size: 1rem; }
+hr { clear: both; height: 1px; background: #e8d0f0; border: none; margin: 24px 0; }
+ol, ul { margin: 0 0 12px 20px; padding: 0; }
+li { margin-bottom: 4px; }
+
+@media (max-width: 600px) {
+    .page-wrap { padding: 0 16px 40px; }
+    #top { padding: 22px 16px 18px; }
+    .toc-strip { padding: 8px 16px; gap: 12px; }
+    .footer-divider { display: none; }
+}
+
+@media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="top">
+    <h1>Cargoservice — Sprint1</h1>
+    <div class="subtitle">ISS 2026 — Valeria Capacci &amp; Ginevra Pentoli</div>
+</div>
+
+<div class="toc-strip">
+    <a href="#goal">Goal</a>
+    <a href="#problem-analysis">Problem analysis</a>
+    <a href="#test-plans">Test plans</a>
+    <a href="#project">Project</a>
+    <a href="#deployment">Deployment</a>
+    <a href="#sprint2">Sprint2</a>
+</div>
+
+<div class="page-wrap">
+<div class="body">
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="goal">Goal</h1>
+
+<p>Realizzare il sottosistema che gestisce l'accettazione/rifiuto di una richiesta di carico, il timeout dei 30&nbsp;secondi, e l'interazione reale con lo <code>IOPort</code>: pulsante, sensore, display e LED. <code>cargoservice</code> riceve <code>loadrequest</code>, interroga <code>Hold</code>, risponde con <code>loadaccepted</code>/<code>loadrejected</code> e transita da Idle a Engaged; se il timeout scade torna a Idle liberando lo slot.</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="problem-analysis">Problem analysis</h1>
+
+<h2 id="componenti-necessari">Individuazione dei componenti necessari</h2>
+<p><code>cargoservice</code> deve reagire a vari tipi di richieste: deve rispondere sia alla pressione del pulsante sia al semplice scadere del tempo, nessuna delle due cosa ottenibile da un oggetto passivo. Per questo motivo, scegliamo di rappresentarlo come un QActor, come già discusso precedentemente nello Sprint0.<br> Per lo stesso motivo <code>ioport</code>, che gestisce l'interazione con il cliente, è anch'esso un attore: riceve stimoli da due direzioni indipendenti: invia notifiche da parte del cliente (es. pulsante premuto) e riceve (e gestisce) le notifiche inviate da <code>cargoservice</code> (es. esito della loadrequest).</p>
+<p>A questi componenti essenziali occorre poi analizzare e valutare se è necessario aggiungerne altri.</p>
+
+<h2 id="tecnologia-ioport">Scelta della tecnologia di implementazione dell'IOPort</h2>
+<p>L'IOPort è un nodo architetturale a sé stante rispetto a <code>cargoservice</code>: comunica con l'utente finale, e la sua implementazione non deve necessariamente ricalcare lo stack tecnologico del resto del sistema. Le alternative concretamente valutate per realizzarlo sono state un pannello embedded con touchscreen e firmware proprio, oppure una WebGUI fruibile da browser. Il committente ha indicato una preferenza esplicita per la seconda. La scelta resta comunque coerente: rispetto al pannello, riduce i costi di manutenzione e permette che lo stato della hold sia visualizzabile da più utenti contemporaneamente, senza vincolare la soluzione a un singolo dispositivo fisico.</p>
+<p>Il costo di questa scelta è una disomogeneità tecnologica che il pannello embedded non avrebbe introdotto: mentre <code>cargoservice</code> e <code>ioport</code> vivono nello stack Kotlin/qak, l'interfaccia utente è codice JavaScript/HTML in esecuzione nel browser, un ambiente che, come discusso di seguito, non parla lo stesso protocollo né lo stesso linguaggio del resto del sistema. Questa eterogeneità viene quindi accettata come costo del requisito multi-utente.</p>
+
+<h2 id="canale-verso-browser">Perché il canale interno di qak non basta, e perché non si fa polling</h2>
+<p>Qak usa TCP come trasporto tra <code>Context</code>: ogni <code>Context</code> apre un socket in ascolto, e il runtime serializza/deserializza gli <code>IApplMessage</code> scambiati tra attori in un formato interno, noto solo alle due estremità qak-qak. Un browser non può costruire né interpretare questo formato, né, più in generale, aprire un socket TCP grezzo: per motivi di sicurezza, il sandboxing dei browser espone a JavaScript solo un insieme ristretto di API di rete (richieste HTTP/HTTPS, WebSocket, e ciò che vi si costruisce sopra), non l'accesso diretto a socket TCP o UDP. È per questo che anche CoAP, che si appoggia su UDP, non è utilizzabile da una pagina web. 
+    MQTT è invece raggiungibile da browser solo se il broker espone un bridge MQTT-over-WebSocket: il vero canale attraversato resta comunque una WebSocket.</p>
+<p>Il canale verso il browser va quindi progettato a parte, e deve soddisfare un requisito di aggiornamento in tempo reale: più utenti devono vedere lo stato della hold e l'esito delle richieste non appena cambia. Una prima alternativa scartata è il polling HTTP (il client richiede periodicamente lo stato): introduce latenza tra il cambiamento di stato e la sua visualizzazione, e un carico crescente con il numero di client connessi che interroga il server anche quando nulla è cambiato, inadeguato a un pannello che più clienti potrebbero osservare contemporaneamente. Restano da confrontare i due protocolli effettivamente push e raggiungibili da un browser:</p>
+<table>
+<tr><th>Alternativa</th><th>Limite rispetto al caso d'uso</th></tr>
+<tr><td>MQTT (via bridge WebSocket)</td><td>modello publish/subscribe, richiede un broker come componente architetturale aggiuntivo; la bidirezionalità punto-a-punto richiesta qui (comando dal client, risposta al sistema) è ottenibile solo simulandola con due topic distinti</td></tr>
+<tr><td>WebSocket</td><td>canale full-duplex nativo su una singola connessione TCP, senza componenti architetturali aggiuntivi: il server emette un aggiornamento non appena pronto, senza che il client debba richiederlo</td></tr>
+</table>
+<p>La scelta ricade su WebSocket proprio perché non introduce un broker: la comunicazione avviene direttamente tra client e server applicativo.</p>
+
+<h2 id="formato-messaggi">Formato dei messaggi</h2>
+<p>L'infrastruttura qak sa già trasformare una stringa ricevuta su una connessione in un messaggio applicativo (<code>IApplMessage</code>): è esattamente ciò che fa quando due attori comunicano via TCP. A rigore, quindi, non è la traduzione in sé il problema di analisi: se il browser inviasse messaggi già nello stesso formato riconosciuto dall'infrastruttura, servirebbe solo un componente che li accolga sulla connessione WebSocket e li consegni alla coda dell'attore, senza alcuna conversione di vocabolario.</p>
+<p>Ciò che l'analisi deve garantire è che le due estremità del canale (la pagina web e <code>ioport</code>) si accordino su un formato condiviso in cui rappresentare i comandi che la GUI può inviare. Se questo formato condiviso coincide con quello nativo di qak non serve alcuna conversione; se invece si adotta, per il lato browser, un vocabolario applicativo più minimale, diventa necessario un passo di mappatura tra i due.</p>
+
+<h2 id="componente-ponte">Il componente ponte tra WebSocket e attore</h2>
+<p>Il protocollo WebSocket introduce un vincolo indipendente dal formato dei messaggi: la libreria che lo implementa gestisce ogni connessione sul proprio thread, distinto da quello su cui gira il ciclo di esecuzione di <code>ioport</code>. Il modello ad attori di qak richiede che lo stato di un attore sia modificato esclusivamente dal thread dell'attore stesso, in risposta ai messaggi sulla propria coda: nessun altro thread può invocare direttamente metodi che ne alterino lo stato. Un messaggio WebSocket in arrivo sul thread del server non può quindi tradursi in una chiamata diretta su <code>ioport</code>. 
+    Serve dunque un componente dedicato che riceva l'evento sul proprio thread e lo consegni alla coda dell'attore tramite <code>sendMsgToMyself</code>, l'unico canale ammesso. Questo componente, <code>IOPortWsAdapter</code>, non è un attore qak: è un oggetto Java di proprietà esclusiva di <code>ioport</code>, che lo istanzia alla propria creazione passandogli un riferimento a se stesso. Esso vive interamente dentro il nodo <code>ioport</code> e non comunica in alcun modo, né diretto né indiretto, con <code>cargoservice</code> o con altri attori: è <code>ioport</code>, come già discusso, a occuparsi dello scambio dei messaggi.</p>
+
+<h2 id="context-unico">Context unico per Sprint1</h2>
+<p><code>cargoservice</code> e <code>ioport</code> sono stati mantenuti all'interno dello stesso <code>Context ctxcargoservice</code>, scelta di semplificazione esplicitamente temporanea: la separazione dei Context per nodo fisico è demandata allo Sprint2.</p>
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="test-plans">Test plans</h1>
+
+<p>Per lo Sprint1 ci concentriamo sul verificare che, a fronte di un input noto (un messaggio inviato all'attore), il sistema produca l'output atteso (una reply o un aggiornamento del display), indipendentemente da come è implementato internamente. Ogni caso di test corrisponde quindi a una sequenza osservabile di messaggi qak, verificabile leggendo la reply ricevuta da <code>cargoservice</code> o il payload broadcast da <code>IOPortWsAdapter</code> verso i client WebSocket.</p>
+
+<table>
+<tr><th>Caso</th><th>Precondizione</th><th>Azione</th><th>Risultato atteso</th></tr>
+<tr><td>Richiesta accettata</td><td>almeno uno slot <code>FREE</code> in <code>hold</code>; sensore non occupato</td><td><code>pushButton</code> su <code>ioport</code></td><td><code>cargoservice</code> risponde <code>loadaccepted(SLOT,HOLD)</code> con uno <code>SLOT</code> valido; transita da <code>idle</code> a <code>engaged</code>; il display mostra "Richiesta accettata - slot X"</td></tr>
+<tr><td>Rifiuto: retrylater</td><td>sensore forzato a occupato (<code>setOccupied(true)</code>)</td><td><code>pushButton</code></td><td><code>loadrejected(retrylater,HOLD)</code>; il display mostra "Richiesta rifiutata: retrylater"</td></tr>
+<tr><td>Rifiuto: full</td><td>tutti e 4 gli slot già <code>RESERVED</code>/<code>OCCUPIED</code> (4 richieste precedenti accettate)</td><td><code>pushButton</code> con sensore libero</td><td><code>loadrejected(full,HOLD)</code></td></tr>
+<tr><td>Timeout dei 30&nbsp;s</td><td>richiesta appena accettata, <code>cargoservice</code> nello stato <code>engaged</code></td><td>nessuna interazione per 30000&nbsp;ms (<code>Transition t1 whenTime</code>)</td><td><code>cargoservice</code> rilascia lo slot (<code>hold.releaseReserved()</code>), torna <code>idle</code> e invia a <code>ioport</code> un <code>updateDisplay</code> con stato <code>IDLE</code> e messaggio "Timeout scaduto: slot liberato, torno idle"</td></tr>
+</table>
+
+<p>Trattandosi di un sistema che espone la propria interazione tramite un pannello GUI, i casi sono al momento eseguibili manualmente dal pannello di controllo, osservando le reply e i log colorati prodotti dagli attori.</p>
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="project">Project</h1>
+
+<p>Il sistema è descritto interamente da <a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint1.qak">sprint1.qak</a>, unica fonte da cui il toolchain qak genera il codice Kotlin degli attori — le classi in <code>it.unibo.cargoservice</code>/<code>it.unibo.ioport</code> non sono scritte a mano.</p>
+<div class="code-wrapper">
+    <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint1.qak">sprint1.qak</a></div>
+    <pre>Request loadrequest  : loadrequest(OCCUPIED)
+Reply   loadaccepted : loadaccepted(SLOT,HOLD) for loadrequest
+Reply   loadrejected : loadrejected(REASON,HOLD) for loadrequest
+
+Dispatch pushButton    : pushButton(NONE)
+Dispatch setOccupied   : setOccupied(FLAG)
+Dispatch updateDisplay : updateDisplay(STATE,HOLD,MSG)
+
+Context ctxcargoservice ip [host="localhost" port=8050]</pre>
+</div>
+<p><code>loadrequest</code> è la request/reply tra <code>ioport</code> e <code>cargoservice</code>; <code>pushButton</code> e <code>setOccupied</code> sono i dispatch che l'adapter inietta in <code>ioport</code> per conto del browser; <code>updateDisplay</code> è l'unico dispatch con cui <code>cargoservice</code> comunica a <code>ioport</code> un aggiornamento da mostrare, qualunque ne sia l'origine.</p>
+
+<h2 id="proj-cargoservice">cargoservice</h2>
+<p>Incapsula la stiva tramite <code>withobj hold using "utils.cargoservice.Hold()"</code>. Alla ricezione di <code>loadrequest</code>: rifiuta <code>retrylater</code> se occupato, altrimenti tenta <code>hold.reserveFirstFree()</code> e se riesce risponde <code>loadaccepted</code>. <code>Transition t1 whenTime 30000 -> disengaged</code> è il timeout che rilascia lo slot inoltra esplicitamente a <code>ioport</code> un <code>updateDisplay</code>; il timeout è un'iniziativa autonoma (dispatch) di <code>cargoservice</code>, non una risposta (reply)a qualcosa che <code>ioport</code> ha chiesto.</p>
+<div class="code-wrapper">
+    <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint1.qak">sprint1.qak</a></div>
+    <pre>State handleRequest {
+    onMsg(loadrequest : loadrequest(X)) {
+        [# Occupied = payloadArg(0).toBoolean() #]
+        if [# Occupied == true #] {
+            replyTo loadrequest with loadrejected : loadrejected(retrylater,$H)
+        } else {
+            [# Slot = hold.reserveFirstFree() #]
+            if [# Slot != -1 #] {
+                replyTo loadrequest with loadaccepted : loadaccepted($Slot,$H2)
+            } else {
+                replyTo loadrequest with loadrejected : loadrejected(full,$H)
+            }
+        }
+    }
+}
+Goto engaged if [# Slot != -1 && Occupied == false #] else idle
+
+State disengaged {
+    [# hold.releaseReserved() #]
+    [# var S = "'IDLE'" #]
+    [# var M = "'Timeout scaduto: slot liberato, torno idle'" #]
+    forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+    [# Slot = -1 #]
+}
+Goto idle</pre>
+</div>
+<p>Il LED fisico non è ancora un'interazione qak modellata: nei due punti in cui andrebbe acceso/spento, il codice si limita per ora a un <code>println("LED PicoW -> on/off")</code>, in attesa del microcontrollore reale che verrà sviluppato nello Sprint2.</p>
+
+
+<h2 id="proj-ioport">ioport</h2>
+<p>Reagisce a tre soli dispatch (<code>pushButton</code>, <code>setOccupied</code>, <code>updateDisplay</code>), oltre alle reply di <code>cargoservice</code>. Il flag di occupazione è incapsulato in <a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/utils/cargoservice/IOPortStatus.java">IOPortStatus.java</a>. Alla pressione del pulsante genera la <code>loadrequest</code> leggendo quel campo:</p>
+<div class="code-wrapper">
+    <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint1.qak">sprint1.qak</a></div>
+    <pre>State onButtonPressed {
+    onMsg(pushButton : pushButton(X)) {
+        [# var Occ = status.isOccupied() #]
+        request cargoservice -m loadrequest : loadrequest($Occ)
+    }
+}</pre>
+</div>
+<p>Ricevuta la reply, costruisce lei stessa il messaggio (stato) da mostrare e chiama l'adapter.</p>
+<div class="code-wrapper">
+    <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint1.qak">sprint1.qak</a></div>
+    <pre>State showAccepted {
+    onMsg(loadaccepted : loadaccepted(SLOT,HOLD)) {
+        [# WsAdapter.updateDisplay("ENGAGED", H, "Richiesta accettata - slot " + S) #]
+    }
+}
+Goto idle
+
+State onUpdateDisplay {
+    onMsg(updateDisplay : updateDisplay(STATE,HOLD,MSG)) {
+        [# WsAdapter.updateDisplay(S, H, M) #]
+    }
+}
+Goto idle</pre>
+</div>
+<p>L'attore istanzia l'adapter nel proprio stato iniziale, passandogli un riferimento a se stesso e la porta HTTP:</p>
+<div class="code-wrapper">
+    <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint1.qak">sprint1.qak</a></div>
+    <pre>QActor ioport context ctxcargoservice
+    withobj status using "utils.cargoservice.IOPortStatus()" {
+
+    [# var WsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070) #]</pre>
+</div>
+
+<h2 id="proj-adapter">IOPortWsAdapter</h2>
+<p>Il costruttore avvia un server Javalin che serve la GUI statica ed espone l'endpoint <code>/ws/ioport</code>, visualizzabile da tutti i clienti attraverso un broadcast:</p>
+<div class="code-wrapper">
+    <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/utils/cargoservice/IOPortWsAdapter.java">IOPortWsAdapter.java</a></div>
+    <pre>app.ws("/ws/ioport", ws -> {
+    ws.onConnect(ctx -> clients.add(ctx));
+    ws.onClose(ctx -> clients.remove(ctx));
+    ws.onMessage(ctx -> handleClientMessage(ctx.message()));
+});</pre>
+</div>
+<p>Per quanto riguarda il formato dei messaggi condivisi, invece del formato nativo di <code>IApplMessage</code>, si è scelto un envelope JSON minimale con un solo campo discriminante <code>type</code>, motivato dalla leggerezza e dal parsing nativo in JavaScript (<code>JSON.parse</code>, senza librerie). Questa scelta implementativa rende necessario il passo di mappatura verso il dispatch qak, che <code>toDispatch</code> esegue:</p>
+<div class="code-wrapper">
+    <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/utils/cargoservice/IOPortWsAdapter.java">IOPortWsAdapter.java</a></div>
+    <pre>static String[] toDispatch(String raw) throws Exception {
+    JSONObject json = (JSONObject) new JSONParser().parse(raw);
+    String type = (String) json.get("type");
+    if ("pushButton".equals(type)) {
+        return new String[] { "pushButton", "pushButton(0)" };
+    } else if ("setOccupied".equals(type)) {
+        boolean value = Boolean.TRUE.equals(json.get("value"));
+        return new String[] { "setOccupied", "setOccupied(" + value + ")" };
+    }
+    throw new IllegalArgumentException("unknown message type: " + type);
+}
+
+private void sendToActor(String msgId, String content) {
+    IApplMessage dispatch = CommUtils.buildDispatch(SENDER, msgId, content, IOPORT_NAME);
+    ioport.sendMsgToMyself(dispatch);
+}</pre>
+</div>
+<p>Nella direzione opposta non c'è questo problema: <code>updateDisplay</code>/<code>notifySensor</code> sono chiamate dirette e sincrone da <code>ioport</code> (è l'attore a tenere l'iniziativa dal proprio thread), ciascuna trasmessa in broadcast a tutti i client connessi.</p>
+
+<h2 id="proj-gui">GUI</h2>
+<p><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/main/resources/page/ioport_gui.html">ioport_gui.html</a> e <a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/main/resources/page/wscontrol.js">wscontrol.js</a> non contengono logica di business: inviano i due soli comandi previsti, e aggiornano il DOM in base al tipo di messaggio ricevuto in broadcast.</p>
+<div class="code-wrapper">
+    <div class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/main/resources/page/wscontrol.js">wscontrol.js</a></div>
+    <pre>btn.addEventListener('click', () => {
+  socket.send(JSON.stringify({ type: 'pushButton' }));
+  startTimer();
+});</pre>
+</div>
+<p>Il countdown avviato da <code>startTimer()</code> è puramente rappresentativo: disabilita il pulsante lato client, ma non è la fonte di verità del timeout, gestito interamente lato server dalla <code>Transition t1 whenTime 30000</code> vista sopra. Un client disconnesso o in ritardo non può quindi disallineare lo stato reale del sistema; alla riconnessione (ritentata ogni 2&nbsp;s) riparte da uno stato neutro finché non arriva il prossimo <code>display</code> in broadcast.</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="deployment">Deployment</h1>
+
+<p>Il progetto si avvia dalla cartella <code>sprint1</code> tramite <code>gradlew run</code></p>
+
+<p>Il sistema espone due porte distinte, con responsabilità separate:</p>
+
+<table>
+<tr><th>Porta</th><th>Componente</th><th>Funzione</th></tr>
+<tr><td>8050</td><td><code>Context ctxcargoservice</code></td><td>porta di infrastruttura del Context qak, riservata all'eventuale comunicazione remota tra attori; non utilizzata nello Sprint1 poiché <code>cargoservice</code> e <code>ioport</code> condividono lo stesso Context</td></tr>
+<tr><td>7070</td><td>Server Javalin embedded (<code>IOPortWsAdapter</code>, istanziato dall'attore <code>ioport</code>)</td><td>traffico HTTP/WS della GUI: redirect da <code>/</code> a <code>/ioport_gui.html</code>, endpoint WebSocket su <code>/ws/ioport</code></td></tr>
+</table>
+
+<p>Il pannello di controllo è raggiungibile all'indirizzo <code>http://localhost:7070/ioport_gui.html</code> a sistema avviato.</p>
+<img src="../img/ioport.png"
+     alt="ioport"
+     width="350"
+     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="sprint2">Definizione dello Sprint2</h1>
+
+<p>Lo Sprint1 ha chiuso il core business (accettazione/rifiuto, timeout, IOPort come attore reale collegato a una GUI). Lo Sprint2 dovrà estendere il sistema con i componenti rimasti fuori da Sprint1:</p>
+
+<div class="req">
+<ul>
+    <li>Introdurre l'attore <code>sonar</code>: emissione degli eventi <code>sonarcontainer</code>/<code>sonarfault</code> a partire dalle letture di distanza, e gestione dello stato <em>Out of service</em> (D&nbsp;&gt;&nbsp;DFREE per almeno 3&nbsp;s) sul display dello IOPort.</li>
+    <li>Progettare e realizzare l'attore <code>cargorobot</code>, che orchestra il movimento del DDR appoggiandosi al servizio esterno <code>RobotSmart26</code>: raggiungere l'IOPort, prelevare il container, passare da <code>slot5</code> (marcatura) allo slot riservato, tornare in HOME.</li>
+    <li>Modellare il <code>marker</code>: segnalazione (interna al nodo <code>cargoservice</code>) del completamento della marcatura in <code>slot5</code>, prima che il robot possa prelevare il container.</li>
+    <li>Separare i Context per nodo fisico (<code>cargoservice</code>, <code>cargorobot</code>, <code>sonar</code>, <code>ioport</code>), oggi ancora unificati in <code>ctxcargoservice</code> per semplicità.</li>
+</ul>
+</div>
+
+</div><!-- .body -->
+
+<div class="footer">
+    <div class="footer-authors">
+        <div class="footer-author">
+            <img src="../img/VC.jpg" alt="VC"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="footer-author-initials" style="display:none;">
+                VC
+            </div>
+            <div>
+                <strong>Valeria Capacci</strong><br>
+                <a href="mailto:valeria.capacci@studio.unibo.it">valeria.capacci@studio.unibo.it</a>
+            </div>
+        </div>
+        <div class="footer-divider"></div>
+        <div class="footer-author">
+            <img src="../img/GP.jpeg" alt="GP"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="footer-author-initials" style="display:none;">
+                GP
+            </div>
+            <div>
+                <strong>Ginevra Pentoli</strong><br>
+                <a href="mailto:ginevra.pentoli@studio.unibo.it">ginevra.pentoli@studio.unibo.it</a>
+            </div>
+        </div>
+    </div>
+    <div style="margin-left: auto; font-size: 0.8rem; opacity: 0.85;">
+        GIT: <a href="https://github.com/valecapa/TemaFinaleISS2026">github.com/valecapa/TemaFinaleISS2026</a>
+    </div>
+</div>
+
+</div><!-- .page-wrap -->
+</body>
+</html>
