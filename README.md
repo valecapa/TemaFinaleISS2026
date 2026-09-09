@@ -15,9 +15,9 @@ di **Pentoli Ginevra** e **Capacci Valeria**.
 
 | Sprint | Diario di bordo | Codice | Stato |
 |:------:|:----------------|:-------|:-----:|
-| **Sprint 0** | [Analisi & modello iniziale](sprint0\userDocs\) | [`/sprint0`](sprint0) | ✅ |
-| **Sprint 1** | [IOPort](sprint1\userDocs\sprint\) | [`/sprint1`](sprint1) | ✅ |
-| **Sprint 2** | [Cargorobot](sprint2\userDocs\sprint\) | [`/sprint2`](sprint2) | ✅ |
+| **Sprint 0** | [Analisi & modello iniziale](sprint0\userDocs\PentoliCapacciCargoservice_Sprint0_v4.pdf) | [`/sprint0`](sprint0) | ✅ |
+| **Sprint 1** | [IOPort](sprint1\userDocs\sprint\PentoliCapacciCargoservice_Sprint1_v5.pdf) | [`/sprint1`](sprint1) | ✅ |
+| **Sprint 2** | [Cargorobot](sprint2\userDocs\sprint\PentoliCapacciTemaFinale_Sprint2v1_compressed.pdf) | [`/sprint2`](sprint2) | ✅ |
 | **Sprint 3** | [Sonar & LED](docs/pages/sprint2.html#sprint3) | [`/sprint3`](sprint3) | 🚧 |
 
 
