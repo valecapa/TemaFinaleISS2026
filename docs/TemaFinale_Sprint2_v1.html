@@ -437,13 +437,12 @@ RobotSmart26 conosce infatti solo primitive di movimento verso coordinate e non 
 
 <p>Si introduce quindi un Context per ogni nodo fisico realmente distinto, coerentemente col fatto che ogni nodo userà tecnologie diverse e con quanto richiesto dal goal di questo sprint. I nodi introdotti in questo sprint sono:</p>
 <ul>
-<li><strong><code>ctxcargoservice</code></strong> (<code>localhost:8050</code>, invariata da Sprint0/1): ospita l'attore <code>cargoservice</code>, <code>Hold</code> (POJO) e il marker.</li>
+<li><strong><code>ctxcargoservice</code></strong> (<code>localhost:8050</code>, invariata da Sprint0/1): ospita gli attori <code>cargoservice</code> e <code>cargorobot</code>, <code>Hold</code> (POJO) e il marker.</li>
 <li><strong><code>ctxioport</code></strong> (nuova, es. <code>localhost:8060</code>): ospita l'attore <code>ioport</code> e l'adapter <code>IOPortWsAdapter</code> verso la WebGUI, separato ora da <code>cargoservice</code>.</li>
-<li><strong><code>ctxcargorobot</code></strong> (nuova, es. <code>localhost:8070</code>): ospita l'attore <code>cargorobot</code>.</li>
-<li><strong>RobotSmart26</strong>: già esterno per definizione (fornito dal committente), referenziato come <code>ExternalQActor</code> nel Context di <code>cargorobot</code>, su <code>localhost:8020</code>.</li>
+<li><strong>RobotSmart26</strong>: già esterno per definizione (fornito dal committente), referenziato come <code>ExternalQActor</code> nel Context di <code>cargoservice</code>, su <code>localhost:8020</code>.</li>
 </ul>
 
-<p>Di conseguenza <code>cargoservice</code>, per parlare con <code>cargorobot</code> o con <code>ioport</code>, lo dichiara <code>ExternalQActor</code> nel proprio Context.</p>
+<p>Di conseguenza ora <code>cargoservice</code>, per parlare con <code>ioport</code>, lo dichiara <code>ExternalQActor</code> nel proprio Context.</p>
 
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="test-plans">Test plans</h1>
