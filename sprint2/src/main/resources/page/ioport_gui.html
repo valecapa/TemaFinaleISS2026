@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IOPort — Cargoservice</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="device">
+  <div class="plate">
+    <span class="name">IOPort</span>
+    <span class="tag">nodo cargoservice</span>
+  </div>
+
+  <div class="screen">
+    <div class="row"><span>stato</span><span id="stateVal">IDLE</span></div>
+    <div class="row"><span>hold</span><span id="holdVal">0/4</span></div>
+    <div class="row"><span>timer</span><span id="timerVal">--</span></div>
+    <div class="msg" id="msgVal">In attesa di richieste...</div>
+  </div>
+
+  <div class="button-wrap">
+    <button class="pushbutton" id="pushBtn">Carica</button>
+  </div>
+
+  <div class="sensor">
+    <span class="label">Sensore occupato
+      <small>simula presenza container (test)</small>
+    </span>
+    <button class="switch" id="sensorSwitch" aria-pressed="false" aria-label="Simula sensore occupato"></button>
+  </div>
+
+  <p class="footnote" id="connStatus">connessione in corso...</p>
+</div>
+
+<script src="wscontrol.js"></script>
+</body>
+</html>
+
