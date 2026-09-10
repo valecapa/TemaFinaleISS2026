@@ -30,9 +30,7 @@ class Ioport ( name: String, scope: CoroutineScope, isconfined: Boolean=false, i
 		//val interruptedStateTransitions = mutableListOf<Transition>()
 		//IF actor.withobj !== null val actor.withobj.name� = actor.withobj.method�ENDIF
 		val status = utils.cargoservice.IOPortStatus()
-		 println("IOPORT: sto creando WebSocket adapter sulla 7070")
-		     var WsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070) 
-		     println("IOPORT: WebSocket adapter creato") 
+		 var WsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070)  
 		return { //this:ActionBasciFsm
 				state("idle") { //this:State
 					action { //it:State
@@ -42,9 +40,9 @@ class Ioport ( name: String, scope: CoroutineScope, isconfined: Boolean=false, i
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t010",targetState="onButtonPressed",cond=whenDispatch("pushButton"))
-					transition(edgeName="t011",targetState="onSetOccupied",cond=whenDispatch("setOccupied"))
-					transition(edgeName="t012",targetState="onUpdateDisplay",cond=whenDispatch("updateDisplay"))
+					 transition(edgeName="t012",targetState="onButtonPressed",cond=whenDispatch("pushButton"))
+					transition(edgeName="t013",targetState="onSetOccupied",cond=whenDispatch("setOccupied"))
+					transition(edgeName="t014",targetState="onUpdateDisplay",cond=whenDispatch("updateDisplay"))
 				}	 
 				state("onButtonPressed") { //this:State
 					action { //it:State
@@ -59,9 +57,9 @@ class Ioport ( name: String, scope: CoroutineScope, isconfined: Boolean=false, i
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t113",targetState="showAccepted",cond=whenReply("loadaccepted"))
-					transition(edgeName="t114",targetState="showRejected",cond=whenReply("loadrejected"))
-					transition(edgeName="t115",targetState="onUpdateDisplay",cond=whenDispatch("updateDisplay"))
+					 transition(edgeName="t115",targetState="showAccepted",cond=whenReply("loadaccepted"))
+					transition(edgeName="t116",targetState="showRejected",cond=whenReply("loadrejected"))
+					transition(edgeName="t117",targetState="onUpdateDisplay",cond=whenDispatch("updateDisplay"))
 				}	 
 				state("showAccepted") { //this:State
 					action { //it:State

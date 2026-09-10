@@ -8,22 +8,22 @@ Dispatch pushButton    : pushButton(NONE)          // simula la pressione del pu
 Dispatch setOccupied   : setOccupied(FLAG)         // simula il sensore
 Dispatch updateDisplay : updateDisplay(STATE,HOLD,MSG)
 
-Request transportContainer : transportContainer(SLOT)  //cargoservice incarica cargorobot di prelevare il container dall'IOPort, passare da slot5 per la marcatura e depositarlo nello SLOT riservato
+Request transportContainer : transportContainer(SLOT)              "cargoservice incarica cargorobot di prelevare il container dall'IOPort, passare da slot5 per la marcatura e depositarlo nello SLOT riservato"
 Reply   transportDone      : transportDone(SLOT)      for transportContainer
 Reply   transportFailed    : transportFailed(CAUSE)   for transportContainer
 
-Request waitMarking : waitMarking(NONE)  		//cargorobot, depositato il container in slot5, resta bloccato in attesa che cargoservice segnali la fine della marcatura
+Request waitMarking : waitMarking(NONE)          "cargorobot, depositato il container in slot5, resta bloccato in attesa che cargoservice segnali la fine della marcatura"
 Reply   markingDone : markingDone(NONE) for waitMarking
 
-Dispatch robotHalted : robotHalted(CAUSE)        //cargorobot notifica a cargoservice di essersi fermato per un guasto di RobotSmart26; cargoservice deciderà come procedere
+Dispatch robotHalted : robotHalted(CAUSE)        "cargorobot notifica a cargoservice di essersi fermato per un guasto di RobotSmart26; cargoservice deciderà come procedere"
 
-Request  moverobot      : moverobot(TARGETX, TARGETY, STEPTIME)   //move from current pos to (TARGETX,TARGETY)
+// --- protocollo verso RobotSmart26 ---
+Request  moverobot      : moverobot(TARGETX, TARGETY, STEPTIME)   "move from current pos to (TARGETX,TARGETY)"
 Reply    moverobotdone  : moverobotok(ARG)                        for moverobot
 Reply    moverobotfailed: moverobotfailed(PLANDONE, PLANTODO)     for moverobot
 
-Context ctxcargoservice ip [host="localhost" port=8050]   // cargoservice e cargorobot
-Context ctxioport       ip [host="localhost" port=8060]
-Context ctxrobotsmart   ip [host="127.0.0.1"  port=8090]
+Context ctxcargoservice ip [host="localhost" port=8050]   // cargoservice, cargorobot e ioport: tutti qui, un solo processo
+Context ctxrobotsmart   ip [host="127.0.0.1"  port=8090]  // unico vero servizio esterno
 
 ExternalQActor robotsmart context ctxrobotsmart
 
@@ -59,21 +59,24 @@ QActor cargoservice context ctxcargoservice
     Goto engaged if [# Slot != -1 && Occupied == false #] else idle
 
     State engaged {
-        println("$name | engaged") color magenta
-    }
-    Transition t1 whenTime 30000 -> disengaged
-
-    State disengaged {
-        println("$name | timeout scaduto, libero lo slot e torno idle") color magenta
-		[# hold.releaseReserved() #]
-		[# var H = "'" + hold.displayStatus() + "'" #]
-		[# var S = "'IDLE'" #]
-		[# var M = "'Timeout scaduto: slot liberato, torno idle'" #]
-		println("$name | LED PicoW -> off (hold=$H)") color magenta
-		forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
-        [# Slot = -1 #]
-    }
-    Goto idle
+	    println("$name | engaged, incarico cargorobot per slot $Slot") color magenta
+	    request cargorobot -m transportContainer : transportContainer($Slot)
+	}
+	Transition t1 whenTime 30000 -> disengaged
+	    whenReply transportDone   -> disengaged
+	    whenReply transportFailed -> disengaged
+	
+	State disengaged {
+	    println("$name | timeout scaduto, libero lo slot e torno idle") color magenta
+	    [# hold.releaseReserved() #]
+	    [# var H = "'" + hold.displayStatus() + "'" #]
+	    [# var S = "'IDLE'" #]
+	    [# var M = "'Timeout scaduto: slot liberato, torno idle'" #]
+	    println("$name | LED PicoW -> off (hold=$H)") color magenta
+	    forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+	    [# Slot = -1 #]
+	}
+	Goto idle
 }
 
 QActor cargorobot context ctxcargoservice {
@@ -138,12 +141,10 @@ QActor cargorobot context ctxcargoservice {
     }
 }
 
-QActor ioport context ctxioport
+QActor ioport context ctxcargoservice
     withobj status using "utils.cargoservice.IOPortStatus()" {
 
-	[# println("IOPORT: sto creando WebSocket adapter sulla 7070")
-     var WsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070) 
-     println("IOPORT: WebSocket adapter creato")#]
+    [# var WsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070) #]
 
     State idle initial {
         println("$name | idle, in attesa della pressione del pulsante...") color cyan
@@ -206,4 +207,3 @@ QActor ioport context ctxioport
     }
     Goto idle
 }
-

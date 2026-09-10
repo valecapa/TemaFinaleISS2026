@@ -76,7 +76,8 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 				}	 
 				state("engaged") { //this:State
 					action { //it:State
-						CommUtils.outmagenta("$name | engaged")
+						CommUtils.outmagenta("$name | engaged, incarico cargorobot per slot $Slot")
+						request("transportContainer", "transportContainer($Slot)" ,"cargorobot" )  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
@@ -85,6 +86,8 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 				 	 					  scope, context!!, "local_tout_"+name+"_engaged", 30000.toLong() )  //OCT2023
 					}	 	 
 					 transition(edgeName="t11",targetState="disengaged",cond=whenTimeout("local_tout_"+name+"_engaged"))   
+					transition(edgeName="t12",targetState="disengaged",cond=whenReply("transportDone"))
+					transition(edgeName="t13",targetState="disengaged",cond=whenReply("transportFailed"))
 				}	 
 				state("disengaged") { //this:State
 					action { //it:State
