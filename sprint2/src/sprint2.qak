@@ -83,9 +83,7 @@ QActor cargoservice context ctxcargoservice
 
 QActor cargorobot context ctxcargoservice
     withobj hold using "utils.cargoservice.Hold()" {
-    // hold qui è una seconda istanza dello stesso POJO usato da cargoservice: espone solo
-    // il layout fisso della stiva (IOPort/slot5/HOME), letto da .properties, quindi è sicuro
-    // istanziarlo di nuovo qui. Lo stato mutabile delle riserve resta invece solo in cargoservice.
+
     [# var TargetSlot = -1
        var TargetX = -1
        var TargetY = -1
