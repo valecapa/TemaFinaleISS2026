@@ -1,0 +1,5 @@
+Risolvere in Sprint2:
+
+- Quando si manda richiesta, la GUI segna lo slot subito occupato (ma da backend è libero)
+- Quando si avvia la GUI, lo stato è segnato come OCCUPATI/TOTALI, ma quando si avvia, il formato cambia
+- Anche se il robot è tornato in home, finchè non scade il timer del tempo limite non è possibile fare una nuova richiesta.

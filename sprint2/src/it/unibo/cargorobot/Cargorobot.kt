@@ -29,13 +29,10 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 	override fun getBody() : (ActorBasicFsm.() -> Unit){
 		//val interruptedStateTransitions = mutableListOf<Transition>()
 		//IF actor.withobj !== null val actor.withobj.name� = actor.withobj.method�ENDIF
+		val hold = utils.cargoservice.Hold()
 		 var TargetSlot = -1
-		       val SLOT5_X = 2      // TODO: sostituire con le coordinate reali di slot5
-		       val SLOT5_Y = 5
-		       val HOME_X  = 0      // TODO: sostituire con le coordinate reali di HOME
-		       val HOME_Y  = 0
-		       fun slotX(s:Int) = when(s) { 1->1; 2->1; 3->3; 4->3; else->0 }   // TODO: mappatura placeholder, da sostituire
-		       fun slotY(s:Int) = when(s) { 1->1; 2->3; 3->1; 4->3; else->0 }   // con il layout reale degli slot
+		       var TargetX = -1
+		       var TargetY = -1
 		return { //this:ActionBasciFsm
 				state("idle") { //this:State
 					action { //it:State
@@ -49,11 +46,16 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 				}	 
 				state("startTransport") { //this:State
 					action { //it:State
-						if( checkMsgContent( Term.createTerm("transportContainer(SLOT)"), Term.createTerm("transportContainer(SLOT)"), 
+						if( checkMsgContent( Term.createTerm("transportContainer(SLOT,TARGETX,TARGETY)"), Term.createTerm("transportContainer(SLOT,TARGETX,TARGETY)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
-								 TargetSlot = payloadArg(0).toInt()  
-								CommUtils.outyellow("$name | incarico ricevuto (slot riservato=$TargetSlot), vado a slot5")
-								request("moverobot", "moverobot($SLOT5_X,$SLOT5_Y,345)" ,"robotsmart" )  
+								 TargetSlot = payloadArg(0).toInt()
+								               TargetX = payloadArg(1).toInt()
+								               TargetY = payloadArg(2).toInt()
+								               var S5 = hold.getSlot5Position()
+								               var X_S5 =  S5.getX()
+								               var Y_S5 = S5.getY()  
+								CommUtils.outyellow("$name | incarico ricevuto (slot riservato=$TargetSlot, x=$TargetX,y=$TargetY), vado a slot5")
+								request("moverobot", "moverobot($X_S5,$Y_S5,345)" ,"robotsmart" )  
 						}
 						//genTimer( actor, state )
 					}
@@ -66,18 +68,19 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 				state("atSlot5") { //this:State
 					action { //it:State
 						CommUtils.outyellow("$name | container depositato in slot5, attendo fine marcatura")
-						request("waitMarking", "waitMarking(NONE)" ,"cargoservice" )  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
+				 	 		stateTimer = TimerActor("timer_atSlot5", 
+				 	 					  scope, context!!, "local_tout_"+name+"_atSlot5", 5000.toLong() )  //OCT2023
 					}	 	 
-					 transition(edgeName="t27",targetState="goToReservedSlot",cond=whenReply("markingDone"))
+					 transition(edgeName="t27",targetState="goToReservedSlot",cond=whenTimeout("local_tout_"+name+"_atSlot5"))   
 				}	 
 				state("goToReservedSlot") { //this:State
 					action { //it:State
 						CommUtils.outyellow("$name | marcatura completata, vado allo slot riservato $TargetSlot")
-						request("moverobot", "moverobot(slotX($TargetSlot),slotY($TargetSlot),345)" ,"robotsmart" )  
+						request("moverobot", "moverobot($TargetX,$TargetY,345)" ,"robotsmart" )  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
@@ -88,8 +91,11 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 				}	 
 				state("goHome") { //this:State
 					action { //it:State
+						 var H = hold.getHomePosition()
+						        	var X_HOME = H.getX()
+						            var Y_HOME = H.getY()
 						CommUtils.outyellow("$name | container depositato, torno in HOME")
-						request("moverobot", "moverobot($HOME_X,$HOME_Y,345)" ,"robotsmart" )  
+						request("moverobot", "moverobot($X_HOME,$Y_HOME,345)" ,"robotsmart" )  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
@@ -102,7 +108,9 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 					action { //it:State
 						CommUtils.outyellow("$name | HOME raggiunta, trasporto completato")
 						answer("transportContainer", "transportDone", "transportDone($TargetSlot)"   )  
-						 TargetSlot = -1  
+						 TargetSlot = -1
+						           TargetX = -1
+						           TargetY = -1  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002

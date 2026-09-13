@@ -2,6 +2,7 @@ package utils.cargoservice;
 
 import java.util.List;
 import kotlin.Pair;
+import utils.cargoservice.IPosition;
 
 public interface IHold {
 
@@ -25,4 +26,10 @@ public interface IHold {
 
     /** Stringa sintetica dello stato corrente della stiva, da mostrare sul display IOPort. */
     String displayStatus();
+    
+    // Occupa lo slot riservato
+    boolean setReservedSlotOccupied();
+    
+    // Libera tutti gli slot
+    boolean setAllSlotsFree();
 }

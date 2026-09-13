@@ -31,10 +31,13 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 		//IF actor.withobj !== null val actor.withobj.name� = actor.withobj.method�ENDIF
 		val hold = utils.cargoservice.Hold()
 		 var Slot = -1
-		     var Occupied = false  
+		     var Occupied = false
+		     hold.setAllSlotsFree()  
 		return { //this:ActionBasciFsm
 				state("idle") { //this:State
 					action { //it:State
+						var Stato = hold.displayStatus().toString()  
+						CommUtils.outmagenta("$Stato")
 						CommUtils.outmagenta("$name | idle, in attesa di richieste...")
 						//genTimer( actor, state )
 					}
@@ -76,8 +79,10 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 				}	 
 				state("engaged") { //this:State
 					action { //it:State
-						CommUtils.outmagenta("$name | engaged, incarico cargorobot per slot $Slot")
-						request("transportContainer", "transportContainer($Slot)" ,"cargorobot" )  
+						 var TX = hold.slotX(Slot)
+							       var TY = hold.slotY(Slot)  
+						CommUtils.outmagenta("$name | engaged, incarico cargorobot per slot $Slot (x=$TX,y=$TY)")
+						request("transportContainer", "transportContainer($Slot,$TX,$TY)" ,"cargorobot" )  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
@@ -86,7 +91,7 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 				 	 					  scope, context!!, "local_tout_"+name+"_engaged", 30000.toLong() )  //OCT2023
 					}	 	 
 					 transition(edgeName="t11",targetState="disengaged",cond=whenTimeout("local_tout_"+name+"_engaged"))   
-					transition(edgeName="t12",targetState="disengaged",cond=whenReply("transportDone"))
+					transition(edgeName="t12",targetState="success",cond=whenReply("transportDone"))
 					transition(edgeName="t13",targetState="disengaged",cond=whenReply("transportFailed"))
 				}	 
 				state("disengaged") { //this:State
@@ -99,6 +104,28 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 						CommUtils.outmagenta("$name | LED PicoW -> off (hold=$H)")
 						forward("updateDisplay", "updateDisplay($S,$H,$M)" ,"ioport" ) 
 						 Slot = -1  
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition( edgeName="goto",targetState="idle", cond=doswitch() )
+				}	 
+				state("success") { //this:State
+					action { //it:State
+						if( checkMsgContent( Term.createTerm("transportDone(SLOT)"), Term.createTerm("transportDone(SLOT)"), 
+						                        currentMsg.msgContent()) ) { //set msgArgList
+								 Slot = payloadArg(0).toInt() 
+								            	var Done  = hold.setReservedSlotOccupied()
+								CommUtils.outmagenta("$name | trasporto del container in slot $Slot terminato, torno idle")
+								 hold.releaseReserved()  
+								 var H = "'" + hold.displayStatus() + "'"  
+								 var S = "'IDLE'"  
+								 var M = "'Trasporto terminato'"  
+								CommUtils.outmagenta("$name | LED PicoW -> off (hold=$H)")
+								forward("updateDisplay", "updateDisplay($S,$H,$M)" ,"ioport" ) 
+								 Slot = -1  
+						}
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
