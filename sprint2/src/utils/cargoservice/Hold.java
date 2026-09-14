@@ -3,6 +3,7 @@ package utils.cargoservice;
 import java.util.ArrayList;
 import java.util.List;
 import kotlin.Pair;
+import utils.cargoservice.IPosition;
 
 public class Hold implements IHold {
 
@@ -93,8 +94,40 @@ public class Hold implements IHold {
         for (Pair<IPosition, ISlot> p : slotList) {
             ISlot slot = p.getSecond();
             if (sb.length() > 0) sb.append(",");
-            sb.append(slot.getID()).append(":").append(slot.isOccupied() ? "OCC" : "FREE");
+            sb.append(slot.getID()).append(":");
+            if (slot.isOccupied()) {
+            	sb.append("OCC");
+            } else if (slot.getID() == reservedSlotId) {
+            	sb.append("RES");
+            } else {
+            	sb.append("FREE");
+            }
         }
         return sb.toString();
     }
+
+	@Override
+	public boolean setReservedSlotOccupied() {
+		for (Pair<IPosition, ISlot> p : slotList) {
+			if (p.getSecond().getID() == reservedSlotId) {
+				ISlot slot = p.getSecond();
+				slot.setOccupied(true);
+				reservedSlotId = -1;
+				return true;
+			}
+ 
+        }
+		
+		return false;
+	}
+
+	@Override
+	public boolean setAllSlotsFree() {
+		for (Pair<IPosition, ISlot> p : slotList) {
+			p.getSecond().setOccupied(false);
+		}
+		return true;
+	}
+    
+    
 }
