@@ -67,9 +67,24 @@ QActor cargoservice context ctxcargoservice
 	    println("$name | engaged, incarico cargorobot per slot $Slot (x=$TX,y=$TY)") color magenta
 	    request cargorobot -m transportContainer : transportContainer($Slot,$TX,$TY)
 	}
-	Transition t1 whenTime 30000 -> disengaged
-	    whenReply transportDone   -> success
-	    whenReply transportFailed -> disengaged
+	Goto waitingTransport
+	
+	State waitingTransport {
+	    // nessuna azione: solo attesa, nessuna richiesta va ripetuta rientrando qui
+	}
+	Transition t1 whenTime 30000        -> disengaged
+	    whenReply transportDone          -> success
+	    whenReply transportFailed        -> disengaged
+	    whenRequest loadrequest          -> rejectBusy
+	
+	State rejectBusy {
+	    onMsg(loadrequest : loadrequest(X)) {
+	        [# var H = "'" + hold.displayStatus() + "'" #]
+	        println("$name | sistema occupato, rifiuto nuova richiesta") color magenta
+	        replyTo loadrequest with loadrejected : loadrejected(retrylater,$H)
+	    }
+	}
+	Goto waitingTransport
 	
 	State disengaged {
 	    println("$name | timeout scaduto, libero lo slot e torno idle") color magenta
@@ -120,31 +135,55 @@ QActor cargorobot context ctxcargoservice
             [# TargetSlot = payloadArg(0).toInt()
                TargetX = payloadArg(1).toInt()
                TargetY = payloadArg(2).toInt()
-               var S5 = hold.getSlot5Position()
-               var X_S5 =  S5.getX()
-               var Y_S5 = S5.getY() #]
-            println("$name | incarico ricevuto (slot riservato=$TargetSlot, x=$TargetX,y=$TargetY), vado a slot5") color yellow
-            request robotsmart -m moverobot : moverobot($X_S5, $Y_S5, 345)
+               var IOPort = hold.getIOPortPosition()
+               var X_IOPort =  IOPort.getX()
+               var Y_IOPort = IOPort.getY()
+                #]
+            println("$name | incarico ricevuto (slot riservato=$TargetSlot, x=$TargetX,y=$TargetY), vado all'IOPort per il ritiro del container") color yellow
+            request robotsmart -m moverobot : moverobot($X_IOPort, $Y_IOPort, 345)
         }
     }
     Transition t1
-        whenReply moverobotdone   -> atSlot5
+        whenReply moverobotdone   -> atIOPort
+        whenReply moverobotfailed -> halted
+        
+    State atIOPort {
+        println("$name | arrivato in IoPort") color yellow
+    }
+    Transition t2 whenTime 2000 -> goToSlot5
+        
+        
+    State goToSlot5 {
+    	[# var S5 = hold.getSlot5Position()
+               var X_S5 =  S5.getX()
+               var Y_S5 = S5.getY() #]
+    	println("$name | container ritirato, vado allo slot5 per la marcatura") color yellow
+    	request robotsmart -m moverobot : moverobot($X_S5, $Y_S5, 345)
+    }
+    Transition t3
+    	whenReply moverobotdone   -> atSlot5
         whenReply moverobotfailed -> halted
 
     State atSlot5 {
         println("$name | container depositato in slot5, attendo fine marcatura") color yellow
         //request cargoservice -m waitMarking : waitMarking(NONE)
     }
-    Transition t2 whenTime 5000 -> goToReservedSlot
+    Transition t4 whenTime 2000 -> goToReservedSlot
 
     State goToReservedSlot {
         println("$name | marcatura completata, vado allo slot riservato $TargetSlot") color yellow
         request robotsmart -m moverobot : moverobot($TargetX, $TargetY, 345)
     }
-    Transition t3
-        whenReply moverobotdone   -> goHome
+    Transition t5
+        whenReply moverobotdone   -> atSlot
         whenReply moverobotfailed -> halted
-
+        
+    State atSlot {
+        println("$name | arrivato allo slot riservato $TargetSlot") color yellow
+        //request cargoservice -m waitMarking : waitMarking(NONE)
+    }
+    Transition t6 whenTime 2000 -> goHome
+    
     State goHome {
         [# var H = hold.getHomePosition()
         	var X_HOME = H.getX()
@@ -153,7 +192,7 @@ QActor cargorobot context ctxcargoservice
         println("$name | container depositato, torno in HOME") color yellow
         request robotsmart -m moverobot : moverobot($X_HOME, $Y_HOME, 345)
     }
-    Transition t4
+    Transition t7
         whenReply moverobotdone   -> done
         whenReply moverobotfailed -> halted
 

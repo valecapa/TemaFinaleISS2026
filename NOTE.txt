@@ -2,4 +2,9 @@ Risolvere in Sprint2:
 
 - Quando si manda richiesta, la GUI segna lo slot subito occupato (ma da backend è libero)
 - Quando si avvia la GUI, lo stato è segnato come OCCUPATI/TOTALI, ma quando si avvia, il formato cambia
-- Anche se il robot è tornato in home, finchè non scade il timer del tempo limite non è possibile fare una nuova richiesta.
+- Anche se il robot è tornato in home, finché non scade il timer del tempo limite non è possibile fare una nuova richiesta.
+- controllare cosa succede con una seconda richiesta mentre sta gestendo la prima
+- il robot deve prima andare a IOPort, poi allo slot
+- When the request to load is accepted, the customer must move the container in the sensor area within prefixed amount of time (e.g. 30 secs), otherwise the systems becomes disengaged. in che senso è il cliente a muovere il container? cosa è la sensor area? il sonar del pico o quella virtuale del virtualrobot? sono la stessa cosa? come vanno gestite?
+- lo slot diventa occupato quando arriva a home, non quando deposita il container nello slot
+- il robot si deve girare verso gli slot?

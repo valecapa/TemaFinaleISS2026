@@ -25,13 +25,20 @@
       if (remaining <= 0) {
         clearInterval(timerInterval);
         timerVal.textContent = '--';
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          btn.disabled = false;
-        }
+        // NB: non riabilitiamo più il bottone da qui: il countdown resta solo
+        // un'indicazione visiva, è il server (stato IDLE) a decidere davvero
         return;
       }
       timerVal.textContent = remaining + ' s';
     }, 1000);
+  }
+
+  function stopTimerAndUnlock() {
+    clearInterval(timerInterval);
+    timerVal.textContent = '--';
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      btn.disabled = false;
+    }
   }
 
   function setConnStatus(text, lost) {
@@ -64,6 +71,12 @@
         stateVal.textContent = msg.state;
         holdVal.textContent = msg.hold;
         msgVal.textContent = msg.msg;
+
+        // il bottone torna cliccabile solo quando il backend dice davvero IDLE,
+        // non in base al countdown locale
+        if (msg.state === 'IDLE') {
+          stopTimerAndUnlock();
+        }
       } else if (msg.type === 'sensor') {
         sensorOccupied = !!msg.occupied;
         sensorSwitch.classList.toggle('occupied', sensorOccupied);

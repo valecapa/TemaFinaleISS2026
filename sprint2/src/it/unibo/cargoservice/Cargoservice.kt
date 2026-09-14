@@ -87,12 +87,37 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
-				 	 		stateTimer = TimerActor("timer_engaged", 
-				 	 					  scope, context!!, "local_tout_"+name+"_engaged", 30000.toLong() )  //OCT2023
 					}	 	 
-					 transition(edgeName="t11",targetState="disengaged",cond=whenTimeout("local_tout_"+name+"_engaged"))   
+					 transition( edgeName="goto",targetState="waitingTransport", cond=doswitch() )
+				}	 
+				state("waitingTransport") { //this:State
+					action { //it:State
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+				 	 		stateTimer = TimerActor("timer_waitingTransport", 
+				 	 					  scope, context!!, "local_tout_"+name+"_waitingTransport", 30000.toLong() )  //OCT2023
+					}	 	 
+					 transition(edgeName="t11",targetState="disengaged",cond=whenTimeout("local_tout_"+name+"_waitingTransport"))   
 					transition(edgeName="t12",targetState="success",cond=whenReply("transportDone"))
 					transition(edgeName="t13",targetState="disengaged",cond=whenReply("transportFailed"))
+					transition(edgeName="t14",targetState="rejectBusy",cond=whenRequest("loadrequest"))
+				}	 
+				state("rejectBusy") { //this:State
+					action { //it:State
+						if( checkMsgContent( Term.createTerm("loadrequest(OCCUPIED)"), Term.createTerm("loadrequest(X)"), 
+						                        currentMsg.msgContent()) ) { //set msgArgList
+								 var H = "'" + hold.displayStatus() + "'"  
+								CommUtils.outmagenta("$name | sistema occupato, rifiuto nuova richiesta")
+								answer("loadrequest", "loadrejected", "loadrejected(retrylater,$H)"   )  
+						}
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition( edgeName="goto",targetState="waitingTransport", cond=doswitch() )
 				}	 
 				state("disengaged") { //this:State
 					action { //it:State
