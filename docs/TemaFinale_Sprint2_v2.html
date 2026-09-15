@@ -446,7 +446,7 @@ RobotSmart26 conosce infatti solo primitive di movimento verso coordinate e non 
 <p>La separazione in nodi distinti resta quindi rimandata ai soli casi in cui è davvero richiesta da un vincolo fisico/tecnologico reale (ad es. <code>sonar</code>, previsto per lo Sprint3).</p>
 
 <h2 id="modello-qak">Il modello prodotto</h2>
-<p>Dall'analisi precedente segue il modello <code>qak</code> completo (<a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint2/src/sprint2.qak"><code>sprint2.qak</code></a>). Il protocollo dei messaggi rispecchia direttamente le decisioni prese sopra: <code>transportContainer</code> porta con sé anche le coordinate dello slot riservato (calcolate da <code>Hold</code>, si veda la sezione <a href="#gestione-slot">Gestione degli slot</a> in Project), cosicché <code>cargorobot</code> non debba conoscere il layout della stiva:</p>
+<p>Dall'analisi precedente segue il protocollo dei messaggi del modello <code>qak</code> (<a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint2/src/sprint2.qak"><code>sprint2.qak</code></a>). Rispecchia direttamente le decisioni prese sopra: <code>transportContainer</code> porta con sé anche le coordinate dello slot riservato (calcolate da <code>Hold</code>, si veda la sezione <a href="#gestione-slot">Gestione degli slot</a> in Project), cosicché <code>cargorobot</code> non debba conoscere il layout della stiva.</p>
 
 <div class="code-wrapper">
 <span class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint2/src/sprint2.qak">sprint2.qak</a></span>
@@ -462,77 +462,11 @@ Request transportContainer : transportContainer(SLOT,TARGETX,TARGETY)
 Reply   transportDone      : transportDone(SLOT)      for transportContainer
 Reply   transportFailed    : transportFailed(CAUSE)   for transportContainer
 
-Request waitMarking : waitMarking(NONE)
-Reply   markingDone : markingDone(NONE) for waitMarking
-
 Dispatch robotHalted : robotHalted(CAUSE)
 
 Request  moverobot      : moverobot(TARGETX, TARGETY, STEPTIME)
 Reply    moverobotdone  : moverobotok(ARG)                        for moverobot
-Reply    moverobotfailed: moverobotfailed(PLANDONE, PLANTODO)     for moverobot
-
-Context ctxcargoservice ip [host="localhost" port=8050]   // cargoservice, cargorobot, ioport
-Context ctxrobotsmart   ip [host="127.0.0.1"  port=8020]  // unico vero servizio esterno
-
-ExternalQActor robotsmart context ctxrobotsmart</pre>
-</div>
-
-<p>Introduciamo la  <a href="#gestione-slot">gestione degli slot</a> in cui <code>engaged</code> incarica <code>cargorobot</code> passandogli la posizione dello slot, letta da <code>Hold</code>:</p>
-
-<div class="code-wrapper">
-<span class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint2/src/sprint2.qak">sprint2.qak</a></span>
-<pre>State engaged {
-    [# var TX = hold.slotX(Slot)
-       var TY = hold.slotY(Slot) #]
-    println("$name | engaged, incarico cargorobot per slot $Slot (x=$TX,y=$TY)") color magenta
-    request cargorobot -m transportContainer : transportContainer($Slot,$TX,$TY)
-}
-Transition t1 whenTime 30000 -> disengaged
-    whenReply transportDone   -> disengaged
-    whenReply transportFailed -> disengaged
-
-State disengaged {
-    [# hold.releaseReserved() #]
-    [# var H = "'" + hold.displayStatus() + "'" #]
-    forward ioport -m updateDisplay : updateDisplay('IDLE',$H,'Timeout scaduto: slot liberato, torno idle')
-    [# Slot = -1 #]
-}
-Goto idle</pre>
-</div>
-
-<p><code>cargorobot</code> porta il container in slot5, per la marcatura, e successivamente torna in HOME, fermandosi (<code>halted</code>) a ogni fallimento di <code>moverobot</code>:</p>
-
-<div class="code-wrapper">
-<span class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/sprint2.qak"><code>sprint2.qak</code></a></span>
-<pre>QActor cargorobot context ctxcargoservice
-    withobj hold using "utils.cargoservice.Hold()" {
-    
-    State startTransport { onMsg(transportContainer : transportContainer(SLOT,TARGETX,TARGETY)) {
-        [# ... #] request robotsmart -m moverobot : moverobot($S5.getX(), $S5.getY(), 345)
-    }}
-    Transition t1 whenReply moverobotdone -> atSlot5
-                  whenReply moverobotfailed -> halted
-
-    State atSlot5 { request cargoservice -m waitMarking : waitMarking(NONE) }
-    Transition t2 whenReply markingDone -> goToReservedSlot
-
-    State goToReservedSlot { request robotsmart -m moverobot : moverobot($TargetX, $TargetY, 345) }
-    Transition t3 whenReply moverobotdone -> goHome
-                  whenReply moverobotfailed -> halted
-
-    State goHome { [# var H = hold.getHomePosition() #]
-        request robotsmart -m moverobot : moverobot($H.getX(), $H.getY(), 345) }
-    Transition t4 whenReply moverobotdone -> done
-                  whenReply moverobotfailed -> halted
-
-    State done { replyTo transportContainer with transportDone : transportDone($TargetSlot) }
-    Goto idle
-
-    State halted {
-        forward cargoservice -m robotHalted : robotHalted(guastoRobotSmart26)
-        replyTo transportContainer with transportFailed : transportFailed(guastoRobotSmart26)
-    }
-}</pre>
+Reply    moverobotfailed: moverobotfailed(PLANDONE, PLANTODO)     for moverobot</pre>
 </div>
 
 <!-- ══════════════════════════════════════════════════════ -->
@@ -556,10 +490,85 @@ Goto idle</pre>
 <p>A partire dal modello di analisi si è realizzato un prototipo eseguibile che copre il goal dello sprint: orchestrazione del trasporto tramite <code>cargorobot</code>, gestione degli slot tramite <code>Hold</code>, mantenimento (senza modifiche strutturali) di <code>ioport</code>.</p>
 
 <h2 id="impl-cargorobot">cargorobot</h2>
-<p>Realizzato come nuovo <code>QActor</code> nel Context <code>ctxcargoservice</code>. Ogni passo della sequenza invia una <code>moverobot</code> a <code>robotsmart</code> (<code>ExternalQActor</code>) e reagisce solo alla relativa reply.</p>
+<p>Realizzato come nuovo <code>QActor</code> nel Context <code>ctxcargoservice</code>. Ogni passo della sequenza invia una <code>moverobot</code> a <code>robotsmart</code> (<code>ExternalQActor</code>) e reagisce solo alla relativa reply; in <code>atSlot5</code> l'attesa della marcatura è gestita con un timeout fisso di 5&nbsp;s (<code>whenTime 5000</code>) anziché con una reply dedicata:</p>
+
+<div class="code-wrapper">
+<span class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint2/src/sprint2.qak"><code>sprint2.qak</code></a></span>
+<pre>QActor cargorobot context ctxcargoservice
+    withobj hold using "utils.cargoservice.Hold()" {
+
+    State startTransport { onMsg(transportContainer : transportContainer(SLOT,TARGETX,TARGETY)) {
+        [# ... #] request robotsmart -m moverobot : moverobot($S5.getX(), $S5.getY(), 345)
+    }}
+    Transition t1 whenReply moverobotdone -> atSlot5
+                  whenReply moverobotfailed -> halted
+
+    State atSlot5 { /* container depositato in slot5, attesa marcatura */ }
+    Transition t2 whenTime 5000 -> goToReservedSlot
+
+    State goToReservedSlot { request robotsmart -m moverobot : moverobot($TargetX, $TargetY, 345) }
+    Transition t3 whenReply moverobotdone -> goHome
+                  whenReply moverobotfailed -> halted
+
+    State goHome { [# var H = hold.getHomePosition() #]
+        request robotsmart -m moverobot : moverobot($H.getX(), $H.getY(), 345) }
+    Transition t4 whenReply moverobotdone -> done
+                  whenReply moverobotfailed -> halted
+
+    State done { replyTo transportContainer with transportDone : transportDone($TargetSlot) }
+    Goto idle
+
+    State halted {
+        forward cargoservice -m robotHalted : robotHalted(guastoRobotSmart26)
+        replyTo transportContainer with transportFailed : transportFailed(guastoRobotSmart26)
+    }
+}</pre>
+</div>
+
+<h3 id="context-robotsmart">Context e canale verso RobotSmart26</h3>
+<p><code>cargoservice</code>, <code>cargorobot</code> e <code>ioport</code> condividono lo stesso Context <code>ctxcargoservice</code> (un solo processo); <code>robotsmart</code> è dichiarato come <code>ExternalQActor</code> nel Context separato <code>ctxrobotsmart</code>.</p>
+
+<div class="code-wrapper">
+<span class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint2/src/sprint2.qak"><code>sprint2.qak</code></a></span>
+<pre>Context ctxcargoservice ip [host="localhost" port=8050]   // cargoservice, cargorobot, ioport
+Context ctxrobotsmart   ip [host="127.0.0.1"  port=8020]  // unico vero servizio esterno
+
+ExternalQActor robotsmart context ctxrobotsmart</pre>
+</div>
 
 <h2 id="impl-cargoservice">cargoservice</h2>
-<p>Rispetto a Sprint1 <code>engaged</code> ora incarica <code>cargorobot</code> passandogli anche la posizione dello slot riservato (vedi sotto), e la transizione da <code>engaged</code> osserva sia il timeout dei 30s sia le reply <code>transportDone</code>/<code>transportFailed</code> di <code>cargorobot</code>, così che un trasporto concluso (con successo o fallito) chiuda subito l'operazione invece di aspettare lo scadere del timer.</p>
+<p>Rispetto a Sprint1 <code>engaged</code> ora incarica <code>cargorobot</code> passandogli anche la posizione dello slot riservato, e la transizione da <code>engaged</code> osserva sia il timeout dei 30s sia le reply <code>transportDone</code>/<code>transportFailed</code> di <code>cargorobot</code>: un fallimento riporta subito a <code>disengaged</code> (stesso comportamento del timeout), mentre un trasporto concluso con successo porta a un nuovo stato <code>success</code> dedicato, che aggiorna la stiva e il display con un messaggio diverso da quello di timeout:</p>
+
+<div class="code-wrapper">
+<span class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint2/src/sprint2.qak"><code>sprint2.qak</code></a></span>
+<pre>State engaged {
+    [# var TX = hold.slotX(Slot)
+       var TY = hold.slotY(Slot) #]
+    request cargorobot -m transportContainer : transportContainer($Slot,$TX,$TY)
+}
+Transition t1 whenTime 30000 -> disengaged
+    whenReply transportDone   -> success
+    whenReply transportFailed -> disengaged
+
+State disengaged {
+    [# hold.releaseReserved() #]
+    [# var H = "'" + hold.displayStatus() + "'" #]
+    forward ioport -m updateDisplay : updateDisplay('IDLE',$H,'Timeout scaduto: slot liberato, torno idle')
+    [# Slot = -1 #]
+}
+Goto idle
+
+State success {
+    onMsg(transportDone : transportDone(SLOT)) {
+        [# hold.setReservedSlotOccupied()
+           hold.releaseReserved() #]
+        [# var H = "'" + hold.displayStatus() + "'" #]
+        forward ioport -m updateDisplay : updateDisplay('IDLE',$H,'Trasporto terminato')
+        [# Slot = -1 #]
+    }
+}
+Goto idle</pre>
+</div>
 
 <h2 id="gestione-slot">Gestione degli slot</h2>
 <p>La gestione della stiva è incapsulata nel POJO <code>Hold</code> che mantiene due tipi di informazione ben distinti:</p>
