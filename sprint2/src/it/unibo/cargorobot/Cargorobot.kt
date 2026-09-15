@@ -42,7 +42,7 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t04",targetState="startTransport",cond=whenRequest("transportContainer"))
+					 transition(edgeName="t05",targetState="startTransport",cond=whenRequest("transportContainer"))
 				}	 
 				state("startTransport") { //this:State
 					action { //it:State
@@ -51,19 +51,46 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 								 TargetSlot = payloadArg(0).toInt()
 								               TargetX = payloadArg(1).toInt()
 								               TargetY = payloadArg(2).toInt()
-								               var S5 = hold.getSlot5Position()
-								               var X_S5 =  S5.getX()
-								               var Y_S5 = S5.getY()  
-								CommUtils.outyellow("$name | incarico ricevuto (slot riservato=$TargetSlot, x=$TargetX,y=$TargetY), vado a slot5")
-								request("moverobot", "moverobot($X_S5,$Y_S5,345)" ,"robotsmart" )  
+								               var IOPort = hold.getIOPortPosition()
+								               var X_IOPort =  IOPort.getX()
+								               var Y_IOPort = IOPort.getY()
+								CommUtils.outyellow("$name | incarico ricevuto (slot riservato=$TargetSlot, x=$TargetX,y=$TargetY), vado all'IOPort per il ritiro del container")
+								request("moverobot", "moverobot($X_IOPort,$Y_IOPort,345)" ,"robotsmart" )  
 						}
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t15",targetState="atSlot5",cond=whenReply("moverobotdone"))
-					transition(edgeName="t16",targetState="halted",cond=whenReply("moverobotfailed"))
+					 transition(edgeName="t16",targetState="atIOPort",cond=whenReply("moverobotdone"))
+					transition(edgeName="t17",targetState="halted",cond=whenReply("moverobotfailed"))
+				}	 
+				state("atIOPort") { //this:State
+					action { //it:State
+						CommUtils.outyellow("$name | arrivato in IoPort")
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+				 	 		stateTimer = TimerActor("timer_atIOPort", 
+				 	 					  scope, context!!, "local_tout_"+name+"_atIOPort", 2000.toLong() )  //OCT2023
+					}	 	 
+					 transition(edgeName="t28",targetState="goToSlot5",cond=whenTimeout("local_tout_"+name+"_atIOPort"))   
+				}	 
+				state("goToSlot5") { //this:State
+					action { //it:State
+						 var S5 = hold.getSlot5Position()
+						               var X_S5 =  S5.getX()
+						               var Y_S5 = S5.getY()  
+						CommUtils.outyellow("$name | container ritirato, vado allo slot5 per la marcatura")
+						request("moverobot", "moverobot($X_S5,$Y_S5,345)" ,"robotsmart" )  
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition(edgeName="t39",targetState="atSlot5",cond=whenReply("moverobotdone"))
+					transition(edgeName="t310",targetState="halted",cond=whenReply("moverobotfailed"))
 				}	 
 				state("atSlot5") { //this:State
 					action { //it:State
@@ -73,9 +100,9 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 					//After Lenzi Aug2002
 					sysaction { //it:State
 				 	 		stateTimer = TimerActor("timer_atSlot5", 
-				 	 					  scope, context!!, "local_tout_"+name+"_atSlot5", 5000.toLong() )  //OCT2023
+				 	 					  scope, context!!, "local_tout_"+name+"_atSlot5", 2000.toLong() )  //OCT2023
 					}	 	 
-					 transition(edgeName="t27",targetState="goToReservedSlot",cond=whenTimeout("local_tout_"+name+"_atSlot5"))   
+					 transition(edgeName="t411",targetState="goToReservedSlot",cond=whenTimeout("local_tout_"+name+"_atSlot5"))   
 				}	 
 				state("goToReservedSlot") { //this:State
 					action { //it:State
@@ -86,8 +113,20 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t38",targetState="goHome",cond=whenReply("moverobotdone"))
-					transition(edgeName="t39",targetState="halted",cond=whenReply("moverobotfailed"))
+					 transition(edgeName="t512",targetState="atSlot",cond=whenReply("moverobotdone"))
+					transition(edgeName="t513",targetState="halted",cond=whenReply("moverobotfailed"))
+				}	 
+				state("atSlot") { //this:State
+					action { //it:State
+						CommUtils.outyellow("$name | arrivato allo slot riservato $TargetSlot")
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+				 	 		stateTimer = TimerActor("timer_atSlot", 
+				 	 					  scope, context!!, "local_tout_"+name+"_atSlot", 2000.toLong() )  //OCT2023
+					}	 	 
+					 transition(edgeName="t614",targetState="goHome",cond=whenTimeout("local_tout_"+name+"_atSlot"))   
 				}	 
 				state("goHome") { //this:State
 					action { //it:State
@@ -101,8 +140,8 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t410",targetState="done",cond=whenReply("moverobotdone"))
-					transition(edgeName="t411",targetState="halted",cond=whenReply("moverobotfailed"))
+					 transition(edgeName="t715",targetState="done",cond=whenReply("moverobotdone"))
+					transition(edgeName="t716",targetState="halted",cond=whenReply("moverobotfailed"))
 				}	 
 				state("done") { //this:State
 					action { //it:State

@@ -40,9 +40,9 @@ class Ioport ( name: String, scope: CoroutineScope, isconfined: Boolean=false, i
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t012",targetState="onButtonPressed",cond=whenDispatch("pushButton"))
-					transition(edgeName="t013",targetState="onSetOccupied",cond=whenDispatch("setOccupied"))
-					transition(edgeName="t014",targetState="onUpdateDisplay",cond=whenDispatch("updateDisplay"))
+					 transition(edgeName="t017",targetState="onButtonPressed",cond=whenDispatch("pushButton"))
+					transition(edgeName="t018",targetState="onSetOccupied",cond=whenDispatch("setOccupied"))
+					transition(edgeName="t019",targetState="onUpdateDisplay",cond=whenDispatch("updateDisplay"))
 				}	 
 				state("onButtonPressed") { //this:State
 					action { //it:State
@@ -57,9 +57,9 @@ class Ioport ( name: String, scope: CoroutineScope, isconfined: Boolean=false, i
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t115",targetState="showAccepted",cond=whenReply("loadaccepted"))
-					transition(edgeName="t116",targetState="showRejected",cond=whenReply("loadrejected"))
-					transition(edgeName="t117",targetState="onUpdateDisplay",cond=whenDispatch("updateDisplay"))
+					 transition(edgeName="t120",targetState="showAccepted",cond=whenReply("loadaccepted"))
+					transition(edgeName="t121",targetState="showRejected",cond=whenReply("loadrejected"))
+					transition(edgeName="t122",targetState="onUpdateDisplay",cond=whenDispatch("updateDisplay"))
 				}	 
 				state("showAccepted") { //this:State
 					action { //it:State

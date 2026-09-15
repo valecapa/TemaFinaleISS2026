@@ -71,7 +71,6 @@ public class Hold implements IHold {
         for (Pair<IPosition, ISlot> p : slotList) {
             ISlot slot = p.getSecond();
             if (!slot.isOccupied()) {
-                slot.setOccupied(true);
                 reservedSlotId = slot.getID();
                 return reservedSlotId;
             }
