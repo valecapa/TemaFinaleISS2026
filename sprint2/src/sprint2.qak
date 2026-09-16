@@ -8,22 +8,22 @@ Dispatch pushButton    : pushButton(NONE)          // simula la pressione del pu
 Dispatch setOccupied   : setOccupied(FLAG)         // simula il sensore
 Dispatch updateDisplay : updateDisplay(STATE,HOLD,MSG)
 
-Request transportContainer : transportContainer(SLOT)  //cargoservice incarica cargorobot di prelevare il container dall'IOPort, passare da slot5 per la marcatura e depositarlo nello SLOT riservato
+Request transportContainer : transportContainer(SLOT,TARGETX,TARGETY)   //cargoservice incarica cargorobot di prelevare il container dall'IOPort, passare da slot5 per la marcatura e depositarlo nello SLOT riservato; TARGETX/TARGETY sono le coordinate dello SLOT, calcolate da Hold (unica fonte del layout della stiva)"
 Reply   transportDone      : transportDone(SLOT)      for transportContainer
 Reply   transportFailed    : transportFailed(CAUSE)   for transportContainer
 
-Request waitMarking : waitMarking(NONE)  		//cargorobot, depositato il container in slot5, resta bloccato in attesa che cargoservice segnali la fine della marcatura
-Reply   markingDone : markingDone(NONE) for waitMarking
+//Request waitMarking : waitMarking(NONE)          //cargorobot, depositato il container in slot5, resta bloccato in attesa che cargoservice segnali la fine della marcatura"
+//Reply   markingDone : markingDone(NONE) for waitMarking
 
-Dispatch robotHalted : robotHalted(CAUSE)        //cargorobot notifica a cargoservice di essersi fermato per un guasto di RobotSmart26; cargoservice deciderà come procedere
+Dispatch robotHalted : robotHalted(CAUSE)        //cargorobot notifica a cargoservice di essersi fermato per un guasto di RobotSmart26; cargoservice deciderà come procedere"
 
-Request  moverobot      : moverobot(TARGETX, TARGETY, STEPTIME)   //move from current pos to (TARGETX,TARGETY)
+
+Request  moverobot      : moverobot(TARGETX, TARGETY, STEPTIME)   //move from current pos to (TARGETX,TARGETY)"
 Reply    moverobotdone  : moverobotok(ARG)                        for moverobot
 Reply    moverobotfailed: moverobotfailed(PLANDONE, PLANTODO)     for moverobot
 
-Context ctxcargoservice ip [host="localhost" port=8050]   // cargoservice e cargorobot
-Context ctxioport       ip [host="localhost" port=8060]
-Context ctxrobotsmart   ip [host="127.0.0.1"  port=8090]
+Context ctxcargoservice ip [host="localhost" port=8050]   // cargoservice, cargorobot e ioport: tutti qui, un solo processo
+Context ctxrobotsmart   ip [host="127.0.0.1"  port=8020]  // unico vero servizio esterno
 
 ExternalQActor robotsmart context ctxrobotsmart
 
@@ -31,9 +31,12 @@ QActor cargoservice context ctxcargoservice
     withobj hold using "utils.cargoservice.Hold()" {
 
     [# var Slot = -1
-     var Occupied = false #]
+     var Occupied = false
+     hold.setAllSlotsFree() #]
 
     State idle initial {
+    	[#var Stato = hold.displayStatus().toString() #]
+    	println("$Stato") color magenta
         println("$name | idle, in attesa di richieste...") color magenta
     }
     Transition t0 whenRequest loadrequest -> handleRequest
@@ -59,31 +62,67 @@ QActor cargoservice context ctxcargoservice
     Goto engaged if [# Slot != -1 && Occupied == false #] else idle
 
     State engaged {
-        println("$name | engaged") color magenta
-    }
-    Transition t1 whenTime 30000 -> disengaged
-
-    State disengaged {
-        println("$name | timeout scaduto, libero lo slot e torno idle") color magenta
-		[# hold.releaseReserved() #]
-		[# var H = "'" + hold.displayStatus() + "'" #]
-		[# var S = "'IDLE'" #]
-		[# var M = "'Timeout scaduto: slot liberato, torno idle'" #]
-		println("$name | LED PicoW -> off (hold=$H)") color magenta
-		forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
-        [# Slot = -1 #]
-    }
-    Goto idle
+	    [# var TX = hold.slotX(Slot)
+	       var TY = hold.slotY(Slot) #]
+	    println("$name | engaged, incarico cargorobot per slot $Slot (x=$TX,y=$TY)") color magenta
+	    request cargorobot -m transportContainer : transportContainer($Slot,$TX,$TY)
+	}
+	Goto waitingTransport
+	
+	State waitingTransport {
+	    // nessuna azione: solo attesa, nessuna richiesta va ripetuta rientrando qui
+	}
+	Transition t1 whenTime 30000        -> disengaged
+	    whenReply transportDone          -> success
+	    whenReply transportFailed        -> disengaged
+	    whenRequest loadrequest          -> rejectBusy
+	
+	State rejectBusy {
+	    onMsg(loadrequest : loadrequest(X)) {
+	        [# var H = "'" + hold.displayStatus() + "'" #]
+	        println("$name | sistema occupato, rifiuto nuova richiesta") color magenta
+	        replyTo loadrequest with loadrejected : loadrejected(retrylater,$H)
+	    }
+	}
+	Goto waitingTransport
+	
+	State disengaged {
+	    println("$name | timeout scaduto, libero lo slot e torno idle") color magenta
+	    [# hold.releaseReserved() #]
+	    [# var H = "'" + hold.displayStatus() + "'" #]
+	    [# var S = "'IDLE'" #]
+	    [# var M = "'Timeout scaduto: slot liberato, torno idle'" #]
+	    println("$name | LED PicoW -> off (hold=$H)") color magenta
+	    forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+	    [# Slot = -1 #]
+	}
+	Goto idle
+	
+	State success {
+		onMsg(transportDone : transportDone(SLOT)) {
+            [# Slot = payloadArg(0).toInt() 
+            	var Done  = hold.setReservedSlotOccupied()
+            #]
+            
+			println("$name | trasporto del container in slot $Slot terminato, torno idle") color magenta
+			[# hold.releaseReserved() #]
+	    	[# var H = "'" + hold.displayStatus() + "'" #]
+	    	[# var S = "'IDLE'" #]
+	    	[# var M = "'Trasporto terminato'" #]
+	    	println("$name | LED PicoW -> off (hold=$H)") color magenta
+	    	forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+	    	[# Slot = -1 #]
+		}
+	}
+	Goto idle
 }
 
-QActor cargorobot context ctxcargoservice {
+QActor cargorobot context ctxcargoservice
+    withobj hold using "utils.cargoservice.Hold()" {
+
     [# var TargetSlot = -1
-       val SLOT5_X = 2      // TODO: sostituire con le coordinate reali di slot5
-       val SLOT5_Y = 5
-       val HOME_X  = 0      // TODO: sostituire con le coordinate reali di HOME
-       val HOME_Y  = 0
-       fun slotX(s:Int) = when(s) { 1->1; 2->1; 3->3; 4->3; else->0 }   // TODO: mappatura placeholder, da sostituire
-       fun slotY(s:Int) = when(s) { 1->1; 2->3; 3->1; 4->3; else->0 }   // con il layout reale degli slot
+       var TargetX = -1
+       var TargetY = -1
     #]
 
     State idle initial {
@@ -92,42 +131,77 @@ QActor cargorobot context ctxcargoservice {
     Transition t0 whenRequest transportContainer -> startTransport
 
     State startTransport {
-        onMsg(transportContainer : transportContainer(SLOT)) {
-            [# TargetSlot = payloadArg(0).toInt() #]
-            println("$name | incarico ricevuto (slot riservato=$TargetSlot), vado a slot5") color yellow
-            request robotsmart -m moverobot : moverobot($SLOT5_X, $SLOT5_Y, 345)
+        onMsg(transportContainer : transportContainer(SLOT,TARGETX,TARGETY)) {
+            [# TargetSlot = payloadArg(0).toInt()
+               TargetX = payloadArg(1).toInt()
+               TargetY = payloadArg(2).toInt()
+               var IOPort = hold.getIOPortPosition()
+               var X_IOPort =  IOPort.getX()
+               var Y_IOPort = IOPort.getY()
+                #]
+            println("$name | incarico ricevuto (slot riservato=$TargetSlot, x=$TargetX,y=$TargetY), vado all'IOPort per il ritiro del container") color yellow
+            request robotsmart -m moverobot : moverobot($X_IOPort, $Y_IOPort, 345)
         }
     }
     Transition t1
-        whenReply moverobotdone   -> atSlot5
+        whenReply moverobotdone   -> atIOPort
+        whenReply moverobotfailed -> halted
+        
+    State atIOPort {
+        println("$name | arrivato in IoPort") color yellow
+    }
+    Transition t2 whenTime 2000 -> goToSlot5
+        
+        
+    State goToSlot5 {
+    	[# var S5 = hold.getSlot5Position()
+               var X_S5 =  S5.getX()
+               var Y_S5 = S5.getY() #]
+    	println("$name | container ritirato, vado allo slot5 per la marcatura") color yellow
+    	request robotsmart -m moverobot : moverobot($X_S5, $Y_S5, 345)
+    }
+    Transition t3
+    	whenReply moverobotdone   -> atSlot5
         whenReply moverobotfailed -> halted
 
     State atSlot5 {
         println("$name | container depositato in slot5, attendo fine marcatura") color yellow
-        request cargoservice -m waitMarking : waitMarking(NONE)
+        //request cargoservice -m waitMarking : waitMarking(NONE)
     }
-    Transition t2 whenReply markingDone -> goToReservedSlot
+    Transition t4 whenTime 2000 -> goToReservedSlot
 
     State goToReservedSlot {
         println("$name | marcatura completata, vado allo slot riservato $TargetSlot") color yellow
-        request robotsmart -m moverobot : moverobot(slotX($TargetSlot), slotY($TargetSlot), 345)
+        request robotsmart -m moverobot : moverobot($TargetX, $TargetY, 345)
     }
-    Transition t3
-        whenReply moverobotdone   -> goHome
+    Transition t5
+        whenReply moverobotdone   -> atSlot
         whenReply moverobotfailed -> halted
-
-    State goHome {
-        println("$name | container depositato, torno in HOME") color yellow
-        request robotsmart -m moverobot : moverobot($HOME_X, $HOME_Y, 345)
+        
+    State atSlot {
+        println("$name | arrivato allo slot riservato $TargetSlot") color yellow
+        //request cargoservice -m waitMarking : waitMarking(NONE)
     }
-    Transition t4
+    Transition t6 whenTime 2000 -> goHome
+    
+    State goHome {
+        [# var H = hold.getHomePosition()
+        	var X_HOME = H.getX()
+            var Y_HOME = H.getY()
+        #]
+        println("$name | container depositato, torno in HOME") color yellow
+        request robotsmart -m moverobot : moverobot($X_HOME, $Y_HOME, 345)
+    }
+    Transition t7
         whenReply moverobotdone   -> done
         whenReply moverobotfailed -> halted
 
     State done {
         println("$name | HOME raggiunta, trasporto completato") color yellow
         replyTo transportContainer with transportDone : transportDone($TargetSlot)
-        [# TargetSlot = -1 #]
+        [# TargetSlot = -1
+           TargetX = -1
+           TargetY = -1 #]
     }
     Goto idle
 
@@ -138,12 +212,10 @@ QActor cargorobot context ctxcargoservice {
     }
 }
 
-QActor ioport context ctxioport
+QActor ioport context ctxcargoservice
     withobj status using "utils.cargoservice.IOPortStatus()" {
 
-	[# println("IOPORT: sto creando WebSocket adapter sulla 7070")
-     var WsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070) 
-     println("IOPORT: WebSocket adapter creato")#]
+    [# var WsAdapter = utils.cargoservice.IOPortWsAdapter(this, 7070) #]
 
     State idle initial {
         println("$name | idle, in attesa della pressione del pulsante...") color cyan
@@ -206,4 +278,3 @@ QActor ioport context ctxioport
     }
     Goto idle
 }
-

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cargoservice — Sprint2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --h1-bg:   #f0e6ff;
+    --h2-bg:   #fce4f0;
+    --h3-bg:   #f9e0f5;
+    --h4-bg:   #fdf0f8;
+    --req-bg:  #fef0fb;
+    --req-border: #d484b8;
+    --domanda-bg:  #d2e6f4;
+    --domanda-border: #5caaeb;
+    --rem-bg:  #f8eaff;
+    --rem-border: #c9a0e0;
+    --code-bg: #fdf8ff;
+    --code-border: #dfc8e8;
+    --text:    #1e1a2e;
+    --text-muted: #5a4a6a;
+    --accent:  #7b3fa0;
+    --link:    #6b3a8a;
+    --body-bg: #fdf9ff;
+    --radius:  8px;
+    --font-body: 'DM Sans', sans-serif;
+    --font-head: 'Lora', Georgia, serif;
+    --font-code: 'Source Code Pro', 'Consolas', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--body-bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.page-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 36px 60px;
+}
+
+/* ── top banner ── */
+#top {
+    background: linear-gradient(135deg, #7b2fa0 0%, #b060c8 45%, #e080b0 80%, #f4a8cc 100%);
+    padding: 32px 36px 28px;
+    margin-bottom: 0;
+    position: relative;
+    overflow: hidden;
+}
+#top::after {
+    content: '';
+    position: absolute;
+
+    top: -80px;
+    right: -20px;
+
+    width: 300px;
+    height: 300px;
+
+    background-image: url('../img/boat.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    opacity: 0.7;
+}
+#top h1 {
+    color: #fff;
+    font-family: var(--font-head);
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 12px rgba(80,0,60,0.25);
+}
+#top .subtitle {
+    color: rgba(255,255,255,0.80);
+    font-size: 0.85rem;
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* ── section nav strip ── */
+.toc-strip {
+    background: #fff;
+    border-bottom: 2px solid #e8c8f4;
+    padding: 10px 36px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.toc-strip a {
+    color: var(--accent);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+}
+.toc-strip a:hover { opacity: 1; text-decoration: underline; }
+
+/* ── typography ── */
+h1 {
+    font-family: var(--font-head);
+    font-size: 1.55rem;
+    font-weight: 700;
+    background: var(--h1-bg);
+    color: #3a1a5a;
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    margin: 36px 0 14px;
+    border-left: 5px solid #9a5fc8;
+    letter-spacing: 0.01em;
+}
+h2 {
+    font-family: var(--font-head);
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: var(--h2-bg);
+    color: #6a1a40;
+    border-radius: var(--radius);
+    margin: 24px 0 10px;
+    padding: 6px 15px;
+    line-height: 1.3;
+    border-left: 4px solid #d060a0;
+}
+h3 {
+    font-family: var(--font-head);
+    font-size: 1.05rem;
+    font-weight: 600;
+    background: var(--h3-bg);
+    color: #6a1860;
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    margin: 22px 0 10px;
+    border-left: 3px solid #c870b8;
+}
+h4 {
+    background: var(--h4-bg);
+    font-size: 0.97rem;
+    font-weight: 600;
+    border-radius: 5px;
+    padding: 5px 12px;
+    margin: 18px 0 8px;
+    width: 95%;
+    border-left: 3px solid #d890c0;
+}
+
+p { margin: 0 0 12px; }
+
+a, a:visited, a:active, a:link {
+    color: var(--link);
+    text-decoration: underline;
+    font-size: 93%;
+}
+a:hover { background: #f4e0f8; border-radius: 3px; }
+
+/* ── code blocks ── */
+pre {
+    font-family: var(--font-code);
+    font-size: 0.88rem;
+    background: #fff9fc;
+    color: #4a3b46;
+    border: 1px solid #f1d7ea;
+    border-left: 5px solid #d87bc4;
+    border-radius: 16px;
+    padding: 18px 22px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.55;
+    margin: 14px 0 22px;
+    box-shadow: 0 4px 14px rgba(216,123,196,0.08), inset 0 1px 2px rgba(255,255,255,0.7);
+}
+
+code {
+    font-family: var(--font-code);
+    font-size: 90%;
+    background: #fdf0fa;
+    color: #7a006a;
+    border-radius: 4px;
+    padding: 1px 5px;
+}
+.code-wrapper {
+    position: relative;
+    margin: 14px 0 22px;
+}
+
+.code-source {
+    position: absolute;
+    top: 8px;
+    right: 14px;
+    font-family: var(--font-code);
+    font-size: 0.72rem;
+    color: #8a6a8f;
+    background: #fff9fc;
+    padding: 2px 6px;
+    border-radius: 4px;
+    z-index: 1;
+}
+
+.code-wrapper pre {
+    margin: 0;
+    padding-top: 38px;
+}
+/* ── requirement box ── */
+div.req {
+    background: var(--req-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--req-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.req::before {
+    content: 'Requisiti';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a3880;
+    margin-bottom: 8px;
+}
+
+/* ── domanda box ── */
+div.domanda {
+    background: var(--domanda-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--domanda-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.domanda::before {
+    content: 'Nota';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #1a6aab;
+    margin-bottom: 6px;
+}
+
+/* ── todo box ── */
+div.todo {
+    background: #f3f3f3;
+    font-size: 0.95rem;
+    border: 2px dashed #b0a8bb;
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    margin: 12px 0 18px;
+    color: #6a6070;
+    font-style: italic;
+}
+
+/* ── tables ── */
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th { background: #f0e0f8; color: #3a1a5a; font-weight: 600; }
+th, td { border: 1px solid #e0c8ec; padding: 8px 12px; font-size: 0.9rem; }
+tr:nth-child(even) td { background: #fdf6ff; }
+
+img { border: 1.5px solid #e8d0f4; border-radius: 6px; max-width: 100%; }
+
+/* ── footer ── */
+.footer {
+    background: linear-gradient(90deg, rgba(140,50,180,0.85), rgba(200,90,150,0.75));
+    color: #fff;
+    padding: 18px 24px;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    margin-top: 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.footer-authors {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.footer-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.footer-author img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.footer-author-initials {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.footer-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,0.3);
+}
+.footer a { color: #f4d0ff; }
+
+div.body { font-size: 1rem; }
+hr { clear: both; height: 1px; background: #e8d0f0; border: none; margin: 24px 0; }
+ol, ul { margin: 0 0 12px 20px; padding: 0; }
+li { margin-bottom: 4px; }
+
+@media (max-width: 600px) {
+    .page-wrap { padding: 0 16px 40px; }
+    #top { padding: 22px 16px 18px; }
+    .toc-strip { padding: 8px 16px; gap: 12px; }
+    .footer-divider { display: none; }
+}
+
+@media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="top">
+    <h1>Cargoservice — Sprint2</h1>
+    <div class="subtitle">ISS 2026 — Valeria Capacci &amp; Ginevra Pentoli</div>
+</div>
+
+<div class="toc-strip">
+    <a href="#goal">Goal</a>
+    <a href="#problem-analysis">Problem analysis</a>
+    <a href="#test-plans">Test plans</a>
+    <a href="#project">Project</a>
+    <a href="#deployment">Deployment</a>
+    <a href="#sprint3">Sprint3</a>
+</div>
+
+<div class="page-wrap">
+<div class="body">
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="goal">Goal</h1>
+
+<p>Progettare e realizzare <code>cargorobot</code>, il componente che orchestra il movimento del DDR. Il suo compito è portare il container dall'IOPort a <code>slot5</code> (dove avviene la marcatura), e da lì allo slot riservato, per poi tornare in HOME (requisito <strong>R3</strong> del committente). Il goal comprende inoltre la separazione dei Context per nodo fisico.</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="problem-analysis">Problem analysis</h1>
+
+<h2 id="cargorobot-requisiti">Cargorobot come componente intermedio</h2>
+<p>Come stabilito già in Sprint0, <code>RobotSmart26</code> è il servizio, fornito dal committente, che <code>cargorobot</code> utilizza come servizio esterno per il movimento del DDR, scelto fra le alternative disponibili (<code>RobotObj26</code>, <code>RobotService26</code>, <code>RobotSmart26</code>) perché è quella che riduce maggiormente l'abstraction gap: calcola autonomamente il percorso verso un punto di cui sono note le coordinate.  <code>cargorobot</code> resta comunque un'entità applicativa da progettare e realizzare, distinta da RobotSmart26, con la responsabilità di orchestrare la sequenza di operazioni. È quindi un componente intermedio fra <code>RobotSmart26</code> e <code>cargoservice</code>.<br>
+
+RobotSmart26 conosce infatti solo primitive di movimento verso coordinate e non ha alcuna nozione dei concetti di dominio del sistema (IOPort, slot5, marker, stiva, sequenza di carico) né dello stato di avanzamento di un'operazione di carico. Se <code>cargoservice</code> invocasse RobotSmart26 direttamente dovrebbe gestire sia la logica di business dell'orchestrazione delle varie richieste di carico sia la comunicazion col servizio esterno RobotSmart26, con due conseguenze indesiderate: la logica di orchestrazione del DDR resterebbe sparsa nell'attore <code>cargoservice</code> invece di essere incapsulata in un'unica entità responsabile e un cambiamento nel servizio robot si propagherebbe fino a <code>cargoservice</code> invece di restare confinato al solo componente che lo usa. Introdurre <code>cargorobot</code> come entità intermedia mantiene invece la stessa separazione delle responsabilità, andando a rispettare il Single Responsibility Principle.</p>
+
+<h2 id="canale-comunicazione">Comunicare con RobotSmart26</h2>
+<p>Analizzando il servizio fornito RobotSmart26 notiamo che esistono diversi tipi di comunicazione possibile. Dobbiamo quindi valutare e scegliere, fra i canali che il servizi espone, quello che riteniamo più adatto per far comunicare <code>cargoservice</code> con il servizio:</p>
+
+<table>
+<tr><th>Alternativa</th><th>Considerazioni</th></tr>
+<tr><td>ExternalQActor</td><td>si dichiara un <code>ExternalQActor</code> che punta al Context su cui gira RobotSmart26. Da quel momento <code>cargorobot</code> può inviare <code>request</code>/<code>dispatch</code> verso <code>robotsmart</code> esattamente come farebbe con un attore locale: la serializzazione dei messaggi e il loro instradamento in rete sono gestiti automaticamente dall'infrastruttura qak.</td></tr>
+<tr><td>MQTT</td><td>RobotSmart26 può essere raggiunto anche pubblicando sulla topic <code>robotsmart26in</code> di un broker; gli eventi/reply generati vengono ripubblicati sulla topic gemella <code>robotsmart26in_out</code>. Introduce quindi un componente architetturale aggiuntivo e soprattutto, a differenza del canale ExternalQActor, i payload vanno costruiti e correlati esplicitamente.</td></tr>
+<tr><td>CoAP</td><td>RobotSmart26 espone anche un client CoAP dedicato, pensato però per l'osservazione delle risorse (lo stato di <code>robotmnemo</code>) piuttosto che per l'invio di comandi; usarlo per pilotare il robot richiederebbe di reimplementare da zero sia il mapping dei comandi sia la logica di correlazione fra richiesta e risposta, senza alcun beneficio rispetto alle altre due alternative nel contesto di cargoservice.</td></tr>
+</table>
+
+<p>Si decide di adottare l'<code>ExternalQActor</code> nativo qak come canale primario fra <code>cargorobot</code> e RobotSmart26 perché non introduce componenti aggiuntivi (a differenza di MQTT) e non richiede logica di correlazione scritta a mano (a differenza di CoAP). Essendo RobotSmart26 esso stesso realizzato in qak, questo canale non richiede inoltre alcun livello di conversione dei messaggi.</p>
+
+<h2 id="livello-comando">I comandi di RobotSmart26</h2>
+<p>RobotSmart26 espone il proprio comportamento a più livelli di astrazione, non uno solo, e va quindi scelto quale usare per orchestrare il percorso che devono seguire i container. I comandi rilevanti sono:</p>
+<ul>
+<li><code>moverobot(TARGETX,TARGETY,STEPTIME)</code> → <code>moverobotok(ARG)</code> / <code>moverobotfailed(PLANDONE,PLANTODO)</code>: muove il robot verso una coppia di coordinate assolute, calcolando autonomamente il percorso e orientandosi verso l'obiettivo prima di partire;</li>
+<li><code>buildPlan(PX,PY,TX,TY)</code> → <code>buildPlanDone(PLAN)</code> seguito da <code>doplan(PLAN,STEPTIME)</code> → <code>doplandone(ARG)</code> / <code>doplanfailed(PLANTODO)</code>: separa il calcolo del piano dalla sua esecuzione, lasciando al chiamante la possibilità di ispezionare o modificare il piano fra i due passi;</li>
+<li><code>step(TIME)</code> → <code>stepdone(V)</code> / <code>stepfailed(DURATION,CAUSE)</code> e <code>move(M)</code> (dispatch, M = l|r|a|d|h): comandi elementari di singolo passo/rotazione, pensati per scenari di esplorazione in cui la mappa non è nota a priori.</li>
+</ul>
+
+<p>Analizzando le varie possibilità:</p>
+
+<table>
+<tr><th>Alternativa</th><th>Considerazioni rispetto al caso d'uso</th></tr>
+<tr><td><code>moverobot</code></td><td>massima riduzione dell'abstraction gap: <code>cargorobot</code> chiede solo "vai in (X,Y)", senza occuparsi di pianificazione. Adatta quando l'ambiente è noto a priori, come nel nostro caso.</td></tr>
+<tr><td><code>buildPlan</code> + <code>doplan</code></td><td>utile se occorre ispezionare o adattare il piano prima di eseguirlo (ad esempio per evitare una zona); introduce però in <code>cargorobot</code> una responsabilità di orchestrazione del piano che, per le nostre tratte fisse, non ha controparte in alcun requisito.</td></tr>
+<tr><td><code>step</code> / <code>move</code></td><td>livello più basso, pensato per l'esplorazione di un ambiente non ancora mappato; nel nostro caso l'ambiente è già interamente noto (le coordinate degli slot sono un dato di progetto), quindi usarlo significherebbe reimplementare in <code>cargorobot</code> una logica di path-planning che RobotSmart26 offre già.</td></tr>
+</table>
+
+<p>Si sceglie <code>moverobot</code> come comando primario di movimento: le tratte che <code>cargorobot</code> deve percorrere sono verso coordinate fisse e note in anticipo, per cui non c'è alcun bisogno di intervenire sul piano calcolato.</p>
+
+<h2 id="marker-sincronizzazione">Il marker</h2>
+<p>Il requisito descrive il marker come un dispositivo a sé, ma vale la pena chiedersi se avrebbe senso realizzarlo come una singola entità separata oppure se "inglobarlo" assieme a <code>cargorobot</code>. Analizzandone il comportamento notiamo infatti che esso si occupa solo di gestire per ogni container che gli viene affidato un timeout (con cui notifica il DDR) e l'assegnazione dello slot. Avendo quindi minime responsabilità, ha pertanto senso gestirlo internamente all'orchestratore in modo "astratto", trattandolo come dettaglio implementativo.</p>
+
+<h2 id="cargorobot-guasto-comportamento">Comportamento di cargorobot al guasto di RobotSmart26</h2>
+
+<p>Come stabilito precedentemente con il committente, in presenza di guasti il robot si ferma immediatamente e resta fermo finché il sistema non decide il da farsi. <code>cargorobot</code> si limita quindi a riconoscere il fallimento e a fermarsi, mentre la decisione su come reagire resta a <code>cargoservice</code>.</p>
+
+<h2 id="separazione-context">Separazione dei Context</h2>
+<p>Precedentemente si era già individuata la necessità di alcuni nodi fisici distinti (cargorobot, cargoservice, sonar, IOPort), ma finora abbiamo mantenuto <code>cargoservice</code> e <code>ioport</code> in un unico Context per pura semplicità, rimandando la valutazione di un'eventuale separazione reale successivamente. 
+    Riconsiderando la questione, si decide di non introdurre un <code>ctxioport</code> dedicato. Il motivo è che la vera separazione fisica rilevante per <code>ioport</code> non è quella verso <code>cargoservice</code>, ma quella verso il browser che ospita la WebGUI e quest'ultima è già un processo separato per definizione (gira sul dispositivo del cliente, non su un nostro nodo), che comunica con l'attore <code>ioport</code> tramite <code>IOPortWsAdapter</code>. Introdurre un secondo processo qak solo per <code>ioport</code> aggiungerebbe quindi un salto di rete in più fra <code>ioport</code> e <code>cargoservice</code> (via <code>ExternalQActor</code>) senza portare alcun beneficio.</p>
+
+<p>I nodi di questo sprint restano quindi:</p>
+<ul>
+<li><strong><code>ctxcargoservice</code></strong> (<code>localhost:8050</code>): ospita gli attori <code>cargoservice</code>, <code>cargorobot</code> e <code>ioport</code>, oltre al POJO <code>Hold</code>.</li>
+<li><strong>RobotSmart26</strong>: già esterno per definizione, referenziato come <code>ExternalQActor</code> nel Context di <code>cargoservice</code> su <code>localhost:8020</code>.</li>
+</ul>
+
+<h2 id="modello-qak">Il modello prodotto</h2>
+<p>Dall'analisi precedente segue il protocollo dei messaggi del modello <code>qak</code> (<a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint2/src/sprint2.qak"><code>sprint2.qak</code></a>).</p>
+
+<div class="code-wrapper">
+<span class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint2/src/sprint2.qak">sprint2.qak</a></span>
+<pre>Request loadrequest  : loadrequest(OCCUPIED)
+Reply   loadaccepted : loadaccepted(SLOT,HOLD) for loadrequest
+Reply   loadrejected : loadrejected(REASON,HOLD)   for loadrequest
+
+Dispatch pushButton    : pushButton(NONE)
+Dispatch setOccupied   : setOccupied(FLAG)
+Dispatch updateDisplay : updateDisplay(STATE,HOLD,MSG)
+
+Request transportContainer : transportContainer(SLOT,TARGETX,TARGETY)
+Reply   transportDone      : transportDone(SLOT)      for transportContainer
+Reply   transportFailed    : transportFailed(CAUSE)   for transportContainer
+
+Dispatch robotHalted : robotHalted(CAUSE)
+
+Request  moverobot      : moverobot(TARGETX, TARGETY, STEPTIME)
+Reply    moverobotdone  : moverobotok(ARG)                        for moverobot
+Reply    moverobotfailed: moverobotfailed(PLANDONE, PLANTODO)     for moverobot
+
+Context ctxcargoservice ip [host="localhost" port=8050]   // cargoservice, cargorobot e ioport: tutti qui, un solo processo
+Context ctxrobotsmart   ip [host="127.0.0.1"  port=8020]  // unico vero servizio esterno
+
+ExternalQActor robotsmart context ctxrobotsmart
+
+QActor cargoservice context ctxcargoservice
+    withobj hold using "utils.cargoservice.Hold()" {
+        
+}
+
+QActor cargorobot context ctxcargoservice
+    withobj hold using "utils.cargoservice.Hold()" {
+
+}
+
+QActor ioport context ctxcargoservice
+    withobj status using "utils.cargoservice.IOPortStatus()" {
+
+}
+
+</pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="test-plans">Test plans</h1>
+
+<p>Test che guideranno l'implementazione di <code>cargorobot</code>.</p>
+
+<table>
+<tr><th>Test</th><th>Obiettivo</th></tr>
+<tr><td>Percorso completo del container</td><td>Verificare che <code>cargorobot</code>, ricevuto l'incarico di caricare un container, invii correttamente le richieste <code>moverobot</code>, rispettando l'ordine richiesto dal requisito R3 (IOPort → slot5 → slot riservato → HOME).</td></tr>
+<tr><td>Fallimento del movimento</td><td>Simulare la risposta <code>moverobotfailed</code> e verificare che <code>cargorobot</code> si fermi immediatamente e resti in attesa, senza inviare ulteriori comandi finché il sistema non decide come procedere.</td></tr>
+<tr><td>Comunicazione con RobotSmart26</td><td>Verificare che i messaggi <code>moverobot</code>/<code>moverobotok</code>/<code>moverobotfailed</code> scambiati fra <code>ctxcargoservice</code> e <code>ctxrobotsmart</code> tramite l'<code>ExternalQActor</code> <code>robotsmart</code> arrivino correttamente a destinazione, eseguendo i due Context come processi realmente separati.</td></tr>
+<tr><td>Gestione degli slot</td><td>Verificare, tramite <code>Hold</code>, che richieste di carico successive vengano assegnate a slot liberi distinti (<code>reserveFirstFree</code>), che uno slot pieno/timeout venga correttamente liberato (<code>releaseReserved</code>) e che a stiva piena una nuova <code>loadrequest</code> venga rifiutata con motivo <code>full</code>.</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="project">Project</h1>
+
+<p>A partire dal modello di analisi si è realizzato un prototipo eseguibile che copre il goal dello sprint: orchestrazione del trasporto tramite <code>cargorobot</code>, gestione degli slot tramite <code>Hold</code>, mantenimento (senza modifiche strutturali) di <code>ioport</code>.</p>
+
+<h2 id="impl-cargorobot">cargorobot</h2>
+<p>Realizzato come nuovo <code>QActor</code> nel Context <code>ctxcargoservice</code>. Ogni passo della sequenza invia una <code>moverobot</code> a <code>robotsmart</code> (<code>ExternalQActor</code>) e reagisce solo alla relativa reply; in <code>atSlot5</code> l'attesa della marcatura è gestita con un timeout fisso di 5&nbsp;s (<code>whenTime 5000</code>):</p>
+
+<div class="code-wrapper">
+<span class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint2/src/sprint2.qak"><code>sprint2.qak</code></a></span>
+<pre>QActor cargorobot context ctxcargoservice
+  withobj hold using "utils.cargoservice.Hold()" {
+
+    [# var TargetSlot=-1, TargetX=-1, TargetY=-1 #]
+
+    State idle initial { println("$name | idle") }
+    Transition t0 whenRequest transportContainer -> startTransport
+
+    State startTransport {
+        onMsg(transportContainer : transportContainer(SLOT,TARGETX,TARGETY)) {
+            [# TargetSlot=payloadArg(0).toInt()
+               TargetX=payloadArg(1).toInt()
+               TargetY=payloadArg(2).toInt()
+               var IOPort=hold.getIOPortPosition()
+               var X_IOPort=IOPort.getX(), Y_IOPort=IOPort.getY() #]
+            request robotsmart -m moverobot : moverobot($X_IOPort,$Y_IOPort,345)
+        }
+    }
+    Transition t1
+        whenReply moverobotdone -> atIOPort
+        whenReply moverobotfailed -> halted
+
+    State atIOPort { }
+    Transition t2 whenTime 2000 -> goToSlot5
+
+    State goToSlot5 {
+        [# var S5=hold.getSlot5Position()
+           var X_S5=S5.getX(), Y_S5=S5.getY() #]
+        request robotsmart -m moverobot : moverobot($X_S5,$Y_S5,345)
+    }
+    Transition t3
+        whenReply moverobotdone -> atSlot5
+        whenReply moverobotfailed -> halted
+
+    State atSlot5 { }
+    Transition t4 whenTime 2000 -> goToReservedSlot
+
+    State goToReservedSlot {
+        request robotsmart -m moverobot : moverobot($TargetX,$TargetY,345)
+    }
+    Transition t5
+        whenReply moverobotdone -> atSlot
+        whenReply moverobotfailed -> halted
+
+    State atSlot { }
+    Transition t6 whenTime 2000 -> goHome
+
+    State goHome {
+        [# var H=hold.getHomePosition()
+           var X_HOME=H.getX(), Y_HOME=H.getY() #]
+        request robotsmart -m moverobot : moverobot($X_HOME,$Y_HOME,345)
+    }
+    Transition t7
+        whenReply moverobotdone -> done
+        whenReply moverobotfailed -> halted
+
+    State done {
+        replyTo transportContainer with transportDone : transportDone($TargetSlot)
+        [# TargetSlot=-1, TargetX=-1, TargetY=-1 #]
+    }
+    Goto idle
+
+    State halted {
+        forward cargoservice -m robotHalted : robotHalted(guastoRobotSmart26)
+        replyTo transportContainer with transportFailed : transportFailed(guastoRobotSmart26)
+    }
+}</pre>
+</div>
+
+
+<h2 id="impl-cargoservice">cargoservice</h2>
+<p><code>engaged</code> incarica <code>cargorobot</code> passandogli anche la posizione dello slot riservato, e la transizione da <code>engaged</code> osserva sia il timeout dei 30s sia le reply <code>transportDone</code>/<code>transportFailed</code> di <code>cargorobot</code>: un fallimento riporta subito a <code>disengaged</code> (stesso comportamento del timeout), mentre un trasporto concluso con successo porta a un nuovo stato <code>success</code> dedicato, che aggiorna la stiva e il display con un messaggio diverso da quello di timeout:</p>
+
+<div class="code-wrapper">
+<span class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint2/src/sprint2.qak"><code>sprint2.qak</code></a></span>
+<pre>QActor cargoservice context ctxcargoservice
+  withobj hold using "utils.cargoservice.Hold()" {
+
+    [# var Slot=-1
+       var Occupied=false
+       hold.setAllSlotsFree() #]
+
+    State idle initial { }
+    Transition t0 whenRequest loadrequest -> handleRequest
+
+    State handleRequest {
+        onMsg(loadrequest : loadrequest(X)) {
+            [# Occupied=payloadArg(0).toBoolean()
+               var H="'" + hold.displayStatus() + "'" #]
+            if [# Occupied == true #] {
+                replyTo loadrequest with loadrejected : loadrejected(retrylater,$H)
+            } else {
+                [# Slot=hold.reserveFirstFree() #]
+                if [# Slot != -1 #] {
+                    [# var H2="'" + hold.displayStatus() + "'" #]
+                    replyTo loadrequest with loadaccepted : loadaccepted($Slot,$H2)
+                } else {
+                    replyTo loadrequest with loadrejected : loadrejected(full,$H)
+                }
+            }
+        }
+    }
+    Goto engaged if [# Slot != -1 && Occupied == false #] else idle
+
+    State engaged {
+        [# var TX=hold.slotX(Slot), TY=hold.slotY(Slot) #]
+        request cargorobot -m transportContainer : transportContainer($Slot,$TX,$TY)
+    }
+    Goto waitingTransport
+
+    State waitingTransport { }
+    Transition t1 whenTime 30000       -> disengaged
+        whenReply transportDone         -> success
+        whenReply transportFailed       -> disengaged
+        whenRequest loadrequest         -> rejectBusy
+
+    State rejectBusy {
+        onMsg(loadrequest : loadrequest(X)) {
+            [# var H="'" + hold.displayStatus() + "'" #]
+            replyTo loadrequest with loadrejected : loadrejected(retrylater,$H)
+        }
+    }
+    Goto waitingTransport
+
+    State disengaged {
+        [# hold.releaseReserved()
+           var H="'" + hold.displayStatus() + "'"
+           var S="'IDLE'"
+           var M="'Timeout scaduto: slot liberato, torno idle'" #]
+        forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+        [# Slot=-1 #]
+    }
+    Goto idle
+
+    State success {
+        onMsg(transportDone : transportDone(SLOT)) {
+            [# Slot=payloadArg(0).toInt()
+               var Done=hold.setReservedSlotOccupied()
+               hold.releaseReserved()
+               var H="'" + hold.displayStatus() + "'"
+               var S="'IDLE'"
+               var M="'Trasporto terminato'" #]
+            forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+            [# Slot=-1 #]
+        }
+    }
+    Goto idle
+}</pre>
+</div>
+
+<h2 id="gestione-slot">Gestione degli slot</h2>
+<p>La gestione della stiva è incapsulata nel POJO <code>Hold</code> che mantiene due tipi di informazione ben distinti:</p>
+<ul>
+<li><strong>layout fisso</strong> della stiva (posizioni di IOPort, HOME, slot5 e dei 4 slot), definito come costante nel costruttore di <code>Hold</code> e mai modificato: può quindi essere letto in sicurezza da più istanze di <code>Hold</code> senza alcuno stato condiviso;</li>
+<li><strong>quale slot è occupato</strong>, essendo mutabile vive solo nell'istanza di <code>Hold</code> di <code>cargoservice</code>.</li>
+</ul>
+<p>Questa distinzione permette a <code>cargorobot</code> di istanziare una propria copia di <code>Hold</code> in sola lettura, usata solo per leggere le posizioni fisse (slot5, HOME, IOPort) tramite <code>getSlot5Position()</code>/<code>getHomePosition()</code>/<code>getIOPortPosition()</code>, senza toccare mai lo stato delle riserve. </code></p>
+
+<p>I metodi di <code>Hold</code> che <code>cargoservice</code> usa sono:</p>
+<table>
+<tr><th>Metodo</th><th>Uso</th></tr>
+<tr><td><code>reserveFirstFree()</code></td><td>assegna il primo slot libero e lo marca occupato, oppure ritorna <code>-1</code> se la stiva è piena</td></tr>
+<tr><td><code>releaseReserved()</code></td><td>chiamato in <code>disengaged</code> (timeout scaduto senza che il container sia mai entrato)</td></tr>
+<tr><td><code>slotX(id)</code> / <code>slotY(id)</code></td><td>chiamati in <code>engaged</code> per calcolare le coordinate da passare a <code>cargorobot</code> nella <code>transportContainer</code></td></tr>
+<tr><td><code>displayStatus()</code></td><td>usato in ogni risposta/notifica verso <code>ioport</code>, per mostrare lo stato della stiva sul display</td></tr>
+</table>
+
+<div class="code-wrapper">
+<span class="code-source"><a href="https://github.com/valecapa/TemaFinaleISS2026/blob/main/sprint1/src/utils/cargoservice/Hold.java"><code>Hold.java</code></a></span>
+<pre>public int reserveFirstFree() {
+    for (Pair&lt;IPosition, ISlot&gt; p : slotList) {
+        ISlot slot = p.getSecond();
+        if (!slot.isOccupied()) {
+            slot.setOccupied(true);
+            reservedSlotId = slot.getID();
+            return reservedSlotId;
+        }
+    }
+    return -1; // stiva piena
+}
+
+public void releaseReserved() {
+    if (reservedSlotId == -1) return;
+    findById(reservedSlotId).getSecond().setOccupied(false);
+    reservedSlotId = -1;
+}
+
+public String displayStatus() {
+    StringBuilder sb = new StringBuilder();
+    for (Pair&lt;IPosition, ISlot&gt; p : slotList) {
+        ISlot slot = p.getSecond();
+        if (sb.length() &gt; 0) sb.append(",");
+        sb.append(slot.getID()).append(":").append(slot.isOccupied() ? "OCC" : "FREE");
+    }
+    return sb.toString();
+}</pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="deployment">Deployment</h1>
+
+<p>Il sistema è composto da due processi separati: il nodo applicativo (<code>ctxcargoservice</code>) e il servizio esterno RobotSmart26 (<code>ctxrobotsmart</code>), oltre al browser che ospita la WebGUI, già di per sé un processo indipendente.</p>
+
+<table>
+<tr><th>Nodo</th><th>Indirizzo</th><th>Contenuto</th></tr>
+<tr><td><code>ctxcargoservice</code></td><td><code>localhost:8050</code></td><td>attori <code>cargoservice</code>, <code>cargorobot</code>, <code>ioport</code>; classi <code>utils.cargoservice.*</code> (<code>Hold</code>, <code>Slot</code>, <code>Position</code>, ...)</td></tr>
+<tr><td><code>ctxrobotsmart</code></td><td><code>127.0.0.1:8020</code></td><td>RobotSmart26, fornito dal committente, avviato separatamente tramite <code>robotsmart26.yaml</code>/Docker</td></tr>
+<tr><td>WebGUI</td><td><code>ws://localhost:7070</code></td><td>pagina browser del cliente, connessa via <code>IOPortWsAdapter</code></td></tr>
+</table>
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="sprint3">Definizione dello Sprint3</h1>
+
+<div class="req">
+<ul>
+    <li>Progettare e realizzare l'attore <code>sonar</code> e scrivere il firmware del microcontrollore Raspberry che misura la distanza <code>D</code> davanti all'IOPort.</li>
+    <li>Gestire la reazione del sistema al guasto sonar durante il movimento del DDR.</li>
+    <li>Completare la gestione del <code>LED</code>.</li>
+</ul>
+</div>
+
+</div><!-- .body -->
+
+<div class="footer">
+    <div class="footer-authors">
+        <div class="footer-author">
+            <img src="../img/VC.jpg" alt="VC"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="footer-author-initials" style="display:none;">
+                VC
+            </div>
+            <div>
+                <strong>Valeria Capacci</strong><br>
+                <a href="mailto:valeria.capacci@studio.unibo.it">valeria.capacci@studio.unibo.it</a>
+            </div>
+        </div>
+        <div class="footer-divider"></div>
+        <div class="footer-author">
+            <img src="../img/GP.jpeg" alt="GP"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="footer-author-initials" style="display:none;">
+                GP
+            </div>
+            <div>
+                <strong>Ginevra Pentoli</strong><br>
+                <a href="mailto:ginevra.pentoli@studio.unibo.it">ginevra.pentoli@studio.unibo.it</a>
+            </div>
+        </div>
+    </div>
+    <div style="margin-left: auto; font-size: 0.8rem; opacity: 0.85;">
+        GIT: <a href="https://github.com/valecapa/TemaFinaleISS2026">github.com/valecapa/TemaFinaleISS2026</a>
+    </div>
+</div>
+
+</div><!-- .page-wrap -->
+</body>
+</html>

@@ -72,7 +72,14 @@ public class IOPortWsAdapter {
     }
 
     private void broadcast(String json) {
-        clients.forEach(ctx -> ctx.send(json));
+        for (WsContext ctx : clients) {
+            try {
+                ctx.send(json);
+            } catch (Exception e) {
+                CommUtils.outred("IOPortWsAdapter | invio fallito, rimuovo client non più attivo: " + e.getMessage());
+                clients.remove(ctx);
+            }
+        }
     }
 
 

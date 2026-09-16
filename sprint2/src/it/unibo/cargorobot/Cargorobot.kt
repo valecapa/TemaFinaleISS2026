@@ -29,13 +29,10 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 	override fun getBody() : (ActorBasicFsm.() -> Unit){
 		//val interruptedStateTransitions = mutableListOf<Transition>()
 		//IF actor.withobj !== null val actor.withobj.name� = actor.withobj.method�ENDIF
+		val hold = utils.cargoservice.Hold()
 		 var TargetSlot = -1
-		       val SLOT5_X = 2      // TODO: sostituire con le coordinate reali di slot5
-		       val SLOT5_Y = 5
-		       val HOME_X  = 0      // TODO: sostituire con le coordinate reali di HOME
-		       val HOME_Y  = 0
-		       fun slotX(s:Int) = when(s) { 1->1; 2->1; 3->3; 4->3; else->0 }   // TODO: mappatura placeholder, da sostituire
-		       fun slotY(s:Int) = when(s) { 1->1; 2->3; 3->1; 4->3; else->0 }   // con il layout reale degli slot
+		       var TargetX = -1
+		       var TargetY = -1
 		return { //this:ActionBasciFsm
 				state("idle") { //this:State
 					action { //it:State
@@ -45,64 +42,114 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t02",targetState="startTransport",cond=whenRequest("transportContainer"))
+					 transition(edgeName="t05",targetState="startTransport",cond=whenRequest("transportContainer"))
 				}	 
 				state("startTransport") { //this:State
 					action { //it:State
-						if( checkMsgContent( Term.createTerm("transportContainer(SLOT)"), Term.createTerm("transportContainer(SLOT)"), 
+						if( checkMsgContent( Term.createTerm("transportContainer(SLOT,TARGETX,TARGETY)"), Term.createTerm("transportContainer(SLOT,TARGETX,TARGETY)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
-								 TargetSlot = payloadArg(0).toInt()  
-								CommUtils.outyellow("$name | incarico ricevuto (slot riservato=$TargetSlot), vado a slot5")
-								request("moverobot", "moverobot($SLOT5_X,$SLOT5_Y,345)" ,"robotsmart" )  
+								 TargetSlot = payloadArg(0).toInt()
+								               TargetX = payloadArg(1).toInt()
+								               TargetY = payloadArg(2).toInt()
+								               var IOPort = hold.getIOPortPosition()
+								               var X_IOPort =  IOPort.getX()
+								               var Y_IOPort = IOPort.getY()
+								CommUtils.outyellow("$name | incarico ricevuto (slot riservato=$TargetSlot, x=$TargetX,y=$TargetY), vado all'IOPort per il ritiro del container")
+								request("moverobot", "moverobot($X_IOPort,$Y_IOPort,345)" ,"robotsmart" )  
 						}
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t13",targetState="atSlot5",cond=whenReply("moverobotdone"))
-					transition(edgeName="t14",targetState="halted",cond=whenReply("moverobotfailed"))
+					 transition(edgeName="t16",targetState="atIOPort",cond=whenReply("moverobotdone"))
+					transition(edgeName="t17",targetState="halted",cond=whenReply("moverobotfailed"))
+				}	 
+				state("atIOPort") { //this:State
+					action { //it:State
+						CommUtils.outyellow("$name | arrivato in IoPort")
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+				 	 		stateTimer = TimerActor("timer_atIOPort", 
+				 	 					  scope, context!!, "local_tout_"+name+"_atIOPort", 2000.toLong() )  //OCT2023
+					}	 	 
+					 transition(edgeName="t28",targetState="goToSlot5",cond=whenTimeout("local_tout_"+name+"_atIOPort"))   
+				}	 
+				state("goToSlot5") { //this:State
+					action { //it:State
+						 var S5 = hold.getSlot5Position()
+						               var X_S5 =  S5.getX()
+						               var Y_S5 = S5.getY()  
+						CommUtils.outyellow("$name | container ritirato, vado allo slot5 per la marcatura")
+						request("moverobot", "moverobot($X_S5,$Y_S5,345)" ,"robotsmart" )  
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition(edgeName="t39",targetState="atSlot5",cond=whenReply("moverobotdone"))
+					transition(edgeName="t310",targetState="halted",cond=whenReply("moverobotfailed"))
 				}	 
 				state("atSlot5") { //this:State
 					action { //it:State
 						CommUtils.outyellow("$name | container depositato in slot5, attendo fine marcatura")
-						request("waitMarking", "waitMarking(NONE)" ,"cargoservice" )  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
+				 	 		stateTimer = TimerActor("timer_atSlot5", 
+				 	 					  scope, context!!, "local_tout_"+name+"_atSlot5", 2000.toLong() )  //OCT2023
 					}	 	 
-					 transition(edgeName="t25",targetState="goToReservedSlot",cond=whenReply("markingDone"))
+					 transition(edgeName="t411",targetState="goToReservedSlot",cond=whenTimeout("local_tout_"+name+"_atSlot5"))   
 				}	 
 				state("goToReservedSlot") { //this:State
 					action { //it:State
 						CommUtils.outyellow("$name | marcatura completata, vado allo slot riservato $TargetSlot")
-						request("moverobot", "moverobot(slotX($TargetSlot),slotY($TargetSlot),345)" ,"robotsmart" )  
+						request("moverobot", "moverobot($TargetX,$TargetY,345)" ,"robotsmart" )  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t36",targetState="goHome",cond=whenReply("moverobotdone"))
-					transition(edgeName="t37",targetState="halted",cond=whenReply("moverobotfailed"))
+					 transition(edgeName="t512",targetState="atSlot",cond=whenReply("moverobotdone"))
+					transition(edgeName="t513",targetState="halted",cond=whenReply("moverobotfailed"))
+				}	 
+				state("atSlot") { //this:State
+					action { //it:State
+						CommUtils.outyellow("$name | arrivato allo slot riservato $TargetSlot")
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+				 	 		stateTimer = TimerActor("timer_atSlot", 
+				 	 					  scope, context!!, "local_tout_"+name+"_atSlot", 2000.toLong() )  //OCT2023
+					}	 	 
+					 transition(edgeName="t614",targetState="goHome",cond=whenTimeout("local_tout_"+name+"_atSlot"))   
 				}	 
 				state("goHome") { //this:State
 					action { //it:State
+						 var H = hold.getHomePosition()
+						        	var X_HOME = H.getX()
+						            var Y_HOME = H.getY()
 						CommUtils.outyellow("$name | container depositato, torno in HOME")
-						request("moverobot", "moverobot($HOME_X,$HOME_Y,345)" ,"robotsmart" )  
+						request("moverobot", "moverobot($X_HOME,$Y_HOME,345)" ,"robotsmart" )  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t48",targetState="done",cond=whenReply("moverobotdone"))
-					transition(edgeName="t49",targetState="halted",cond=whenReply("moverobotfailed"))
+					 transition(edgeName="t715",targetState="done",cond=whenReply("moverobotdone"))
+					transition(edgeName="t716",targetState="halted",cond=whenReply("moverobotfailed"))
 				}	 
 				state("done") { //this:State
 					action { //it:State
 						CommUtils.outyellow("$name | HOME raggiunta, trasporto completato")
 						answer("transportContainer", "transportDone", "transportDone($TargetSlot)"   )  
-						 TargetSlot = -1  
+						 TargetSlot = -1
+						           TargetX = -1
+						           TargetY = -1  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
