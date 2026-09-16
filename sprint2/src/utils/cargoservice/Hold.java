@@ -3,7 +3,6 @@ package utils.cargoservice;
 import java.util.ArrayList;
 import java.util.List;
 import kotlin.Pair;
-import utils.cargoservice.IPosition;
 
 public class Hold implements IHold {
 
@@ -13,7 +12,6 @@ public class Hold implements IHold {
 
     private final List<Pair<IPosition, ISlot>> slotList = new ArrayList<>();
 
-    // unico stato mutabile: quale slot è attualmente riservato (-1 = nessuno)
     private int reservedSlotId = -1;
 
     public Hold() {
