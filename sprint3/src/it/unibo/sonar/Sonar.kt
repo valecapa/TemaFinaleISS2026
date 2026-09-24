@@ -36,8 +36,12 @@ class Sonar ( name: String, scope: CoroutineScope, isconfined: Boolean=false, is
 		       var T0Container = 0L        // 0 = nessuna finestra di conferma container in corso
 		       var T0Fault = 0L            // 0 = nessuna finestra di conferma guasto in corso
 		       var WINDOW = 3000L          // 3 secondi, requisito esplicito di Sprint0
-		       var MqttLink = utils.cargoservice.SonarMqttAdapter(this,
-		           "192.168.0.218", "cargoservice/sonar/distance", "cargoservice/sonar/led")
+		       var MqttLink = utils.cargoservice.SonarMqttAdapter(
+				    this,
+				    "tcp://localhost:1883",
+				    "cargoservice/sonar/distance",
+				    "cargoservice/sonar/led"
+				)
 		return { //this:ActionBasciFsm
 				state("idle") { //this:State
 					action { //it:State
@@ -102,8 +106,8 @@ class Sonar ( name: String, scope: CoroutineScope, isconfined: Boolean=false, is
 					action { //it:State
 						if( checkMsgContent( Term.createTerm("blinkLed(FLAG)"), Term.createTerm("blinkLed(FLAG)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
-								 var F = payloadArg(0)  
-								 MqttLink.sendLed(F.toBoolean())  
+								 var F = payloadArg(0)
+								            MqttLink.sendLed(F.toBoolean()) 
 								CommUtils.outblue("$name | comando Led($F) inoltrato al PicoW via MQTT")
 						}
 						//genTimer( actor, state )
