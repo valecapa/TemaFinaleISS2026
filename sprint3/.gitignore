@@ -5,6 +5,7 @@ bin/default
 .project
 .idea
 build
+.gradle/
 logs 
 
 log4jInfo.log
@@ -23,4 +24,3 @@ package-lock.json
 docker/
 /.metadata/
 /src-gen/
-/.gradle/

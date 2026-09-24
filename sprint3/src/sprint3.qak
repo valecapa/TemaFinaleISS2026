@@ -345,9 +345,14 @@ QActor sonar context ctxcargoservice {
        var T0Container = 0L        // 0 = nessuna finestra di conferma container in corso
        var T0Fault = 0L            // 0 = nessuna finestra di conferma guasto in corso
        var WINDOW = 3000L          // 3 secondi, requisito esplicito di Sprint0
-       var MqttLink = utils.cargoservice.SonarMqttAdapter(this,
-           "192.168.0.218", "cargoservice/sonar/distance", "cargoservice/sonar/led")
+       var MqttLink = utils.cargoservice.SonarMqttAdapter(
+		    this,
+		    "tcp://localhost:1883",
+		    "cargoservice/sonar/distance",
+		    "cargoservice/sonar/led"
+		)
     #]
+
 
     State idle initial {
         println("$name | idle, in ascolto delle letture del PicoW via MQTT...") color blue
@@ -403,8 +408,9 @@ QActor sonar context ctxcargoservice {
 
     State onBlink {
         onMsg(blinkLed : blinkLed(FLAG)) {
-            [# var F = payloadArg(0) #]
-            [# MqttLink.sendLed(F.toBoolean()) #]
+            [# var F = payloadArg(0)
+            MqttLink.sendLed(F.toBoolean()) 
+            #]
             println("$name | comando Led($F) inoltrato al PicoW via MQTT") color blue
         }
     }
