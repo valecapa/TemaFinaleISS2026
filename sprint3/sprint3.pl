@@ -1,6 +1,7 @@
 %====================================================================================
 % sprint3 description   
 %====================================================================================
+mqttBroker("127.0.0.1", "1883", "cargoservice/sonar/distance").
 request( loadrequest, loadrequest(OCCUPIED) ).
 reply( loadaccepted, loadaccepted(SLOT,HOLD) ).  %%for loadrequest
 reply( loadrejected, loadrejected(REASON,HOLD) ).  %%for loadrequest

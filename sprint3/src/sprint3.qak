@@ -1,4 +1,5 @@
 System sprint3
+mqttBroker "127.0.0.1" : 1883 eventTopic "cargoservice/sonar/distance"
 
 Request loadrequest  : loadrequest(OCCUPIED)                     // fa richiesta di carico, OCCUPIED controlla se l'ingresso è libero o occupato da un container
 Reply   loadaccepted : loadaccepted(SLOT,HOLD) for loadrequest    // accetta il carico, assegna lo SLOT e mostra lo stato della HOLD
@@ -23,7 +24,7 @@ Reply    moverobotdone  : moverobotok(ARG)                        for moverobot
 Reply    moverobotfailed: moverobotfailed(PLANDONE, PLANTODO)     for moverobot
 
 // ---- NUOVI messaggi Sprint3 (sonar) ----
-Event    sonarreading  : sonarreading(DISTANCE)   // letture continue iniettate da SonarMqttAdapter
+Event sonarreading : sonarreading(DISTANCE)
 Dispatch sonarfault    : sonarfault(CAUSE)        // D > DFREE per >= 3s: sospetto guasto sonar
 Dispatch sonarrestored : sonarrestored(NONE)      // sonar tornato a D <= DFREE dopo un guasto
 Dispatch blinkLed      : blinkLed(FLAG)           // comando Led per il PicoW, inoltrato via MQTT
@@ -345,23 +346,18 @@ QActor sonar context ctxcargoservice {
        var T0Container = 0L        // 0 = nessuna finestra di conferma container in corso
        var T0Fault = 0L            // 0 = nessuna finestra di conferma guasto in corso
        var WINDOW = 3000L          // 3 secondi, requisito esplicito di Sprint0
-       var MqttLink = utils.cargoservice.SonarMqttAdapter(
-		    this,
-		    "tcp://localhost:1883",
-		    "cargoservice/sonar/distance",
-		    "cargoservice/sonar/led"
-		)
     #]
 
 
     State idle initial {
-        println("$name | idle, in ascolto delle letture del PicoW via MQTT...") color blue
-    }
-    Transition t0
-        whenEvent sonarreading -> onReading
-        whenMsg blinkLed     -> onBlink
+	    println("$name | in ascolto eventi nativi QAK via MQTT...") color blue
+	}
+	Transition t0
+	    whenEvent sonarreading -> onReading
+	    whenMsg blinkLed     -> onBlink	
 
     State onReading {
+    	println("$name | RICEVUTO MESSAGGIO!") color green
         onMsg(sonarreading : sonarreading(D)) {
             [# Dist = payloadArg(0).toDouble()
                var Now = System.currentTimeMillis()
@@ -409,7 +405,8 @@ QActor sonar context ctxcargoservice {
     State onBlink {
         onMsg(blinkLed : blinkLed(FLAG)) {
             [# var F = payloadArg(0)
-            MqttLink.sendLed(F.toBoolean()) 
+               var LedMsg = CommUtils.buildDispatch(name, "blinkLed", "blinkLed(" + F + ")", "picow")
+               mqtt.publish("cargoservice/sonar/led", LedMsg.toString())
             #]
             println("$name | comando Led($F) inoltrato al PicoW via MQTT") color blue
         }

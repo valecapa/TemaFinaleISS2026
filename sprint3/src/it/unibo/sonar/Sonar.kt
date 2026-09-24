@@ -36,16 +36,10 @@ class Sonar ( name: String, scope: CoroutineScope, isconfined: Boolean=false, is
 		       var T0Container = 0L        // 0 = nessuna finestra di conferma container in corso
 		       var T0Fault = 0L            // 0 = nessuna finestra di conferma guasto in corso
 		       var WINDOW = 3000L          // 3 secondi, requisito esplicito di Sprint0
-		       var MqttLink = utils.cargoservice.SonarMqttAdapter(
-				    this,
-				    "tcp://localhost:1883",
-				    "cargoservice/sonar/distance",
-				    "cargoservice/sonar/led"
-				)
 		return { //this:ActionBasciFsm
 				state("idle") { //this:State
 					action { //it:State
-						CommUtils.outblue("$name | idle, in ascolto delle letture del PicoW via MQTT...")
+						CommUtils.outblue("$name | in ascolto eventi nativi QAK via MQTT...")
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
@@ -56,6 +50,7 @@ class Sonar ( name: String, scope: CoroutineScope, isconfined: Boolean=false, is
 				}	 
 				state("onReading") { //this:State
 					action { //it:State
+						CommUtils.outgreen("$name | RICEVUTO MESSAGGIO!")
 						if( checkMsgContent( Term.createTerm("sonarreading(DISTANCE)"), Term.createTerm("sonarreading(D)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
 								 Dist = payloadArg(0).toDouble()
@@ -107,7 +102,8 @@ class Sonar ( name: String, scope: CoroutineScope, isconfined: Boolean=false, is
 						if( checkMsgContent( Term.createTerm("blinkLed(FLAG)"), Term.createTerm("blinkLed(FLAG)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
 								 var F = payloadArg(0)
-								            MqttLink.sendLed(F.toBoolean()) 
+								               var LedMsg = CommUtils.buildDispatch(name, "blinkLed", "blinkLed(" + F + ")", "picow")
+								               mqtt.publish("cargoservice/sonar/led", LedMsg.toString())
 								CommUtils.outblue("$name | comando Led($F) inoltrato al PicoW via MQTT")
 						}
 						//genTimer( actor, state )
