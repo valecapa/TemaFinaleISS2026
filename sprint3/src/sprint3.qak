@@ -1,37 +1,36 @@
 System sprint3
-mqttBroker "127.0.0.1" : 1883 eventTopic "cargoservice/sonar/distance"
+mqttBroker "192.168.1.122" : 1883 eventTopic "cargoservice/sonar/distance"
 
 Request loadrequest  : loadrequest(OCCUPIED)                     // fa richiesta di carico, OCCUPIED controlla se l'ingresso è libero o occupato da un container
 Reply   loadaccepted : loadaccepted(SLOT,HOLD) for loadrequest    // accetta il carico, assegna lo SLOT e mostra lo stato della HOLD
 Reply   loadrejected : loadrejected(REASON,HOLD)   for loadrequest    // rifiuta il carico, dà il motivo (REASON) e mostra lo stato della HOLD
 
 Dispatch pushButton    : pushButton(NONE)          // simula la pressione del pulsante fisico dello IOPort
-Dispatch setOccupied   : setOccupied(FLAG)         // ora anche il sonar reale invia questo dispatch, oltre alla simulazione manuale
-Dispatch updateDisplay : updateDisplay(STATE,HOLD,MSG)
+Dispatch setOccupied   : setOccupied(FLAG)         // il sonar reale invia questo dispatch a ioport (stato "c'è già un container fermo all'IOPort")
+Dispatch updateDisplay : updateDisplay(STATE,HOLD,MSG)  //aggiorna messaggio su ioport
 
-Request transportContainer : transportContainer(SLOT,TARGETX,TARGETY)   //cargoservice incarica cargorobot di prelevare il container dall'IOPort, passare da slot5 per la marcatura e depositarlo nello SLOT riservato; TARGETX/TARGETY sono le coordinate dello SLOT, calcolate da Hold (unica fonte del layout della stiva)"
+Request transportContainer : transportContainer(SLOT,TARGETX,TARGETY)   //cargoservice incarica cargorobot di prelevare il container dall'IOPort, passare da slot5 per la marcatura e depositarlo nello SLOT riservato; TARGETX/TARGETY sono le coordinate dello SLOT, calcolate da Hold (unica fonte del layout della stiva)
 Reply   transportDone      : transportDone(SLOT)      for transportContainer
 Reply   transportFailed    : transportFailed(CAUSE)   for transportContainer
 
-//Request waitMarking : waitMarking(NONE)          //cargorobot, depositato il container in slot5, resta bloccato in attesa che cargoservice segnali la fine della marcatura"
-//Reply   markingDone : markingDone(NONE) for waitMarking
+// marker
+Request waitMarker : waitMarker(NONE)
+Reply   markerDone : markerDone(NONE) for waitMarker
 
-Dispatch robotHalted : robotHalted(CAUSE)        //cargorobot notifica a cargoservice di essersi fermato per un guasto di RobotSmart26; cargoservice deciderà come procedere"
+Dispatch sonarcontainer : sonarcontainer(DISTANCE)  // container rilevato (D < DFREE/2 per >= 3s)
 
-
-Request  moverobot      : moverobot(TARGETX, TARGETY, STEPTIME)   //move from current pos to (TARGETX,TARGETY)"
+Request  moverobot      : moverobot(TARGETX, TARGETY, STEPTIME)   // sposta robot da pos corrente a (TARGETX,TARGETY)
 Reply    moverobotdone  : moverobotok(ARG)                        for moverobot
 Reply    moverobotfailed: moverobotfailed(PLANDONE, PLANTODO)     for moverobot
 
-// ---- NUOVI messaggi Sprint3 (sonar) ----
-Event sonarreading : sonarreading(DISTANCE)
+Event    sonarreading  : sonarreading(DISTANCE)   // letture della distanza (DISTANCE) registrata dal sonar
 Dispatch sonarfault    : sonarfault(CAUSE)        // D > DFREE per >= 3s: sospetto guasto sonar
 Dispatch sonarrestored : sonarrestored(NONE)      // sonar tornato a D <= DFREE dopo un guasto
-Dispatch blinkLed      : blinkLed(FLAG)           // comando Led per il PicoW, inoltrato via MQTT
-Dispatch halt          : halt(X)                  // arresto immediato verso RobotSmart26 (da validare, vedi diario)
+Dispatch blinkLed      : blinkLed(FLAG)           // comando Led per il PicoW
+Dispatch halt          : halt(X)                  // arresto immediato
 
-Context ctxcargoservice ip [host="localhost" port=8050]   // cargoservice, cargorobot, ioport e sonar: tutti qui, un solo processo
-Context ctxrobotsmart   ip [host="127.0.0.1"  port=8020]  // unico vero servizio esterno
+Context ctxcargoservice ip [host="localhost" port=8050]   // per cargoservice, cargorobot, ioport e sonar
+Context ctxrobotsmart   ip [host="127.0.0.1"  port=8020]
 
 ExternalQActor robotsmart context ctxrobotsmart
 
@@ -39,6 +38,8 @@ QActor cargoservice context ctxcargoservice
     withobj hold using "utils.cargoservice.Hold()" {
 
     [# var Slot = -1
+     var TX = -1
+     var TY = -1
      var Occupied = false
      hold.setAllSlotsFree() #]
 
@@ -47,7 +48,32 @@ QActor cargoservice context ctxcargoservice
     	println("$Stato") color magenta
         println("$name | idle, in attesa di richieste...") color magenta
     }
-    Transition t0 whenRequest loadrequest -> handleRequest
+    Transition t0
+        whenRequest loadrequest -> handleRequest
+        whenMsg sonarfault      -> idleOutOfService
+        whenMsg sonarrestored   -> idleServiceRestored
+
+    State idleOutOfService {
+        onMsg(sonarfault : sonarfault(CAUSE)) {
+            [# var H = "'" + hold.displayStatus() + "'" #]
+            [# var S = "'OUT_OF_SERVICE'" #]
+            [# var M = "'Out of service'" #]
+            println("$name | sonar guasto, aggiorno display") color red
+            forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+        }
+    }
+    Goto idle
+
+    State idleServiceRestored {
+        onMsg(sonarrestored : sonarrestored(NONE)) {
+            [# var H = "'" + hold.displayStatus() + "'" #]
+            [# var S = "'IDLE'" #]
+            [# var M = "'Service working'" #]
+            println("$name | sonar ripristinato, aggiorno display") color magenta
+            forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+        }
+    }
+    Goto idle
 
     State handleRequest {
         onMsg(loadrequest : loadrequest(X)) {
@@ -58,7 +84,9 @@ QActor cargoservice context ctxcargoservice
             } else {
                 [# Slot = hold.reserveFirstFree() #]
                 if [# Slot != -1 #] {
-                    [# var H2 = "'" + hold.displayStatus() + "'" #]
+                    [# TX = hold.slotX(Slot)
+                       TY = hold.slotY(Slot)
+                       var H2 = "'" + hold.displayStatus() + "'" #]
                     println("$name | richiesta accettata (hold=$H2)") color magenta
                     replyTo loadrequest with loadaccepted : loadaccepted($Slot,$H2)
                 } else {
@@ -70,23 +98,63 @@ QActor cargoservice context ctxcargoservice
     Goto engaged if [# Slot != -1 && Occupied == false #] else idle
 
     State engaged {
-	    [# var TX = hold.slotX(Slot)
-	       var TY = hold.slotY(Slot) #]
-	    println("$name | engaged, incarico cargorobot per slot $Slot (x=$TX,y=$TY)") color magenta
+	    println("$name | engaged, in attesa che il cliente porti il container (slot $Slot)") color magenta
 	    forward sonar -m blinkLed : blinkLed(true)
+	}
+	Transition t0
+	    whenTime 30000           -> disengagedTimeout
+	    whenMsg sonarcontainer   -> startTransport
+	    whenRequest loadrequest  -> rejectBusyContainer
+	    whenMsg sonarfault       -> engagedOutOfService
+	    whenMsg sonarrestored    -> engagedServiceRestored
+
+	State rejectBusyContainer {
+	    onMsg(loadrequest : loadrequest(X)) {
+	        [# var H = "'" + hold.displayStatus() + "'" #]
+	        println("$name | sistema occupato, rifiuto nuova richiesta") color magenta
+	        replyTo loadrequest with loadrejected : loadrejected(retrylater,$H)
+	    }
+	}
+	Goto engaged
+
+	State engagedOutOfService {
+	    onMsg(sonarfault : sonarfault(CAUSE)) {
+	        [# var H = "'" + hold.displayStatus() + "'" #]
+	        [# var S = "'OUT_OF_SERVICE'" #]
+	        [# var M = "'Out of service'" #]
+	        forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+	    }
+	}
+	Goto engaged
+
+	State engagedServiceRestored {
+	    onMsg(sonarrestored : sonarrestored(NONE)) {
+	        [# var H = "'" + hold.displayStatus() + "'" #]
+	        [# var S = "'ENGAGED'" #]
+	        [# var M = "'Service working'" #]
+	        forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+	    }
+	}
+	Goto engaged
+
+	State startTransport {
+	    println("$name | container rilevato, incarico cargorobot per slot $Slot (x=$TX,y=$TY)") color magenta
 	    request cargorobot -m transportContainer : transportContainer($Slot,$TX,$TY)
 	}
 	Goto waitingTransport
 
 	State waitingTransport {
-	    // nessuna azione: solo attesa, nessuna richiesta va ripetuta rientrando qui
+	    // attendo la fine del trasporto o che succeda qualcosa
 	}
-	Transition t1 whenTime 30000        -> disengaged
+	Transition t1
 	    whenReply transportDone          -> success
-	    whenReply transportFailed        -> disengaged
-	    whenRequest loadrequest          -> rejectBusy
+	    whenReply transportFailed        -> disengagedFault
+	    whenRequest loadrequest          -> rejectBusyTransport
+	    whenRequest waitMarker           -> handleMarking
+	    whenMsg sonarfault               -> transportOutOfService
+	    whenMsg sonarrestored            -> transportServiceRestored
 
-	State rejectBusy {
+	State rejectBusyTransport {
 	    onMsg(loadrequest : loadrequest(X)) {
 	        [# var H = "'" + hold.displayStatus() + "'" #]
 	        println("$name | sistema occupato, rifiuto nuova richiesta") color magenta
@@ -95,12 +163,55 @@ QActor cargoservice context ctxcargoservice
 	}
 	Goto waitingTransport
 
-	State disengaged {
-	    println("$name | timeout scaduto, libero lo slot e torno idle") color magenta
+	State transportOutOfService {
+	    onMsg(sonarfault : sonarfault(CAUSE)) {
+	        [# var H = "'" + hold.displayStatus() + "'" #]
+	        [# var S = "'OUT_OF_SERVICE'" #]
+	        [# var M = "'Out of service'" #]
+	        forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+	    }
+	}
+	Goto waitingTransport
+
+	State transportServiceRestored {
+	    onMsg(sonarrestored : sonarrestored(NONE)) {
+	        [# var H = "'" + hold.displayStatus() + "'" #]
+	        [# var S = "'ENGAGED'" #]
+	        [# var M = "'Service working'" #]
+	        forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+	    }
+	}
+	Goto waitingTransport
+
+	State handleMarking {
+	    println("$name | marcatura container in corso...") color magenta
+	}
+	Transition tm whenTime 3000 -> markingDone
+
+	State markingDone {
+	    println("$name | marcatura completata, notifico cargorobot") color magenta
+	    replyTo waitMarker with markerDone : markerDone(NONE)
+	}
+	Goto waitingTransport
+
+	State disengagedTimeout {
+	    println("$name | timeout scaduto, nessun container arrivato: libero lo slot e torno idle") color magenta
 	    [# hold.releaseReserved() #]
 	    [# var H = "'" + hold.displayStatus() + "'" #]
 	    [# var S = "'IDLE'" #]
 	    [# var M = "'Timeout scaduto: slot liberato, torno idle'" #]
+	    forward sonar -m blinkLed : blinkLed(false)
+	    forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+	    [# Slot = -1 #]
+	}
+	Goto idle
+
+	State disengagedFault {
+	    println("$name | trasporto fallito per guasto robot: libero lo slot e torno idle") color red
+	    [# hold.releaseReserved() #]
+	    [# var H = "'" + hold.displayStatus() + "'" #]
+	    [# var S = "'IDLE'" #]
+	    [# var M = "'Guasto durante il trasporto: slot liberato, riprovare'" #]
 	    forward sonar -m blinkLed : blinkLed(false)
 	    forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
 	    [# Slot = -1 #]
@@ -132,9 +243,9 @@ QActor cargorobot context ctxcargoservice
     [# var TargetSlot = -1
        var TargetX = -1
        var TargetY = -1
-       var PendingTX = -1     // NUOVO: target del moverobot in corso, per la ripresa
+       var PendingTX = -1     // target del moverobot in corso (per la ripresa dopo un guasto sonar)
        var PendingTY = -1
-       var Leg = ""           // NUOVO: "toIOPort" | "toSlot5" | "toReserved" | "toHome"
+       var Leg = ""           // "toIOPort" | "toSlot5" | "toReserved" | "toHome"
     #]
 
     State idle initial {
@@ -166,7 +277,6 @@ QActor cargorobot context ctxcargoservice
     }
     Transition t2 whenTime 2000 -> goToSlot5
 
-
     State goToSlot5 {
     	[# var S5 = hold.getSlot5Position()
                var X_S5 =  S5.getX()
@@ -183,9 +293,9 @@ QActor cargorobot context ctxcargoservice
 
     State atSlot5 {
         println("$name | container depositato in slot5, attendo fine marcatura") color yellow
-        //request cargoservice -m waitMarking : waitMarking(NONE)
+        request cargoservice -m waitMarker : waitMarker(NONE)
     }
-    Transition t4 whenTime 2000 -> goToReservedSlot
+    Transition t4 whenReply markerDone -> goToReservedSlot
 
     State goToReservedSlot {
         [# PendingTX = TargetX ; PendingTY = TargetY ; Leg = "toReserved" #]
@@ -199,7 +309,6 @@ QActor cargorobot context ctxcargoservice
 
     State atSlot {
         println("$name | arrivato allo slot riservato $TargetSlot") color yellow
-        //request cargoservice -m waitMarking : waitMarking(NONE)
     }
     Transition t6 whenTime 2000 -> goHome
 
@@ -228,15 +337,16 @@ QActor cargorobot context ctxcargoservice
 
     State halted {
         println("$name | guasto RobotSmart26 rilevato, mi fermo e attendo decisione") color red
-        forward cargoservice -m robotHalted : robotHalted(guastoRobotSmart26)
         replyTo transportContainer with transportFailed : transportFailed(guastoRobotSmart26)
+        [# TargetSlot = -1
+           TargetX = -1
+           TargetY = -1 #]
     }
-
-    // ---- NUOVI stati Sprint3: interruzione/ripresa per guasto sonar ----
+    Goto idle
 
     State onSonarFault {
         onMsg(sonarfault : sonarfault(CAUSE)) {
-            println("$name | sonarfault ricevuto, fermo RobotSmart26 e sospendo verso ($PendingTX,$PendingTY)") color red
+            println("$name | sonarfault ricevuto, fermo RobotSmart26") color red
             forward robotsmart -m halt : halt(NONE)
         }
     }
@@ -253,7 +363,7 @@ QActor cargorobot context ctxcargoservice
         whenReply moverobotfailed -> halted
 
     State resumedOk {
-        // instrada verso lo stato successivo originale, in base alla tratta interrotta
+        // riprende lo spostamento
     }
     Goto atIOPort if [# Leg == "toIOPort" #] else checkResumedSlot5
 
@@ -263,10 +373,6 @@ QActor cargorobot context ctxcargoservice
     State checkResumedSlot { }
     Goto atSlot if [# Leg == "toReserved" #] else done
 
-    // NOTA: halt e' documentato per la famiglia RobotService26 (Dispatch halt : halt(X)),
-    // non esplicitamente per RobotSmart26 nella versione del Protobook consultata.
-    // Lo adottiamo come ipotesi di lavoro; se RobotSmart26 non lo riconoscesse alla
-    // prima prova su banco, l'unico punto da correggere e' il forward in onSonarFault.
 }
 
 QActor ioport context ctxcargoservice
@@ -336,40 +442,38 @@ QActor ioport context ctxcargoservice
     Goto idle
 }
 
-// ---- NUOVO QActor Sprint3: sonar ----
+
 QActor sonar context ctxcargoservice {
 
-    [# var DFREE = 30              // cm — soglia provvisoria Sprint0, da calibrare (vedi TP-B1)
+    [# var DFREE = 30
        var Dist = 0.0
        var Occupied = false
        var Faulted = false
        var T0Container = 0L        // 0 = nessuna finestra di conferma container in corso
        var T0Fault = 0L            // 0 = nessuna finestra di conferma guasto in corso
-       var WINDOW = 3000L          // 3 secondi, requisito esplicito di Sprint0
+       var WINDOW = 3000L          // 3 secondi
     #]
 
-
     State idle initial {
-	    println("$name | in ascolto eventi nativi QAK via MQTT...") color blue
-	}
-	Transition t0
-	    whenEvent sonarreading -> onReading
-	    whenMsg blinkLed     -> onBlink	
+        println("$name | idle, in ascolto delle letture del PicoW via MQTT...") color blue
+    }
+    Transition t0
+        whenEvent sonarreading -> onReading
+        whenMsg blinkLed     -> onBlink
 
     State onReading {
-    	println("$name | RICEVUTO MESSAGGIO!") color green
         onMsg(sonarreading : sonarreading(D)) {
             [# Dist = payloadArg(0).toDouble()
                var Now = System.currentTimeMillis()
             #]
 
-            // --- zona container: D < DFREE/2 ---
             if [# Dist < DFREE/2.0 #] {
                 [# if (T0Container == 0L) { T0Container = Now } #]
                 if [# !Occupied && (Now - T0Container) >= WINDOW #] {
                     [# Occupied = true #]
-                    println("$name | container rilevato (D=$Dist cm), notifico ioport") color blue
+                    println("$name | container rilevato (D=$Dist cm), notifico ioport e cargoservice") color blue
                     forward ioport -m setOccupied : setOccupied(true)
+                    forward cargoservice -m sonarcontainer : sonarcontainer($Dist)
                 }
             } else {
                 [# T0Container = 0L #]
@@ -380,7 +484,6 @@ QActor sonar context ctxcargoservice {
                 }
             }
 
-            // --- zona guasto: D > DFREE ---
             if [# Dist > DFREE #] {
                 [# if (T0Fault == 0L) { T0Fault = Now } #]
                 if [# !Faulted && (Now - T0Fault) >= WINDOW #] {
@@ -404,10 +507,9 @@ QActor sonar context ctxcargoservice {
 
     State onBlink {
         onMsg(blinkLed : blinkLed(FLAG)) {
-            [# var F = payloadArg(0)
-               var LedMsg = CommUtils.buildDispatch(name, "blinkLed", "blinkLed(" + F + ")", "picow")
-               mqtt.publish("cargoservice/sonar/led", LedMsg.toString())
-            #]
+            [# var F = payloadArg(0) #]
+            [# var LedMsg = CommUtils.buildDispatch(name, "blinkLed", "blinkLed(" + F + ")", "picow")
+               mqtt.publish("cargoservice/sonar/led", LedMsg.toString()) #]
             println("$name | comando Led($F) inoltrato al PicoW via MQTT") color blue
         }
     }

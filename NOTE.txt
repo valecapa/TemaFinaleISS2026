@@ -8,3 +8,14 @@ Risolvere in Sprint2:
 - When the request to load is accepted, the customer must move the container in the sensor area within prefixed amount of time (e.g. 30 secs), otherwise the systems becomes disengaged. in che senso è il cliente a muovere il container? cosa è la sensor area? il sonar del pico o quella virtuale del virtualrobot? sono la stessa cosa? come vanno gestite?
 - lo slot diventa occupato quando arriva a home, non quando deposita il container nello slot
 - il robot si deve girare verso gli slot?
+
+Sprint3:
+
+- risolvere 30 secondi
+- eliminare simulazione dell'ioport occupata in ioport
+
+- problema: esiste ancora un timer generale di 3 secondi che scaduto quello annulla tutto
+- credo vada migliorata la gestione dei sonarfault
+- mi sembra funzioni anche senza soglia (anche se il sonar rileva distanza maggiore, va comunque in home a ritirare il container. forse non riesce a rilevare container (non mi sembra mandi nemmeno il print). confermo, funziona anche senza sonar collegato
+- se fosse possibile togliere i messaggi ricevuti dal sonar…
+- separazione context
