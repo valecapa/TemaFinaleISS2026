@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cargoservice — Sprint3</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --h1-bg:   #f0e6ff;
+    --h2-bg:   #fce4f0;
+    --h3-bg:   #f9e0f5;
+    --h4-bg:   #fdf0f8;
+    --req-bg:  #fef0fb;
+    --req-border: #d484b8;
+    --domanda-bg:  #d2e6f4;
+    --domanda-border: #5caaeb;
+    --rem-bg:  #f8eaff;
+    --rem-border: #c9a0e0;
+    --code-bg: #fdf8ff;
+    --code-border: #dfc8e8;
+    --text:    #1e1a2e;
+    --text-muted: #5a4a6a;
+    --accent:  #7b3fa0;
+    --link:    #6b3a8a;
+    --body-bg: #fdf9ff;
+    --radius:  8px;
+    --font-body: 'DM Sans', sans-serif;
+    --font-head: 'Lora', Georgia, serif;
+    --font-code: 'Source Code Pro', 'Consolas', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--body-bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.page-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 36px 60px;
+}
+
+/* ── top banner ── */
+#top {
+    background: linear-gradient(135deg, #7b2fa0 0%, #b060c8 45%, #e080b0 80%, #f4a8cc 100%);
+    padding: 32px 36px 28px;
+    margin-bottom: 0;
+    position: relative;
+    overflow: hidden;
+}
+#top::after {
+    content: '';
+    position: absolute;
+
+    top: -80px;
+    right: -20px;
+
+    width: 300px;
+    height: 300px;
+
+    background-image: url('../img/boat.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    opacity: 0.7;
+}
+#top h1 {
+    color: #fff;
+    font-family: var(--font-head);
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 12px rgba(80,0,60,0.25);
+}
+#top .subtitle {
+    color: rgba(255,255,255,0.80);
+    font-size: 0.85rem;
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* ── section nav strip ── */
+.toc-strip {
+    background: #fff;
+    border-bottom: 2px solid #e8c8f4;
+    padding: 10px 36px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.toc-strip a {
+    color: var(--accent);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+}
+.toc-strip a:hover { opacity: 1; text-decoration: underline; }
+
+/* ── typography ── */
+h1 {
+    font-family: var(--font-head);
+    font-size: 1.55rem;
+    font-weight: 700;
+    background: var(--h1-bg);
+    color: #3a1a5a;
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    margin: 36px 0 14px;
+    border-left: 5px solid #9a5fc8;
+    letter-spacing: 0.01em;
+}
+h2 {
+    font-family: var(--font-head);
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: var(--h2-bg);
+    color: #6a1a40;
+    border-radius: var(--radius);
+    margin: 24px 0 10px;
+    padding: 6px 15px;
+    line-height: 1.3;
+    border-left: 4px solid #d060a0;
+}
+h3 {
+    font-family: var(--font-head);
+    font-size: 1.05rem;
+    font-weight: 600;
+    background: var(--h3-bg);
+    color: #6a1860;
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    margin: 22px 0 10px;
+    border-left: 3px solid #c870b8;
+}
+h4 {
+    background: var(--h4-bg);
+    font-size: 0.97rem;
+    font-weight: 600;
+    border-radius: 5px;
+    padding: 5px 12px;
+    margin: 18px 0 8px;
+    width: 95%;
+    border-left: 3px solid #d890c0;
+}
+
+p { margin: 0 0 12px; }
+
+a, a:visited, a:active, a:link {
+    color: var(--link);
+    text-decoration: underline;
+    font-size: 93%;
+}
+a:hover { background: #f4e0f8; border-radius: 3px; }
+
+/* ── code blocks ── */
+pre {
+    font-family: var(--font-code);
+    font-size: 0.88rem;
+    background: #fff9fc;
+    color: #4a3b46;
+    border: 1px solid #f1d7ea;
+    border-left: 5px solid #d87bc4;
+    border-radius: 16px;
+    padding: 18px 22px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.55;
+    margin: 14px 0 22px;
+    box-shadow: 0 4px 14px rgba(216,123,196,0.08), inset 0 1px 2px rgba(255,255,255,0.7);
+}
+
+code {
+    font-family: var(--font-code);
+    font-size: 90%;
+    background: #fdf0fa;
+    color: #7a006a;
+    border-radius: 4px;
+    padding: 1px 5px;
+}
+.code-wrapper {
+    position: relative;
+    margin: 14px 0 22px;
+}
+
+.code-source {
+    position: absolute;
+    top: 8px;
+    right: 14px;
+    font-family: var(--font-code);
+    font-size: 0.72rem;
+    color: #8a6a8f;
+    background: #fff9fc;
+    padding: 2px 6px;
+    border-radius: 4px;
+    z-index: 1;
+}
+
+.code-wrapper pre {
+    margin: 0;
+    padding-top: 38px;
+}
+/* ── requirement box ── */
+div.req {
+    background: var(--req-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--req-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.req::before {
+    content: 'Requisiti';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a3880;
+    margin-bottom: 8px;
+}
+
+/* ── domanda box ── */
+div.domanda {
+    background: var(--domanda-bg);
+    font-size: 0.95rem;
+    border: 2px solid var(--domanda-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 12px 0 18px;
+    position: relative;
+}
+div.domanda::before {
+    content: 'Nota';
+    display: block;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #1a6aab;
+    margin-bottom: 6px;
+}
+
+/* ── todo box ── */
+div.todo {
+    background: #f3f3f3;
+    font-size: 0.95rem;
+    border: 2px dashed #b0a8bb;
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    margin: 12px 0 18px;
+    color: #6a6070;
+    font-style: italic;
+}
+
+/* ── tables ── */
+table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+th { background: #f0e0f8; color: #3a1a5a; font-weight: 600; }
+th, td { border: 1px solid #e0c8ec; padding: 8px 12px; font-size: 0.9rem; }
+tr:nth-child(even) td { background: #fdf6ff; }
+
+img { border: 1.5px solid #e8d0f4; border-radius: 6px; max-width: 100%; }
+
+/* ── footer ── */
+.footer {
+    background: linear-gradient(90deg, rgba(140,50,180,0.85), rgba(200,90,150,0.75));
+    color: #fff;
+    padding: 18px 24px;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    margin-top: 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.footer-authors {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.footer-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.footer-author img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.footer-author-initials {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+.footer-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,0.3);
+}
+.footer a { color: #f4d0ff; }
+
+div.body { font-size: 1rem; }
+hr { clear: both; height: 1px; background: #e8d0f0; border: none; margin: 24px 0; }
+ol, ul { margin: 0 0 12px 20px; padding: 0; }
+li { margin-bottom: 4px; }
+
+@media (max-width: 600px) {
+    .page-wrap { padding: 0 16px 40px; }
+    #top { padding: 22px 16px 18px; }
+    .toc-strip { padding: 8px 16px; gap: 12px; }
+    .footer-divider { display: none; }
+}
+
+@media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="top">
+    <h1>Cargoservice — Sprint3</h1>
+    <div class="subtitle">ISS 2026 — Valeria Capacci &amp; Ginevra Pentoli</div>
+</div>
+
+<div class="toc-strip">
+    <a href="#goal">Goal</a>
+    <a href="#problem-analysis">Problem analysis</a>
+    <a href="#test-plans">Test plans</a>
+    <a href="#project">Project</a>
+    <a href="#deployment">Deployment</a>
+</div>
+
+<div class="page-wrap">
+<div class="body">
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="goal">Goal</h1>
+
+<p>Implementare il <code>sonar</code>: scrivere il firmware del sensore su Raspberry PicoW che misura la distanza <code>D</code> davanti allo IOPort e collegarlo al resto del sistema. Gestire inoltre la reazione di <code>cargorobot</code> al guasto sonar durante un movimento già in corso, e completare la gestione del <code>Led</code>.</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="problem-analysis">Problem analysis</h1>
+
+<h2 id="sonar-componente-intermedio">L'attore sonar</h2>
+<p>Come stabilito con il committente, il dispositivo fisico che misura la distanza <code>D</code> davanti allo IOPort è un Raspberry PicoW e occorre scriverne il firmware. Il PicoW, però, esegue MicroPython su un microcontrollore: non è in grado di eseguire la logica applicativa qak né di partecipare al modello ad attori del sistema. Per questo motivo il sistema include un componente intermedio dedicato, l'attore <code>sonar</code>, con lo scopo di ricevere i dati grezzi dal Pico e di tradurli in eventi comprensibili al resto del sistema.</p>
+
+<h2 id="sonar-canale">Comunicazione fra PicoW e sonar</h2>
+<p>L'unico compito del PicoW è andare a calcolare la distanza da un ostacolo e comunicarla sotto forma di stringa. Va però deciso come far comunicare questa informazione dal PicoW al sonar (e di conseguenza a <code>cargoservice</code>).Il PicoW instrada automaticamente stdin/stdout sulla porta USB (MicroPython), quindi il caso più semplice sarebbe un semplice <code>print()</code> della lettura. Tuttavia, essendo un PicoW dotato di connettività WiFi, può però anche pubblicare i dati su un broker MQTT. Andiamo quindi a confontare le due strategie possibili:</p>
+
+<table>
+<tr><th>Alternativa</th><th>Considerazioni</th></tr>
+<tr><td>Seriale via USB/UART</td><td>Nessun componente architetturale aggiuntivo, latenza minima. Il limite è fisico: il nodo che ospita l'attore <code>sonar</code> deve girare sulla stessa macchina a cui il PicoW è collegato via cavo.</td></tr>
+<tr><td>MQTT via WiFi</td><td>il PicoW pubblica le letture su un topic di un broker MQTT, senza vincoli di collegamento fisico col nodo che ospita <code>sonar</code>. Introduce però un componente architetturale aggiuntivo (il broker).</td></tr>
+</table>
+
+<p>Si decide di adottare MQTT: l'attore <code>sonar</code> può vivere in un nodo fisicamente separato dal PicoW senza alcun impatto sul firmware. Il PicoW pubblica le letture di distanza su un topic dedicato, già formattate come messaggio qak, così che l'infrastruttura qak lo riconosca senza bisogno di codice di conversione lato JVM. L'attore <code>sonar</code> si sottoscrive allo stesso topic. Utilizziamo inoltre lo stesso canale, in verso opposto, per portare il comando <code>blinkLed</code> dal sistema al PicoW, su un topic separato.</p>
+
+<h2 id="sonar-mqtt-qak">Dal payload MQTT al messaggio qak</h2>
+<p>Decisa la scelta di MQTT come canale, resta da decidere come i payload che arrivano sul broker diventino messaggi per l'attore <code>sonar</code>. Una prima ipotesi da analizzare è quella di riusare lo stesso schema già adottato per <code>ioport</code>: una classe Java dedicata (sul modello di <code>IOPortWsAdapter</code>) che apre la connessione MQTT, si sottoscrive al topic e, alla ricezione di un payload, lo inietta come messaggio nell'attore tramite un metodo interno del runtime qak. Questa soluzione, però, richiedeva di verificare un meccanismo di iniezione che comportava ulteriore complicazione non necessaria allo scopo del sistema.</p>
+
+<p>Inoltre il runtime qak offre un supporto nativo per MQTT: un <code>System</code> può dichiarare infatti direttamente un broker (<code>mqttBroker "host":porta eventTopic "topic"</code>) e qualunque attore con una transizione <code>whenEvent &lt;nome&gt;</code> il cui payload combaci col formato pubblicato su quel topic riceve automaticamente l'evento, senza alcun codice di sottoscrizione lato Java. Il runtime qak stesso è quindi l'endpoint MQTT.</p>
+
+<p>Si sceglie questa seconda strada: si dichiara il broker una sola volta a livello di <code>System</code>.</p>
+
+<p>Il supporto nativo copre però solo la direzione in ingresso (PicoW → sonar): non esiste un analogo <code>dispatchTopic</code> per la pubblicazione automatica in uscita. Per il comando <code>blinkLed</code> (sonar → PicoW) resta quindi necessaria una chiamata esplicita, che il codice risolve con l'oggetto <code>mqtt</code> reso disponibile dal runtime non appena un broker è dichiarato.</p>
+
+<h2 id="sonar-soglie-frequenza">Soglie e frequenza di campionamento</h2>
+<p>Come specificato nei requisiti, le due soglie di cui il sistema tiene traccia sono:</p>
+<ul>
+  <li><code>D &lt; DFREE/2</code> per almeno 3 secondi → viene rilevato un container</li>
+  <li><code>D &gt; DFREE</code> per almeno 3 secondi → probabile malfunzionamento del sonar</li>
+</ul>
+<p>Il PicoW emette solo letture continue di distanza: è <code>sonar</code> a dover mantenere lo stato temporale delle soglie ed emettere i dispatch verso <code>cargoservice</code>/<code>cargorobot</code>/<code>ioport</code> solo quando queste vengono realmente superate per l'intera finestra di conferma.</p>
+
+<p>Resta da stabilire a quale cadenza il PicoW debba pubblicare le letture. Valutiamo se pubblicare a 1&nbsp;lettura/secondo oppure aumentare la frequenza (ad esempio a 5&nbsp;Hz) per una risoluzione più fine sul momento esatto di superamento soglia: una cadenza più alta ridurrebbe di poco l'incertezza sul preciso istante di superamento, ma aumenta il traffico MQTT e introduce un parametro di tuning non richiesto dai requisiti. Con la finestra di conferma di 3&nbsp;secondi imposta da requisiti, anche a 1&nbsp;lettura/secondo si hanno comunque circa 3 campioni entro la finestra: sufficienti a confermare in modo affidabile un cambio di stato.</p>
+<p>Si decide quindi di implementare la cadenza di 1&nbsp;secondo.</p>
+
+<h2 id="context-singolo">Un solo Context</h2>
+
+<p><code>sonar</code> comunica con un dispositivo esterno e fisicamente separato: il PicoW, su una propria rete WiFi. Ci si può chiedere se questa separazione fisica debba riflettersi anche a livello di qak, cioè se <code>sonar</code> debba vivere in un proprio <code>Context</code> dedicato invece di condividere <code>ctxcargoservice</code> con <code>cargoservice</code>, <code>cargorobot</code> e <code>ioport</code>.</p>
+
+<table>
+<tr><th>Soluzione</th><th>Descrizione</th></tr>
+<tr><td>Context dedicato (<code>ctxsonar</code>)</td><td><code>sonar</code> vive in un proprio processo qak, e comunica con <code>cargoservice</code>/<code>cargorobot</code> tramite un <code>ExternalQActor</code>.</td></tr>
+<tr><td>Context condiviso</td><td><code>sonar</code> resta in <code>ctxcargoservice</code>, come già <code>ioport</code>.</td></tr>
+</table>
+
+<p>Introdurre un <code>ctxsonar</code> dedicato non aggiungerebbe alcuna separazione reale rispetto a quella già garantita dal broker MQTT: sposterebbe solo l'attore <code>sonar</code> in un secondo processo qak, aggiungendo un <code>ExternalQActor</code> e un salto di rete interno fra <code>sonar</code> e <code>cargoservice</code>/<code>cargorobot</code>, un costo senza un confine fisico reale da giustificarlo.</p>
+
+<p><code>sonar</code> resta quindi in <code>ctxcargoservice</code>. Nessuno dei quattro attori applicativi (<code>cargoservice</code>, <code>cargorobot</code>, <code>ioport</code>, <code>sonar</code>) giustifica un <code>Context</code> separato, perché nessuno di essi comunica con un altro vero processo qak se non tramite <code>robotsmart</code> (unico caso di <code>ExternalQActor</code>), in quanto fornito e gestito dal committente come servizio indipendente.</p>
+
+<h2 id="cargorobot-guasto-sonar">Reazione di cargorobot al guasto durante un movimento</h2>
+<p>Come deciso col committente, un guasto sonar rilevato mentre <code>cargorobot</code> è già in movimento deve fermare immediatamente il robot, lasciare il container nella posizione corrente e riprendere l'operazione dal punto di interruzione al ripristino (<code>D ≤ DFREE</code>). <code>cargorobot</code> deve quindi restare sensibile a guasti in ognuna delle quattro tratte del trasporto (verso IOPort, verso slot5, verso lo slot riservato, verso HOME), non solo in una di esse.</p>
+
+<p>Per la ripresa si valuta se richiedere prima un nuovo stato a RobotSmart26 (ad esempio una posizione corrente) prima di reinviare il comando, oppure riprendere direttamente reinviando lo stesso <code>moverobot</code> interrotto verso la stessa destinazione. Poiché il requisito è "lasciare il container dov'è e riprendere da lì", e non è richiesto un riposizionamento intermedio, si sceglie la seconda opzione: più semplice, e coerente col fatto che RobotSmart26, fermato con <code>halt</code>, non si è spostato nel frattempo. Poiché il guasto può verificarsi durante una qualsiasi delle quattro tratte, occorre anche sapere quale tratta fosse in corso al momento dell'interruzione, per poter far rientrare correttamente il flusso del trasporto una volta ripreso il movimento: per questo si introduce una variabile (<code>Leg</code>) dedicata a tener traccia della tratta in corso. Il dettaglio implementativo è in <a href="#project">Project</a>.</p>
+
+<h2 id="led-reale">Dal Led simulato al Led reale</h2>
+<p><code>blinkLed</code> raggiunge il PicoW via MQTT, che deve farlo lampeggiare fisicamente mentre allo stesso tempo continua a leggere il sonar e pubblicare. Il firmware MicroPython gira però su un solo thread: si considera quindi come ipotesi un semplice flag booleano, aggiornato dal callback MQTT sul topic del Led, controllato una volta per iterazione nel loop principale già esistente. Per un indicatore visivo, la precisione del lampeggio non è un requisito, mentre l'accoppiamento con il ciclo di lettura è un compromesso visibile e comprensibile nel codice, non un effetto collaterale nascosto in un thread separato. Alla ricezione di <code>blinkLed(false)</code> il Led viene spento esplicitamente, per evitare che resti acceso a metà lampeggio.</p>
+
+<div class="domanda">Con il lampeggio attivo, il periodo effettivo fra due pubblicazioni di distanza passa da circa 1&nbsp;secondo a circa 1.3&nbsp;secondi (il tempo dedicato al toggle si somma a quello di lettura).</div>
+
+<h2 id="modello-finale">Modello finale</h2>
+<p>Questo sprint aggiunge o rende operative le seguenti:</p>
+<div class="code-wrapper"><span class="code-source">sprint3.qak — dichiarazioni nuove/modificate</span><pre>Dispatch sonarcontainer : sonarcontainer(DISTANCE)  // container rilevato (D &lt; DFREE/2 per &gt;= 3s); 
+
+Event    sonarreading  : sonarreading(DISTANCE)   // lettura di distanza 
+Dispatch sonarfault    : sonarfault(CAUSE)        // D &gt; DFREE per &gt;= 3s: sospetto guasto sonar
+Dispatch sonarrestored : sonarrestored(NONE)      // sonar tornato a D &lt;= DFREE dopo un guasto
+Dispatch blinkLed      : blinkLed(FLAG)           // verso il PicoW reale via MQTT
+Dispatch halt          : halt(X)                  // arresto immediato </pre></div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="test-plans">Test plans</h1>
+
+<p>I test si aggiungono a quelli già coperti negli sprint precedenti (richiesta accettata/rifiutata, hold piena, retrylater, timeout disengage), qui non ripetuti. Sono organizzati in due livelli: <strong>TP-A</strong> sull'attore <code>sonar</code> isolato (con letture MQTT simulate via <code>mosquitto_pub</code>, senza il PicoW fisico) e <strong>TP-B</strong> end-to-end col PicoW reale.</p>
+
+<h2 id="tp-a">TP-A: attore sonar (letture simulate)</h2>
+<table>
+<tr><th>ID</th><th>Scenario</th><th>Esito atteso</th></tr>
+<tr><td>TP-A1</td><td>Pubblico su <code>cargoservice/sonar/distance</code> una sequenza di letture con D&lt;DFREE/2 per soli 2&nbsp;secondi, poi torno sopra soglia</td><td>Nessun <code>setOccupied(true)</code>/<code>sonarcontainer</code> inviato (falso positivo evitato: sotto i 3&nbsp;s richiesti)</td></tr>
+<tr><td>TP-A2</td><td>Come sopra ma per 3.5&nbsp;secondi continui</td><td><code>sonar</code> invia <code>setOccupied(true)</code> a <code>ioport</code> e <code>sonarcontainer</code> a <code>cargoservice</code> una sola volta, al superamento dei 3&nbsp;s; se <code>cargoservice</code> era in <code>engaged</code>, avvia il trasporto</td></tr>
+<tr><td>TP-A3</td><td>Dopo TP-A2, pubblico una lettura con D≥DFREE/2</td><td><code>sonar</code> invia subito <code>setOccupied(false)</code> a <code>ioport</code> (nessuna finestra di conferma richiesta in uscita)</td></tr>
+<tr><td>TP-A4</td><td>Pubblico letture con D&gt;DFREE per 3.5&nbsp;secondi continui</td><td><code>sonar</code> invia <code>sonarfault</code> sia a <code>cargoservice</code> sia a <code>cargorobot</code>; <code>cargoservice</code> mostra "Out of service" indipendentemente dallo stato in cui si trova</td></tr>
+<tr><td>TP-A5</td><td>Dopo TP-A4, pubblico una lettura con D≤DFREE</td><td><code>sonar</code> invia <code>sonarrestored</code> a entrambi; il display torna allo stato precedente ("Service working")</td></tr>
+<tr><td>TP-A6</td><td>Da <code>cargoservice</code>, faccio scattare <code>blinkLed(true)</code> (ingresso in <code>engaged</code>)</td><td><code>sonar</code> pubblica su <code>cargoservice/sonar/led</code> un payload nel formato messaggio qak (via <code>mqtt.publish</code> + <code>CommUtils.buildDispatch</code>), verificabile con <code>mosquitto_sub</code> in assenza del PicoW</td></tr>
+</table>
+
+<h2 id="tp-b">TP-B: end-to-end col PicoW</h2>
+<table>
+<tr><th>ID</th><th>Scenario</th><th>Esito atteso</th></tr>
+<tr><td>TP-B1</td><td>Calibrazione: avvicino un ostacolo davanti al sonar HC-SR04 a distanze note e confronto le letture pubblicate con un metro</td><td>Le letture sono coerenti entro ±1&nbsp;cm; si fissa il valore reale di <code>DFREE</code> (attualmente 30&nbsp;cm provvisorio) sul banco</td></tr>
+<tr><td>TP-B2</td><td>Flusso completo: pulsante IOPort → container fisico posizionato davanti al sonar per &gt;3&nbsp;s → trasporto</td><td><code>ioport</code> segna occupato, <code>cargoservice</code> accetta il carico, il Led lampeggia per tutta la fase <code>engaged</code> e si spegne a trasporto concluso</td></tr>
+<tr><td>TP-B3</td><td>Copro/scopro il sonar con la mano oltre <code>DFREE</code> per &gt;3&nbsp;s durante un <code>moverobot</code> di <code>cargorobot</code> in corso</td><td><code>cargorobot</code> ferma RobotSmart26 (<code>halt</code>), sospende il movimento e, al ripristino, riprende la stessa tratta (stesso <code>Leg</code>) fino a destinazione</td></tr>
+<tr><td>TP-B4</td><td>Spengo il PicoW a metà sessione</td><td>Il broker MQTT non riceve più letture; <code>sonar</code> lato JVM non riceve nulla e resta nell'ultimo stato noto (nessun crash) — comportamento da rivedere se il committente richiede un timeout esplicito di "silenzio sonar"</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="project">Project</h1>
+
+<h2 id="project-system">System e Context</h2>
+<p>Il broker MQTT si dichiara una sola volta a livello di <code>System</code>, indicando l'unico topic per cui si vuole ricezione automatica come <code>Event</code> (le letture di distanza). Il topic del Led, essendo in uscita, non compare qui: viene gestito esplicitamente nel corpo dell'attore (vedi sotto). <code>sonar</code> si aggiunge a <code>ctxcargoservice</code>.</p>
+<div class="code-wrapper"><span class="code-source">sprint3.qak — testata</span><pre>System sprint3
+mqttBroker "192.168.1.122" : 1883 eventTopic "cargoservice/sonar/distance"
+
+Context ctxcargoservice ip [host="localhost" port=8050]   // per cargoservice, cargorobot, ioport e sonar
+Context ctxrobotsmart   ip [host="127.0.0.1"  port=8020]
+
+ExternalQActor robotsmart context ctxrobotsmart</pre></div>
+
+<h2 id="project-sonar">L'attore sonar</h2>
+<p>Nuovo <code>QActor</code> nel contesto <code>ctxcargoservice</code>. Mantiene lo stato temporale delle due soglie (finestra di conferma di 3&nbsp;s) confrontando timestamp di sistema direttamente nei blocchi a ogni <code>sonarreading</code> in arrivo, senza bisogno di uno stato/timer qak dedicato al polling: la logica è puramente reattiva all'arrivo dei dati MQTT.</p>
+<div class="code-wrapper"><span class="code-source">sprint3.qak — QActor sonar</span><pre>QActor sonar context ctxcargoservice {
+
+    [# var DFREE = 30
+       var Dist = 0.0
+       var Occupied = false
+       var Faulted = false
+       var T0Container = 0L        // 0 = nessuna finestra di conferma container in corso
+       var T0Fault = 0L            // 0 = nessuna finestra di conferma guasto in corso
+       var WINDOW = 3000L          // 3 secondi
+    #]
+
+    State idle initial {
+        println("$name | idle, in ascolto delle letture del PicoW via MQTT...") color blue
+    }
+    Transition t0
+        whenEvent sonarreading -> onReading
+        whenMsg blinkLed     -> onBlink
+
+    State onReading {
+        onMsg(sonarreading : sonarreading(D)) {
+            [# Dist = payloadArg(0).toDouble()
+               var Now = System.currentTimeMillis()
+            #]
+
+            if [# Dist &lt; DFREE/2.0 #] {
+                [# if (T0Container == 0L) { T0Container = Now } #]
+                if [# !Occupied &amp;&amp; (Now - T0Container) &gt;= WINDOW #] {
+                    [# Occupied = true #]
+                    println("$name | container rilevato (D=$Dist cm), notifico ioport e cargoservice") color blue
+                    forward ioport -m setOccupied : setOccupied(true)
+                    forward cargoservice -m sonarcontainer : sonarcontainer($Dist)
+                }
+            } else {
+                [# T0Container = 0L #]
+                if [# Occupied &amp;&amp; Dist &gt;= DFREE/2.0 #] {
+                    [# Occupied = false #]
+                    println("$name | container non piu' rilevato (D=$Dist cm)") color blue
+                    forward ioport -m setOccupied : setOccupied(false)
+                }
+            }
+
+            if [# Dist &gt; DFREE #] {
+                [# if (T0Fault == 0L) { T0Fault = Now } #]
+                if [# !Faulted &amp;&amp; (Now - T0Fault) &gt;= WINDOW #] {
+                    [# Faulted = true #]
+                    println("$name | guasto sonar sospetto (D=$Dist cm)") color red
+                    forward cargoservice -m sonarfault : sonarfault(sonarOutOfRange)
+                    forward cargorobot   -m sonarfault : sonarfault(sonarOutOfRange)
+                }
+            } else {
+                [# T0Fault = 0L #]
+                if [# Faulted #] {
+                    [# Faulted = false #]
+                    println("$name | sonar ripristinato (D=$Dist cm)") color blue
+                    forward cargoservice -m sonarrestored : sonarrestored(NONE)
+                    forward cargorobot   -m sonarrestored : sonarrestored(NONE)
+                }
+            }
+        }
+    }
+    Goto idle
+
+    State onBlink {
+        onMsg(blinkLed : blinkLed(FLAG)) {
+            [# var F = payloadArg(0) #]
+            [# var LedMsg = CommUtils.buildDispatch(name, "blinkLed", "blinkLed(" + F + ")", "picow")
+               mqtt.publish("cargoservice/sonar/led", LedMsg.toString()) #]
+            println("$name | comando Led($F) inoltrato al PicoW via MQTT") color blue
+        }
+    }
+    Goto idle
+}</pre></div>
+
+<h2 id="project-cargoservice">Attesa del container in cargoservice</h2>
+<p>Rispetto a Sprint2, <code>engaged</code> non avvia più <code>transportContainer</code> subito: resta in attesa di <code>sonarcontainer</code>, e solo al suo arrivo passa a un nuovo stato <code>startTransport</code> che incarica <code>cargorobot</code>. Ogni stato applicativo (<code>idle</code>, <code>engaged</code>, <code>waitingTransport</code>) porta con sé la stessa coppia di transizioni verso un piccolo stato "OutOfService"/"ServiceRestored" che aggiorna il display e torna indietro:</p>
+<div class="code-wrapper"><span class="code-source">sprint3.qak — cargoservice (estratto)</span><pre>Transition t0
+    whenRequest loadrequest -> handleRequest
+    whenMsg sonarfault      -> idleOutOfService
+    whenMsg sonarrestored   -> idleServiceRestored
+
+State idleOutOfService {
+    onMsg(sonarfault : sonarfault(CAUSE)) {
+        [# var H = "'" + hold.displayStatus() + "'" #]
+        [# var S = "'OUT_OF_SERVICE'" #]
+        [# var M = "'Out of service'" #]
+        forward ioport -m updateDisplay : updateDisplay($S,$H,$M)
+    }
+}
+Goto idle
+// idleServiceRestored e' l'analogo speculare (S='IDLE', M='Service working')
+
+State engaged {
+    println("$name | engaged, in attesa che il cliente porti il container (slot $Slot)") color magenta
+    forward sonar -m blinkLed : blinkLed(true)
+}
+Transition t0
+    whenTime 30000           -> disengagedTimeout
+    whenMsg sonarcontainer   -> startTransport
+    whenRequest loadrequest  -> rejectBusyContainer
+    whenMsg sonarfault       -> engagedOutOfService
+    whenMsg sonarrestored    -> engagedServiceRestored
+
+State startTransport {
+    println("$name | container rilevato, incarico cargorobot per slot $Slot (x=$TX,y=$TY)") color magenta
+    request cargorobot -m transportContainer : transportContainer($Slot,$TX,$TY)
+}
+Goto waitingTransport
+
+State waitingTransport { }
+Transition t1
+    whenReply transportDone          -> success
+    whenReply transportFailed        -> disengagedFault
+    whenRequest loadrequest          -> rejectBusyTransport
+    whenRequest waitMarker           -> handleMarking
+    whenMsg sonarfault               -> transportOutOfService
+    whenMsg sonarrestored            -> transportServiceRestored
+
+// disengagedTimeout, disengagedFault e success (dopo transportDone)
+// inviano ora anche forward sonar -m blinkLed : blinkLed(false)
+// oltre all'aggiornamento display gia' presente da Sprint2</pre></div>
+
+<h2 id="project-cargorobot">Sospensione e ripresa dopo guasto in cargorobot</h2>
+<p>Ogni tratta del trasporto (verso IOPort, verso slot5, verso lo slot riservato, verso HOME) resta sensibile a <code>sonarfault</code> mentre attende la reply di <code>moverobot</code>. Alla ricezione, <code>cargorobot</code> ferma RobotSmart26 con <code>halt</code> e attende <code>sonarrestored</code> per riprendere la stessa tratta, usando <code>Leg</code> per sapere dove rientrare nel flusso normale:</p>
+<div class="code-wrapper"><span class="code-source">sprint3.qak — cargorobot (estratto)</span><pre>[# var TargetSlot = -1
+   var TargetX = -1
+   var TargetY = -1
+   var PendingTX = -1     // target del moverobot in corso (per la ripresa dopo un guasto sonar)
+   var PendingTY = -1
+   var Leg = ""           // "toIOPort" | "toSlot5" | "toReserved" | "toHome"
+#]
+
+// ad ogni tratta, prima della request moverobot:
+//   PendingTX/PendingTY = destinazione della tratta corrente ; Leg = nome della tratta
+// e la relativa Transition aggiunge, accanto a moverobotdone/moverobotfailed:
+    whenMsg sonarfault -> onSonarFault
+
+State onSonarFault {
+    onMsg(sonarfault : sonarfault(CAUSE)) {
+        println("$name | sonarfault ricevuto, fermo RobotSmart26") color red
+        forward robotsmart -m halt : halt(NONE)
+    }
+}
+Transition tf whenMsg sonarrestored -> resumeMove
+
+State resumeMove {
+    onMsg(sonarrestored : sonarrestored(NONE)) {
+        println("$name | sonarrestored ricevuto, riprendo (leg=$Leg) verso ($PendingTX,$PendingTY)") color yellow
+        request robotsmart -m moverobot : moverobot($PendingTX, $PendingTY, 345)
+    }
+}
+Transition tr
+    whenReply moverobotdone   -> resumedOk
+    whenReply moverobotfailed -> halted
+
+State resumedOk { }
+Goto atIOPort if [# Leg == "toIOPort" #] else checkResumedSlot5
+
+State checkResumedSlot5 { }
+Goto atSlot5 if [# Leg == "toSlot5" #] else checkResumedSlot
+
+State checkResumedSlot { }
+Goto atSlot if [# Leg == "toReserved" #] else done</pre></div>
+
+<h2 id="project-picow">Firmware PicoW</h2>
+<p>Implementa la cadenza di lettura di 1 secondo.</p>
+<div class="code-wrapper"><span class="code-source">sonarMqtt.py — estratto</span><pre>TOPIC_DISTANCE = b"cargoservice/sonar/distance"
+TOPIC_LED = b"cargoservice/sonar/led"
+
+blink_led = False
+
+def on_message(topic, msg):
+    global blink_led
+    payload = msg.decode()
+    if "blinkLed(true)" in payload:
+        blink_led = True
+    elif "blinkLed(false)" in payload:
+        blink_led = False
+        led.off()
+
+# ===== MAIN =====
+connect_wifi()
+client = connect_mqtt()
+client.set_callback(on_message)
+client.subscribe(TOPIC_LED)
+
+while True:
+    try:
+        client.check_msg()
+
+        if blink_led:
+            led.toggle()
+            time.sleep(0.3)
+
+        d = misura_distanza()
+        if d is not None:
+            msg = "msg(sonarreading,event,picow,none,sonarreading(" + "(%d)" % round(d) + "),0)"
+            client.publish(TOPIC_DISTANCE, msg.encode())
+
+        time.sleep(1)
+    except Exception as e:
+        print("È successo qualcosa di imprevisto:", type(e).__name__, e)</pre></div>
+<p>Il PicoW si limita a un confronto di sottostringa (<code>"blinkLed(true)" in payload</code>) sul messaggio in formato qak pubblicato da <code>sonar</code>, sufficiente dato che il firmware non ha bisogno di leggere altri campi del messaggio. La configurazione di rete (SSID/password) resta in un modulo separato non versionato.</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1 id="deployment">Deployment</h1>
+
+<h2 id="deploy-topologia">Topologia dei Context</h2>
+<p>Il sistema resta distribuito su due <code>Context</code> qak, <code>sonar</code> si aggiunge a <code>ctxcargoservice</code> senza richiedere un nodo o una porta propri. Il PicoW non è un <code>Context</code> qak: si collega al sistema esclusivamente tramite il broker MQTT, dichiarato una sola volta a livello di <code>System</code>.</p>
+
+<table>
+<tr><th>Nodo</th><th>Host / Porta</th><th>Contenuto</th></tr>
+<tr><td><code>ctxcargoservice</code></td><td><code>localhost:8050</code></td><td><code>cargoservice</code>, <code>cargorobot</code>, <code>ioport</code>, <code>sonar</code></td></tr>
+<tr><td><code>ctxrobotsmart</code></td><td><code>127.0.0.1:8020</code></td><td><code>robotsmart</code> (<code>ExternalQActor</code> fornito dal committente)</td></tr>
+<tr><td>Server Javalin (GUI IOPort)</td><td><code>localhost:7070</code></td><td>istanziato dall'attore <code>ioport</code> (<code>IOPortWsAdapter</code>): redirect a <code>/ioport_gui.html</code>, endpoint WebSocket su <code>/ws/ioport</code>; pannello raggiungibile su <code>http://localhost:7070/ioport_gui.html</code></td></tr>
+<tr><td>Broker MQTT</td><td><code>192.168.1.122:1883</code> (banco di prova attuale, da adattare alla rete usata)</td><td>ponte fra il PicoW e <code>ctxcargoservice</code>.</td></tr>
+<tr><td>PicoW</td><td>rete WiFi del banco, client MQTT id <code>sonarpico</code></td><td>firmware <code>sonarMqtt.py</code>. </tr>
+</table>
+
+<div style="text-align:center; margin: 20px 0 8px;">
+  <img src="../img/deployment.png" alt="Schema di deployment: broker MQTT, PicoW, ctxcargoservice, ctxrobotsmart, GUI IOPort" style="max-width:100%; height:auto; border-radius:8px; border:1px solid var(--code-border);">
+</div>
+
+</div><!-- .body -->
+
+<div class="footer">
+    <div class="footer-authors">
+        <div class="footer-author">
+            <img src="../img/VC.jpg" alt="VC"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="footer-author-initials" style="display:none;">
+                VC
+            </div>
+            <div>
+                <strong>Valeria Capacci</strong><br>
+                <a href="mailto:valeria.capacci@studio.unibo.it">valeria.capacci@studio.unibo.it</a>
+            </div>
+        </div>
+        <div class="footer-divider"></div>
+        <div class="footer-author">
+            <img src="../img/GP.jpeg" alt="GP"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div class="footer-author-initials" style="display:none;">
+                GP
+            </div>
+            <div>
+                <strong>Ginevra Pentoli</strong><br>
+                <a href="mailto:ginevra.pentoli@studio.unibo.it">ginevra.pentoli@studio.unibo.it</a>
+            </div>
+        </div>
+    </div>
+    <div style="margin-left: auto; font-size: 0.8rem; opacity: 0.85;">
+        GIT: <a href="https://github.com/valecapa/TemaFinaleISS2026">github.com/valecapa/TemaFinaleISS2026</a>
+    </div>
+</div>
+
+</div><!-- .page-wrap -->
+</body>
+</html>
