@@ -392,10 +392,10 @@ li { margin-bottom: 4px; }
 
 <p>Si decide di adottare MQTT: l'attore <code>sonar</code> può vivere in un nodo fisicamente separato dal PicoW senza alcun impatto sul firmware. Il PicoW pubblica le letture di distanza su un topic dedicato, già formattate come messaggio qak, così che l'infrastruttura qak lo riconosca senza bisogno di codice di conversione lato JVM. L'attore <code>sonar</code> si sottoscrive allo stesso topic. Utilizziamo inoltre lo stesso canale, in verso opposto, per portare il comando <code>blinkLed</code> dal sistema al PicoW, su un topic separato.</p>
 
-<h2 id="sonar-mqtt-qak">Dal payload MQTT al messaggio qak</h2>
+<h2 id="sonar-mqtt-qak">MQTT</h2>
 <p>Decisa la scelta di MQTT come canale, resta da decidere come i payload che arrivano sul broker diventino messaggi per l'attore <code>sonar</code>. Una prima ipotesi da analizzare è quella di riusare lo stesso schema già adottato per <code>ioport</code>: una classe Java dedicata (sul modello di <code>IOPortWsAdapter</code>) che apre la connessione MQTT, si sottoscrive al topic e, alla ricezione di un payload, lo inietta come messaggio nell'attore tramite un metodo interno del runtime qak. Questa soluzione, però, richiedeva di verificare un meccanismo di iniezione che comportava ulteriore complicazione non necessaria allo scopo del sistema.</p>
 
-<p>Inoltre il runtime qak offre un supporto nativo per MQTT: un <code>System</code> può dichiarare infatti direttamente un broker (<code>mqttBroker "host":porta eventTopic "topic"</code>) e qualunque attore con una transizione <code>whenEvent &lt;nome&gt;</code> il cui payload combaci col formato pubblicato su quel topic riceve automaticamente l'evento, senza alcun codice di sottoscrizione lato Java. Il runtime qak stesso è quindi l'endpoint MQTT.</p>
+<p>Inoltre qak offre un supporto nativo per MQTT: un <code>System</code> può dichiarare infatti direttamente un broker (<code>mqttBroker "host":porta eventTopic "topic"</code>) e qualunque attore con una transizione <code>whenEvent &lt;nome&gt;</code> il cui payload combaci col formato pubblicato su quel topic riceve automaticamente l'evento, senza alcun codice di sottoscrizione lato Java. Il runtime qak stesso è quindi l'endpoint MQTT.</p>
 
 <p>Si sceglie questa seconda strada: si dichiara il broker una sola volta a livello di <code>System</code>.</p>
 
@@ -426,30 +426,26 @@ li { margin-bottom: 4px; }
 
 <p><code>sonar</code> resta quindi in <code>ctxcargoservice</code>. Nessuno dei quattro attori applicativi (<code>cargoservice</code>, <code>cargorobot</code>, <code>ioport</code>, <code>sonar</code>) giustifica un <code>Context</code> separato, perché nessuno di essi comunica con un altro vero processo qak se non tramite <code>robotsmart</code> (unico caso di <code>ExternalQActor</code>), in quanto fornito e gestito dal committente come servizio indipendente.</p>
 
-<h2 id="cargorobot-guasto-sonar">Reazione di cargorobot al guasto durante un movimento</h2>
+<h2 id="cargorobot-guasto-sonar">Reazione di cargorobot al guasto</h2>
 <p>Come deciso col committente, un guasto sonar rilevato mentre <code>cargorobot</code> è già in movimento deve fermare immediatamente il robot, lasciare il container nella posizione corrente e riprendere l'operazione dal punto di interruzione al ripristino (<code>D ≤ DFREE</code>). <code>cargorobot</code> deve quindi restare sensibile a guasti in ognuna delle quattro tratte del trasporto (verso IOPort, verso slot5, verso lo slot riservato, verso HOME), non solo in una di esse.</p>
 
-<p>Per la ripresa si valuta se richiedere prima un nuovo stato a RobotSmart26 (ad esempio una posizione corrente) prima di reinviare il comando, oppure riprendere direttamente reinviando lo stesso <code>moverobot</code> interrotto verso la stessa destinazione. Poiché il requisito è "lasciare il container dov'è e riprendere da lì", e non è richiesto un riposizionamento intermedio, si sceglie la seconda opzione: più semplice, e coerente col fatto che RobotSmart26, fermato con <code>halt</code>, non si è spostato nel frattempo. Poiché il guasto può verificarsi durante una qualsiasi delle quattro tratte, occorre anche sapere quale tratta fosse in corso al momento dell'interruzione, per poter far rientrare correttamente il flusso del trasporto una volta ripreso il movimento: per questo si introduce una variabile (<code>Leg</code>) dedicata a tener traccia della tratta in corso. Il dettaglio implementativo è in <a href="#project">Project</a>.</p>
-
-<h2 id="led-reale">Dal Led simulato al Led reale</h2>
-<p><code>blinkLed</code> raggiunge il PicoW via MQTT, che deve farlo lampeggiare fisicamente mentre allo stesso tempo continua a leggere il sonar e pubblicare. Il firmware MicroPython gira però su un solo thread: si considera quindi come ipotesi un semplice flag booleano, aggiornato dal callback MQTT sul topic del Led, controllato una volta per iterazione nel loop principale già esistente. Per un indicatore visivo, la precisione del lampeggio non è un requisito, mentre l'accoppiamento con il ciclo di lettura è un compromesso visibile e comprensibile nel codice, non un effetto collaterale nascosto in un thread separato. Alla ricezione di <code>blinkLed(false)</code> il Led viene spento esplicitamente, per evitare che resti acceso a metà lampeggio.</p>
-
-<div class="domanda">Con il lampeggio attivo, il periodo effettivo fra due pubblicazioni di distanza passa da circa 1&nbsp;secondo a circa 1.3&nbsp;secondi (il tempo dedicato al toggle si somma a quello di lettura).</div>
+<h2 id="led-reale">Led</h2>
+<p><code>blinkLed</code> raggiunge il PicoW via MQTT, che deve farlo lampeggiare fisicamente mentre allo stesso tempo continua a leggere il sonar e pubblicare. Il firmware MicroPython gira però su un solo thread: si considera quindi come ipotesi un semplice flag booleano, aggiornato dal callback MQTT sul topic del Led, controllato una volta per iterazione nel loop principale già esistente.</p>
 
 <h2 id="modello-finale">Modello finale</h2>
 <p>Questo sprint aggiunge o rende operative le seguenti:</p>
-<div class="code-wrapper"><span class="code-source">sprint3.qak — dichiarazioni nuove/modificate</span><pre>Dispatch sonarcontainer : sonarcontainer(DISTANCE)  // container rilevato (D &lt; DFREE/2 per &gt;= 3s); 
+<div class="code-wrapper"><span class="code-source">sprint3.qak</span><pre>Dispatch sonarcontainer : sonarcontainer(DISTANCE)  // container rilevato (D &lt; DFREE/2 per &gt;= 3s); 
 
 Event    sonarreading  : sonarreading(DISTANCE)   // lettura di distanza 
 Dispatch sonarfault    : sonarfault(CAUSE)        // D &gt; DFREE per &gt;= 3s: sospetto guasto sonar
 Dispatch sonarrestored : sonarrestored(NONE)      // sonar tornato a D &lt;= DFREE dopo un guasto
-Dispatch blinkLed      : blinkLed(FLAG)           // verso il PicoW reale via MQTT
+Dispatch blinkLed      : blinkLed(FLAG)           // ordinare al PicoW di accendere il Led (via MQTT)
 Dispatch halt          : halt(X)                  // arresto immediato </pre></div>
 
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="test-plans">Test plans</h1>
 
-<p>I test si aggiungono a quelli già coperti negli sprint precedenti (richiesta accettata/rifiutata, hold piena, retrylater, timeout disengage), qui non ripetuti. Sono organizzati in due livelli: <strong>TP-A</strong> sull'attore <code>sonar</code> isolato (con letture MQTT simulate via <code>mosquitto_pub</code>, senza il PicoW fisico) e <strong>TP-B</strong> end-to-end col PicoW reale.</p>
+<p>I test si aggiungono a quelli già coperti negli sprint precedenti, qui non ripetuti. Sono organizzati in due livelli: <strong>TP-A</strong> sull'attore <code>sonar</code> isolato (con letture MQTT simulate via <code>mosquitto_pub</code>, senza il PicoW fisico) e <strong>TP-B</strong> end-to-end col PicoW reale.</p>
 
 <h2 id="tp-a">TP-A: attore sonar (letture simulate)</h2>
 <table>
@@ -462,13 +458,11 @@ Dispatch halt          : halt(X)                  // arresto immediato </pre></d
 <tr><td>TP-A6</td><td>Da <code>cargoservice</code>, faccio scattare <code>blinkLed(true)</code> (ingresso in <code>engaged</code>)</td><td><code>sonar</code> pubblica su <code>cargoservice/sonar/led</code> un payload nel formato messaggio qak (via <code>mqtt.publish</code> + <code>CommUtils.buildDispatch</code>), verificabile con <code>mosquitto_sub</code> in assenza del PicoW</td></tr>
 </table>
 
-<h2 id="tp-b">TP-B: end-to-end col PicoW</h2>
+<h2 id="tp-b">TP-B: introduzione del PicoW</h2>
 <table>
 <tr><th>ID</th><th>Scenario</th><th>Esito atteso</th></tr>
-<tr><td>TP-B1</td><td>Calibrazione: avvicino un ostacolo davanti al sonar HC-SR04 a distanze note e confronto le letture pubblicate con un metro</td><td>Le letture sono coerenti entro ±1&nbsp;cm; si fissa il valore reale di <code>DFREE</code> (attualmente 30&nbsp;cm provvisorio) sul banco</td></tr>
-<tr><td>TP-B2</td><td>Flusso completo: pulsante IOPort → container fisico posizionato davanti al sonar per &gt;3&nbsp;s → trasporto</td><td><code>ioport</code> segna occupato, <code>cargoservice</code> accetta il carico, il Led lampeggia per tutta la fase <code>engaged</code> e si spegne a trasporto concluso</td></tr>
-<tr><td>TP-B3</td><td>Copro/scopro il sonar con la mano oltre <code>DFREE</code> per &gt;3&nbsp;s durante un <code>moverobot</code> di <code>cargorobot</code> in corso</td><td><code>cargorobot</code> ferma RobotSmart26 (<code>halt</code>), sospende il movimento e, al ripristino, riprende la stessa tratta (stesso <code>Leg</code>) fino a destinazione</td></tr>
-<tr><td>TP-B4</td><td>Spengo il PicoW a metà sessione</td><td>Il broker MQTT non riceve più letture; <code>sonar</code> lato JVM non riceve nulla e resta nell'ultimo stato noto (nessun crash) — comportamento da rivedere se il committente richiede un timeout esplicito di "silenzio sonar"</td></tr>
+<tr><td>TP-B1</td><td>Flusso completo: pulsante IOPort → container fisico posizionato davanti al sonar per &gt;3&nbsp;s → trasporto</td><td><code>ioport</code> segna occupato, <code>cargoservice</code> accetta il carico, il Led lampeggia per tutta la fase <code>engaged</code> e si spegne a trasporto concluso</td></tr>
+<tr><td>TP-B2</td><td>Copro/scopro il sonar con la mano oltre <code>DFREE</code> per &gt;3&nbsp;s durante un <code>moverobot</code> di <code>cargorobot</code> in corso</td><td><code>cargorobot</code> ferma RobotSmart26 (<code>halt</code>), sospende il movimento e, al ripristino, riprende la stessa tratta (stesso <code>Leg</code>) fino a destinazione</td></tr>
 </table>
 
 <!-- ══════════════════════════════════════════════════════ -->
@@ -476,7 +470,7 @@ Dispatch halt          : halt(X)                  // arresto immediato </pre></d
 
 <h2 id="project-system">System e Context</h2>
 <p>Il broker MQTT si dichiara una sola volta a livello di <code>System</code>, indicando l'unico topic per cui si vuole ricezione automatica come <code>Event</code> (le letture di distanza). Il topic del Led, essendo in uscita, non compare qui: viene gestito esplicitamente nel corpo dell'attore (vedi sotto). <code>sonar</code> si aggiunge a <code>ctxcargoservice</code>.</p>
-<div class="code-wrapper"><span class="code-source">sprint3.qak — testata</span><pre>System sprint3
+<div class="code-wrapper"><span class="code-source">sprint3.qak</span><pre>System sprint3
 mqttBroker "192.168.1.122" : 1883 eventTopic "cargoservice/sonar/distance"
 
 Context ctxcargoservice ip [host="localhost" port=8050]   // per cargoservice, cargorobot, ioport e sonar
@@ -484,9 +478,9 @@ Context ctxrobotsmart   ip [host="127.0.0.1"  port=8020]
 
 ExternalQActor robotsmart context ctxrobotsmart</pre></div>
 
-<h2 id="project-sonar">L'attore sonar</h2>
-<p>Nuovo <code>QActor</code> nel contesto <code>ctxcargoservice</code>. Mantiene lo stato temporale delle due soglie (finestra di conferma di 3&nbsp;s) confrontando timestamp di sistema direttamente nei blocchi a ogni <code>sonarreading</code> in arrivo, senza bisogno di uno stato/timer qak dedicato al polling: la logica è puramente reattiva all'arrivo dei dati MQTT.</p>
-<div class="code-wrapper"><span class="code-source">sprint3.qak — QActor sonar</span><pre>QActor sonar context ctxcargoservice {
+<h2 id="project-sonar">sonar</h2>
+<p>Nuovo <code>QActor</code> nel contesto <code>ctxcargoservice</code>. Mantiene lo stato temporale delle due soglie (finestra di conferma di 3&nbsp;s) confrontando timestamp di sistema direttamente nei blocchi a ogni <code>sonarreading</code> in arrivo.</p>
+<div class="code-wrapper"><span class="code-source">sprint3.qak</span><pre>QActor sonar context ctxcargoservice {
 
     [# var DFREE = 30
        var Dist = 0.0
@@ -559,9 +553,9 @@ ExternalQActor robotsmart context ctxrobotsmart</pre></div>
     Goto idle
 }</pre></div>
 
-<h2 id="project-cargoservice">Attesa del container in cargoservice</h2>
-<p>Rispetto a Sprint2, <code>engaged</code> non avvia più <code>transportContainer</code> subito: resta in attesa di <code>sonarcontainer</code>, e solo al suo arrivo passa a un nuovo stato <code>startTransport</code> che incarica <code>cargorobot</code>. Ogni stato applicativo (<code>idle</code>, <code>engaged</code>, <code>waitingTransport</code>) porta con sé la stessa coppia di transizioni verso un piccolo stato "OutOfService"/"ServiceRestored" che aggiorna il display e torna indietro:</p>
-<div class="code-wrapper"><span class="code-source">sprint3.qak — cargoservice (estratto)</span><pre>Transition t0
+<h2 id="project-cargoservice">cargoservice</h2>
+<p>Rispetto a Sprint2, <code>engaged</code> non avvia più <code>transportContainer</code> subito: resta in attesa di <code>sonarcontainer</code> e solo al suo arrivo passa a un nuovo stato <code>startTransport</code> che incarica <code>cargorobot</code>. Ogni stato può portare verso uno stato di "OutOfService" o "ServiceRestored", che aggiorna il display e torna indietro:</p>
+<div class="code-wrapper"><span class="code-source">sprint3.qak</span><pre>Transition t0
     whenRequest loadrequest -> handleRequest
     whenMsg sonarfault      -> idleOutOfService
     whenMsg sonarrestored   -> idleServiceRestored
@@ -607,9 +601,9 @@ Transition t1
 // inviano ora anche forward sonar -m blinkLed : blinkLed(false)
 // oltre all'aggiornamento display gia' presente da Sprint2</pre></div>
 
-<h2 id="project-cargorobot">Sospensione e ripresa dopo guasto in cargorobot</h2>
+<h2 id="project-cargorobot">cargorobot</h2>
 <p>Ogni tratta del trasporto (verso IOPort, verso slot5, verso lo slot riservato, verso HOME) resta sensibile a <code>sonarfault</code> mentre attende la reply di <code>moverobot</code>. Alla ricezione, <code>cargorobot</code> ferma RobotSmart26 con <code>halt</code> e attende <code>sonarrestored</code> per riprendere la stessa tratta, usando <code>Leg</code> per sapere dove rientrare nel flusso normale:</p>
-<div class="code-wrapper"><span class="code-source">sprint3.qak — cargorobot (estratto)</span><pre>[# var TargetSlot = -1
+<div class="code-wrapper"><span class="code-source">sprint3.qak</span><pre>[# var TargetSlot = -1
    var TargetX = -1
    var TargetY = -1
    var PendingTX = -1     // target del moverobot in corso (per la ripresa dopo un guasto sonar)
@@ -687,7 +681,7 @@ while True:
         time.sleep(1)
     except Exception as e:
         print("È successo qualcosa di imprevisto:", type(e).__name__, e)</pre></div>
-<p>Il PicoW si limita a un confronto di sottostringa (<code>"blinkLed(true)" in payload</code>) sul messaggio in formato qak pubblicato da <code>sonar</code>, sufficiente dato che il firmware non ha bisogno di leggere altri campi del messaggio. La configurazione di rete (SSID/password) resta in un modulo separato non versionato.</p>
+<p>Oltre al firmware, è necessario caricare sul PicoW altri due file: il file "umqtt_simple", che permette di utilizzare MQTT su MicroPython, e il file "secrets", che contiene la configurazione di rete (SSID/password).</p>
 
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="deployment">Deployment</h1>
@@ -700,7 +694,7 @@ while True:
 <tr><td><code>ctxcargoservice</code></td><td><code>localhost:8050</code></td><td><code>cargoservice</code>, <code>cargorobot</code>, <code>ioport</code>, <code>sonar</code></td></tr>
 <tr><td><code>ctxrobotsmart</code></td><td><code>127.0.0.1:8020</code></td><td><code>robotsmart</code> (<code>ExternalQActor</code> fornito dal committente)</td></tr>
 <tr><td>Server Javalin (GUI IOPort)</td><td><code>localhost:7070</code></td><td>istanziato dall'attore <code>ioport</code> (<code>IOPortWsAdapter</code>): redirect a <code>/ioport_gui.html</code>, endpoint WebSocket su <code>/ws/ioport</code>; pannello raggiungibile su <code>http://localhost:7070/ioport_gui.html</code></td></tr>
-<tr><td>Broker MQTT</td><td><code>192.168.1.122:1883</code> (banco di prova attuale, da adattare alla rete usata)</td><td>ponte fra il PicoW e <code>ctxcargoservice</code>.</td></tr>
+<tr><td>Broker MQTT</td><td><code>x.x.x.x:1883</code> (IP da adattare alla rete usata)</td><td>ponte fra il PicoW e <code>ctxcargoservice</code>.</td></tr>
 <tr><td>PicoW</td><td>rete WiFi del banco, client MQTT id <code>sonarpico</code></td><td>firmware <code>sonarMqtt.py</code>. </tr>
 </table>
 

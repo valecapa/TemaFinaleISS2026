@@ -23,5 +23,3 @@ package-lock.json
 docker/
 /.metadata/
 /src-gen/
-
-src/utils/sonar/secretsInfostrada.py

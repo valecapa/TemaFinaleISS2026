@@ -1,5 +1,5 @@
 System sprint3
-mqttBroker "192.168.1.122" : 1883 eventTopic "cargoservice/sonar/distance"
+mqttBroker "192.168.1.98" : 1883 eventTopic "cargoservice/sonar/distance"
 
 Request loadrequest  : loadrequest(OCCUPIED)                     // fa richiesta di carico, OCCUPIED controlla se l'ingresso è libero o occupato da un container
 Reply   loadaccepted : loadaccepted(SLOT,HOLD) for loadrequest    // accetta il carico, assegna lo SLOT e mostra lo stato della HOLD

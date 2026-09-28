@@ -31,6 +31,8 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 		//IF actor.withobj !== null val actor.withobj.name� = actor.withobj.method�ENDIF
 		val hold = utils.cargoservice.Hold()
 		 var Slot = -1
+		     var TX = -1
+		     var TY = -1
 		     var Occupied = false
 		     hold.setAllSlotsFree()  
 		return { //this:ActionBasciFsm
@@ -45,6 +47,42 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 					sysaction { //it:State
 					}	 	 
 					 transition(edgeName="t00",targetState="handleRequest",cond=whenRequest("loadrequest"))
+					transition(edgeName="t01",targetState="idleOutOfService",cond=whenDispatch("sonarfault"))
+					transition(edgeName="t02",targetState="idleServiceRestored",cond=whenDispatch("sonarrestored"))
+				}	 
+				state("idleOutOfService") { //this:State
+					action { //it:State
+						if( checkMsgContent( Term.createTerm("sonarfault(CAUSE)"), Term.createTerm("sonarfault(CAUSE)"), 
+						                        currentMsg.msgContent()) ) { //set msgArgList
+								 var H = "'" + hold.displayStatus() + "'"  
+								 var S = "'OUT_OF_SERVICE'"  
+								 var M = "'Out of service'"  
+								CommUtils.outred("$name | sonar guasto, aggiorno display")
+								forward("updateDisplay", "updateDisplay($S,$H,$M)" ,"ioport" ) 
+						}
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition( edgeName="goto",targetState="idle", cond=doswitch() )
+				}	 
+				state("idleServiceRestored") { //this:State
+					action { //it:State
+						if( checkMsgContent( Term.createTerm("sonarrestored(NONE)"), Term.createTerm("sonarrestored(NONE)"), 
+						                        currentMsg.msgContent()) ) { //set msgArgList
+								 var H = "'" + hold.displayStatus() + "'"  
+								 var S = "'IDLE'"  
+								 var M = "'Service working'"  
+								CommUtils.outmagenta("$name | sonar ripristinato, aggiorno display")
+								forward("updateDisplay", "updateDisplay($S,$H,$M)" ,"ioport" ) 
+						}
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition( edgeName="goto",targetState="idle", cond=doswitch() )
 				}	 
 				state("handleRequest") { //this:State
 					action { //it:State
@@ -58,7 +96,9 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 								else
 								 { Slot = hold.reserveFirstFree()  
 								 if(  Slot != -1  
-								  ){ var H2 = "'" + hold.displayStatus() + "'"  
+								  ){ TX = hold.slotX(Slot)
+								                        TY = hold.slotY(Slot)
+								                        var H2 = "'" + hold.displayStatus() + "'"  
 								 CommUtils.outmagenta("$name | richiesta accettata (hold=$H2)")
 								 answer("loadrequest", "loadaccepted", "loadaccepted($Slot,$H2)"   )  
 								 }
@@ -79,10 +119,71 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 				}	 
 				state("engaged") { //this:State
 					action { //it:State
-						 var TX = hold.slotX(Slot)
-							       var TY = hold.slotY(Slot)  
-						CommUtils.outmagenta("$name | engaged, incarico cargorobot per slot $Slot (x=$TX,y=$TY)")
+						CommUtils.outmagenta("$name | engaged, in attesa che il cliente porti il container (slot $Slot)")
 						forward("blinkLed", "blinkLed(true)" ,"sonar" ) 
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+				 	 		stateTimer = TimerActor("timer_engaged", 
+				 	 					  scope, context!!, "local_tout_"+name+"_engaged", 30000.toLong() )  //OCT2023
+					}	 	 
+					 transition(edgeName="t03",targetState="disengagedTimeout",cond=whenTimeout("local_tout_"+name+"_engaged"))   
+					transition(edgeName="t04",targetState="startTransport",cond=whenDispatch("sonarcontainer"))
+					transition(edgeName="t05",targetState="rejectBusyContainer",cond=whenRequest("loadrequest"))
+					transition(edgeName="t06",targetState="engagedOutOfService",cond=whenDispatch("sonarfault"))
+					transition(edgeName="t07",targetState="engagedServiceRestored",cond=whenDispatch("sonarrestored"))
+				}	 
+				state("rejectBusyContainer") { //this:State
+					action { //it:State
+						if( checkMsgContent( Term.createTerm("loadrequest(OCCUPIED)"), Term.createTerm("loadrequest(X)"), 
+						                        currentMsg.msgContent()) ) { //set msgArgList
+								 var H = "'" + hold.displayStatus() + "'"  
+								CommUtils.outmagenta("$name | sistema occupato, rifiuto nuova richiesta")
+								answer("loadrequest", "loadrejected", "loadrejected(retrylater,$H)"   )  
+						}
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition( edgeName="goto",targetState="engaged", cond=doswitch() )
+				}	 
+				state("engagedOutOfService") { //this:State
+					action { //it:State
+						if( checkMsgContent( Term.createTerm("sonarfault(CAUSE)"), Term.createTerm("sonarfault(CAUSE)"), 
+						                        currentMsg.msgContent()) ) { //set msgArgList
+								 var H = "'" + hold.displayStatus() + "'"  
+								 var S = "'OUT_OF_SERVICE'"  
+								 var M = "'Out of service'"  
+								forward("updateDisplay", "updateDisplay($S,$H,$M)" ,"ioport" ) 
+						}
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition( edgeName="goto",targetState="engaged", cond=doswitch() )
+				}	 
+				state("engagedServiceRestored") { //this:State
+					action { //it:State
+						if( checkMsgContent( Term.createTerm("sonarrestored(NONE)"), Term.createTerm("sonarrestored(NONE)"), 
+						                        currentMsg.msgContent()) ) { //set msgArgList
+								 var H = "'" + hold.displayStatus() + "'"  
+								 var S = "'ENGAGED'"  
+								 var M = "'Service working'"  
+								forward("updateDisplay", "updateDisplay($S,$H,$M)" ,"ioport" ) 
+						}
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition( edgeName="goto",targetState="engaged", cond=doswitch() )
+				}	 
+				state("startTransport") { //this:State
+					action { //it:State
+						CommUtils.outmagenta("$name | container rilevato, incarico cargorobot per slot $Slot (x=$TX,y=$TY)")
 						request("transportContainer", "transportContainer($Slot,$TX,$TY)" ,"cargorobot" )  
 						//genTimer( actor, state )
 					}
@@ -97,15 +198,15 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
-				 	 		stateTimer = TimerActor("timer_waitingTransport", 
-				 	 					  scope, context!!, "local_tout_"+name+"_waitingTransport", 30000.toLong() )  //OCT2023
 					}	 	 
-					 transition(edgeName="t11",targetState="disengaged",cond=whenTimeout("local_tout_"+name+"_waitingTransport"))   
-					transition(edgeName="t12",targetState="success",cond=whenReply("transportDone"))
-					transition(edgeName="t13",targetState="disengaged",cond=whenReply("transportFailed"))
-					transition(edgeName="t14",targetState="rejectBusy",cond=whenRequest("loadrequest"))
+					 transition(edgeName="t18",targetState="success",cond=whenReply("transportDone"))
+					transition(edgeName="t19",targetState="disengagedFault",cond=whenReply("transportFailed"))
+					transition(edgeName="t110",targetState="rejectBusyTransport",cond=whenRequest("loadrequest"))
+					transition(edgeName="t111",targetState="handleMarking",cond=whenRequest("waitMarker"))
+					transition(edgeName="t112",targetState="transportOutOfService",cond=whenDispatch("sonarfault"))
+					transition(edgeName="t113",targetState="transportServiceRestored",cond=whenDispatch("sonarrestored"))
 				}	 
-				state("rejectBusy") { //this:State
+				state("rejectBusyTransport") { //this:State
 					action { //it:State
 						if( checkMsgContent( Term.createTerm("loadrequest(OCCUPIED)"), Term.createTerm("loadrequest(X)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
@@ -120,13 +221,85 @@ class Cargoservice ( name: String, scope: CoroutineScope, isconfined: Boolean=fa
 					}	 	 
 					 transition( edgeName="goto",targetState="waitingTransport", cond=doswitch() )
 				}	 
-				state("disengaged") { //this:State
+				state("transportOutOfService") { //this:State
 					action { //it:State
-						CommUtils.outmagenta("$name | timeout scaduto, libero lo slot e torno idle")
+						if( checkMsgContent( Term.createTerm("sonarfault(CAUSE)"), Term.createTerm("sonarfault(CAUSE)"), 
+						                        currentMsg.msgContent()) ) { //set msgArgList
+								 var H = "'" + hold.displayStatus() + "'"  
+								 var S = "'OUT_OF_SERVICE'"  
+								 var M = "'Out of service'"  
+								forward("updateDisplay", "updateDisplay($S,$H,$M)" ,"ioport" ) 
+						}
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition( edgeName="goto",targetState="waitingTransport", cond=doswitch() )
+				}	 
+				state("transportServiceRestored") { //this:State
+					action { //it:State
+						if( checkMsgContent( Term.createTerm("sonarrestored(NONE)"), Term.createTerm("sonarrestored(NONE)"), 
+						                        currentMsg.msgContent()) ) { //set msgArgList
+								 var H = "'" + hold.displayStatus() + "'"  
+								 var S = "'ENGAGED'"  
+								 var M = "'Service working'"  
+								forward("updateDisplay", "updateDisplay($S,$H,$M)" ,"ioport" ) 
+						}
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition( edgeName="goto",targetState="waitingTransport", cond=doswitch() )
+				}	 
+				state("handleMarking") { //this:State
+					action { //it:State
+						CommUtils.outmagenta("$name | marcatura container in corso...")
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+				 	 		stateTimer = TimerActor("timer_handleMarking", 
+				 	 					  scope, context!!, "local_tout_"+name+"_handleMarking", 3000.toLong() )  //OCT2023
+					}	 	 
+					 transition(edgeName="tm14",targetState="markingDone",cond=whenTimeout("local_tout_"+name+"_handleMarking"))   
+				}	 
+				state("markingDone") { //this:State
+					action { //it:State
+						CommUtils.outmagenta("$name | marcatura completata, notifico cargorobot")
+						answer("waitMarker", "markerDone", "markerDone(NONE)"   )  
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition( edgeName="goto",targetState="waitingTransport", cond=doswitch() )
+				}	 
+				state("disengagedTimeout") { //this:State
+					action { //it:State
+						CommUtils.outmagenta("$name | timeout scaduto, nessun container arrivato: libero lo slot e torno idle")
 						 hold.releaseReserved()  
 						 var H = "'" + hold.displayStatus() + "'"  
 						 var S = "'IDLE'"  
 						 var M = "'Timeout scaduto: slot liberato, torno idle'"  
+						forward("blinkLed", "blinkLed(false)" ,"sonar" ) 
+						forward("updateDisplay", "updateDisplay($S,$H,$M)" ,"ioport" ) 
+						 Slot = -1  
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition( edgeName="goto",targetState="idle", cond=doswitch() )
+				}	 
+				state("disengagedFault") { //this:State
+					action { //it:State
+						CommUtils.outred("$name | trasporto fallito per guasto robot: libero lo slot e torno idle")
+						 hold.releaseReserved()  
+						 var H = "'" + hold.displayStatus() + "'"  
+						 var S = "'IDLE'"  
+						 var M = "'Guasto durante il trasporto: slot liberato, riprovare'"  
 						forward("blinkLed", "blinkLed(false)" ,"sonar" ) 
 						forward("updateDisplay", "updateDisplay($S,$H,$M)" ,"ioport" ) 
 						 Slot = -1  

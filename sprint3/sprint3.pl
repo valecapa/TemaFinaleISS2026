@@ -1,7 +1,7 @@
 %====================================================================================
 % sprint3 description   
 %====================================================================================
-mqttBroker("127.0.0.1", "1883", "cargoservice/sonar/distance").
+mqttBroker("192.168.1.98", "1883", "cargoservice/sonar/distance").
 request( loadrequest, loadrequest(OCCUPIED) ).
 reply( loadaccepted, loadaccepted(SLOT,HOLD) ).  %%for loadrequest
 reply( loadrejected, loadrejected(REASON,HOLD) ).  %%for loadrequest
@@ -11,7 +11,9 @@ dispatch( updateDisplay, updateDisplay(STATE,HOLD,MSG) ).
 request( transportContainer, transportContainer(SLOT,TARGETX,TARGETY) ).
 reply( transportDone, transportDone(SLOT) ).  %%for transportContainer
 reply( transportFailed, transportFailed(CAUSE) ).  %%for transportContainer
-dispatch( robotHalted, robotHalted(CAUSE) ).
+request( waitMarker, waitMarker(NONE) ).
+reply( markerDone, markerDone(NONE) ).  %%for waitMarker
+dispatch( sonarcontainer, sonarcontainer(DISTANCE) ).
 request( moverobot, moverobot(TARGETX,TARGETY,STEPTIME) ).
 reply( moverobotdone, moverobotok(ARG) ).  %%for moverobot
 reply( moverobotfailed, moverobotfailed(PLANDONE,PLANTODO) ).  %%for moverobot

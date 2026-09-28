@@ -29,28 +29,27 @@ class Sonar ( name: String, scope: CoroutineScope, isconfined: Boolean=false, is
 	override fun getBody() : (ActorBasicFsm.() -> Unit){
 		//val interruptedStateTransitions = mutableListOf<Transition>()
 		//IF actor.withobj !== null val actor.withobj.name� = actor.withobj.method�ENDIF
-		 var DFREE = 30              // cm — soglia provvisoria Sprint0, da calibrare (vedi TP-B1)
+		 var DFREE = 30
 		       var Dist = 0.0
 		       var Occupied = false
 		       var Faulted = false
 		       var T0Container = 0L        // 0 = nessuna finestra di conferma container in corso
 		       var T0Fault = 0L            // 0 = nessuna finestra di conferma guasto in corso
-		       var WINDOW = 3000L          // 3 secondi, requisito esplicito di Sprint0
+		       var WINDOW = 3000L          // 3 secondi
 		return { //this:ActionBasciFsm
 				state("idle") { //this:State
 					action { //it:State
-						CommUtils.outblue("$name | in ascolto eventi nativi QAK via MQTT...")
+						CommUtils.outblue("$name | idle, in ascolto delle letture del PicoW via MQTT...")
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t030",targetState="onReading",cond=whenEvent("sonarreading"))
-					transition(edgeName="t031",targetState="onBlink",cond=whenDispatch("blinkLed"))
+					 transition(edgeName="t040",targetState="onReading",cond=whenEvent("sonarreading"))
+					transition(edgeName="t041",targetState="onBlink",cond=whenDispatch("blinkLed"))
 				}	 
 				state("onReading") { //this:State
 					action { //it:State
-						CommUtils.outgreen("$name | RICEVUTO MESSAGGIO!")
 						if( checkMsgContent( Term.createTerm("sonarreading(DISTANCE)"), Term.createTerm("sonarreading(D)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
 								 Dist = payloadArg(0).toDouble()
@@ -59,8 +58,9 @@ class Sonar ( name: String, scope: CoroutineScope, isconfined: Boolean=false, is
 								 ){ if (T0Container == 0L) { T0Container = Now }  
 								if(  !Occupied && (Now - T0Container) >= WINDOW  
 								 ){ Occupied = true  
-								CommUtils.outblue("$name | container rilevato (D=$Dist cm), notifico ioport")
+								CommUtils.outblue("$name | container rilevato (D=$Dist cm), notifico ioport e cargoservice")
 								forward("setOccupied", "setOccupied(true)" ,"ioport" ) 
+								forward("sonarcontainer", "sonarcontainer($Dist)" ,"cargoservice" ) 
 								}
 								}
 								else
@@ -101,9 +101,9 @@ class Sonar ( name: String, scope: CoroutineScope, isconfined: Boolean=false, is
 					action { //it:State
 						if( checkMsgContent( Term.createTerm("blinkLed(FLAG)"), Term.createTerm("blinkLed(FLAG)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
-								 var F = payloadArg(0)
-								               var LedMsg = CommUtils.buildDispatch(name, "blinkLed", "blinkLed(" + F + ")", "picow")
-								               mqtt.publish("cargoservice/sonar/led", LedMsg.toString())
+								 var F = payloadArg(0)  
+								 var LedMsg = CommUtils.buildDispatch(name, "blinkLed", "blinkLed(" + F + ")", "picow")
+								               mqtt.publish("cargoservice/sonar/led", LedMsg.toString())  
 								CommUtils.outblue("$name | comando Led($F) inoltrato al PicoW via MQTT")
 						}
 						//genTimer( actor, state )
