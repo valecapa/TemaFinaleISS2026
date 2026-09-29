@@ -59,7 +59,8 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 								               var Y_IOPort = IOPort.getY()
 								               PendingTX = X_IOPort ; PendingTY = Y_IOPort ; Leg = "toIOPort"
 								CommUtils.outyellow("$name | incarico ricevuto (slot riservato=$TargetSlot, x=$TargetX,y=$TargetY), vado all'IOPort per il ritiro del container")
-								request("moverobot", "moverobot($X_IOPort,$Y_IOPort,345)" ,"robotsmart" )  
+								 var MoveCmd = "moverobot($X_IOPort,$Y_IOPort,345)"  
+								request("moverobot", "$MoveCmd" ,"robotsmart" )  
 						}
 						//genTimer( actor, state )
 					}
@@ -187,6 +188,7 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 						                        currentMsg.msgContent()) ) { //set msgArgList
 								CommUtils.outred("$name | sonarfault ricevuto, fermo RobotSmart26")
 								emit("alarm", "alarm(sonarfault)" ) 
+								forward("move", "move(h)" ,"robotsmart" ) 
 						}
 						//genTimer( actor, state )
 					}

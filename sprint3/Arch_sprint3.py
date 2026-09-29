@@ -43,4 +43,5 @@ with Diagram('sprint3Arch', show=False, outformat='png', graph_attr=graphattr) a
      cargoservice >> Edge(color='blue', style='solid',  decorate='true', label='<updateDisplay &nbsp; >',  fontcolor='blue') >> ioport
      sonar >> Edge(color='blue', style='solid',  decorate='true', label='<setOccupied &nbsp; >',  fontcolor='blue') >> ioport
      sonar >> Edge(color='blue', style='solid',  decorate='true', label='<sonarfault &nbsp; sonarrestored &nbsp; >',  fontcolor='blue') >> cargorobot
+     cargorobot >> Edge(color='blue', style='solid',  decorate='true', label='<move &nbsp; >',  fontcolor='blue') >> robotsmart
 diag

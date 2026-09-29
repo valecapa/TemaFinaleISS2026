@@ -22,6 +22,7 @@ dispatch( sonarfault, sonarfault(CAUSE) ).
 dispatch( sonarrestored, sonarrestored(NONE) ).
 dispatch( blinkLed, blinkLed(FLAG) ).
 event( alarm, alarm(X) ).
+dispatch( move, move(M) ).
 %====================================================================================
 context(ctxcargoservice, "localhost",  "TCP", "8050").
 context(ctxrobotsmart, "robotsmart26",  "TCP", "8020").

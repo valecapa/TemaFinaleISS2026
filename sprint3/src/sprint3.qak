@@ -28,6 +28,7 @@ Dispatch sonarfault    : sonarfault(CAUSE)        // D > DFREE per >= 3s: sospet
 Dispatch sonarrestored : sonarrestored(NONE)      // sonar tornato a D <= DFREE dopo un guasto
 Dispatch blinkLed      : blinkLed(FLAG)           // comando Led per il PicoW
 Event 	 alarm         : alarm(X)
+Dispatch move		   : move(M)
 
 Context ctxcargoservice ip [host="localhost" port=8050]   // per cargoservice, cargorobot, ioport e sonar
 Context ctxrobotsmart   ip [host="robotsmart26"  port=8020]
@@ -264,7 +265,8 @@ QActor cargorobot context ctxcargoservice
                PendingTX = X_IOPort ; PendingTY = Y_IOPort ; Leg = "toIOPort"
                 #]
             println("$name | incarico ricevuto (slot riservato=$TargetSlot, x=$TargetX,y=$TargetY), vado all'IOPort per il ritiro del container") color yellow
-            request robotsmart -m moverobot : moverobot($X_IOPort, $Y_IOPort, 345)
+			[# var MoveCmd = "moverobot($X_IOPort,$Y_IOPort,345)" #]
+			request robotsmart -m moverobot : $MoveCmd
         }
     }
     Transition t1
@@ -348,6 +350,7 @@ QActor cargorobot context ctxcargoservice
         onMsg(sonarfault : sonarfault(CAUSE)) {
             println("$name | sonarfault ricevuto, fermo RobotSmart26") color red
     		emit alarm : alarm(sonarfault)
+    		forward robotsmart -m move : move(h)
         }
     }
 	Transition t8
