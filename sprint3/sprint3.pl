@@ -1,7 +1,7 @@
 %====================================================================================
 % sprint3 description   
 %====================================================================================
-mqttBroker("192.168.1.98", "1883", "cargoservice/sonar/distance").
+mqttBroker("mosquitto", "1883", "cargoservice/sonar/distance").
 request( loadrequest, loadrequest(OCCUPIED) ).
 reply( loadaccepted, loadaccepted(SLOT,HOLD) ).  %%for loadrequest
 reply( loadrejected, loadrejected(REASON,HOLD) ).  %%for loadrequest
@@ -21,10 +21,10 @@ event( sonarreading, sonarreading(DISTANCE) ).
 dispatch( sonarfault, sonarfault(CAUSE) ).
 dispatch( sonarrestored, sonarrestored(NONE) ).
 dispatch( blinkLed, blinkLed(FLAG) ).
-dispatch( halt, halt(X) ).
+event( alarm, alarm(X) ).
 %====================================================================================
 context(ctxcargoservice, "localhost",  "TCP", "8050").
-context(ctxrobotsmart, "127.0.0.1",  "TCP", "8020").
+context(ctxrobotsmart, "robotsmart26",  "TCP", "8020").
  qactor( robotsmart, ctxrobotsmart, "external").
   qactor( cargoservice, ctxcargoservice, "it.unibo.cargoservice.Cargoservice").
  static(cargoservice).

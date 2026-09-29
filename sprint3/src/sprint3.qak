@@ -1,5 +1,5 @@
 System sprint3
-mqttBroker "192.168.1.98" : 1883 eventTopic "cargoservice/sonar/distance"
+mqttBroker "mosquitto" : 1883 eventTopic "cargoservice/sonar/distance"
 
 Request loadrequest  : loadrequest(OCCUPIED)                     // fa richiesta di carico, OCCUPIED controlla se l'ingresso è libero o occupato da un container
 Reply   loadaccepted : loadaccepted(SLOT,HOLD) for loadrequest    // accetta il carico, assegna lo SLOT e mostra lo stato della HOLD
@@ -27,10 +27,10 @@ Event    sonarreading  : sonarreading(DISTANCE)   // letture della distanza (DIS
 Dispatch sonarfault    : sonarfault(CAUSE)        // D > DFREE per >= 3s: sospetto guasto sonar
 Dispatch sonarrestored : sonarrestored(NONE)      // sonar tornato a D <= DFREE dopo un guasto
 Dispatch blinkLed      : blinkLed(FLAG)           // comando Led per il PicoW
-Dispatch halt          : halt(X)                  // arresto immediato
+Event 	 alarm         : alarm(X)
 
 Context ctxcargoservice ip [host="localhost" port=8050]   // per cargoservice, cargorobot, ioport e sonar
-Context ctxrobotsmart   ip [host="127.0.0.1"  port=8020]
+Context ctxrobotsmart   ip [host="robotsmart26"  port=8020]
 
 ExternalQActor robotsmart context ctxrobotsmart
 
@@ -347,11 +347,18 @@ QActor cargorobot context ctxcargoservice
     State onSonarFault {
         onMsg(sonarfault : sonarfault(CAUSE)) {
             println("$name | sonarfault ricevuto, fermo RobotSmart26") color red
-            forward robotsmart -m halt : halt(NONE)
+    		emit alarm : alarm(sonarfault)
         }
     }
-    Transition tf whenMsg sonarrestored -> resumeMove
-
+	Transition t8
+	    	whenReply moverobotfailed -> waitSonar
+	    	whenReply moverobotdone   -> waitSonar
+	        
+	State waitSonar {
+	    	println("$name | Attendo che il sonar si ripristini...") color yellow
+		}
+	Transition tResume
+	    whenMsg sonarrestored -> resumeMove
     State resumeMove {
         onMsg(sonarrestored : sonarrestored(NONE)) {
             println("$name | sonarrestored ricevuto, riprendo (leg=$Leg) verso ($PendingTX,$PendingTY)") color yellow
