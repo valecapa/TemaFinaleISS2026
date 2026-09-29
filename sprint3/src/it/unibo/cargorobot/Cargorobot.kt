@@ -193,7 +193,18 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="tf31",targetState="resumeMove",cond=whenDispatch("sonarrestored"))
+					 transition(edgeName="t831",targetState="waitSonar",cond=whenReply("moverobotfailed"))
+					transition(edgeName="t832",targetState="waitSonar",cond=whenReply("moverobotdone"))
+				}	 
+				state("waitSonar") { //this:State
+					action { //it:State
+						CommUtils.outyellow("$name | Attendo che il sonar si ripristini...")
+						//genTimer( actor, state )
+					}
+					//After Lenzi Aug2002
+					sysaction { //it:State
+					}	 	 
+					 transition(edgeName="tResume33",targetState="resumeMove",cond=whenDispatch("sonarrestored"))
 				}	 
 				state("resumeMove") { //this:State
 					action { //it:State
@@ -207,8 +218,8 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="tr32",targetState="resumedOk",cond=whenReply("moverobotdone"))
-					transition(edgeName="tr33",targetState="halted",cond=whenReply("moverobotfailed"))
+					 transition(edgeName="tr34",targetState="resumedOk",cond=whenReply("moverobotdone"))
+					transition(edgeName="tr35",targetState="halted",cond=whenReply("moverobotfailed"))
 				}	 
 				state("resumedOk") { //this:State
 					action { //it:State

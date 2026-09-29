@@ -350,8 +350,15 @@ QActor cargorobot context ctxcargoservice
     		emit alarm : alarm(sonarfault)
         }
     }
-    Transition tf whenMsg sonarrestored -> resumeMove
-
+	Transition t8
+	    	whenReply moverobotfailed -> waitSonar
+	    	whenReply moverobotdone   -> waitSonar
+	        
+	State waitSonar {
+	    	println("$name | Attendo che il sonar si ripristini...") color yellow
+		}
+	Transition tResume
+	    whenMsg sonarrestored -> resumeMove
     State resumeMove {
         onMsg(sonarrestored : sonarrestored(NONE)) {
             println("$name | sonarrestored ricevuto, riprendo (leg=$Leg) verso ($PendingTX,$PendingTY)") color yellow

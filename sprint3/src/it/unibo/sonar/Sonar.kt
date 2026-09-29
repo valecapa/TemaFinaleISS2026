@@ -45,8 +45,8 @@ class Sonar ( name: String, scope: CoroutineScope, isconfined: Boolean=false, is
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition(edgeName="t040",targetState="onReading",cond=whenEvent("sonarreading"))
-					transition(edgeName="t041",targetState="onBlink",cond=whenDispatch("blinkLed"))
+					 transition(edgeName="t042",targetState="onReading",cond=whenEvent("sonarreading"))
+					transition(edgeName="t043",targetState="onBlink",cond=whenDispatch("blinkLed"))
 				}	 
 				state("onReading") { //this:State
 					action { //it:State
