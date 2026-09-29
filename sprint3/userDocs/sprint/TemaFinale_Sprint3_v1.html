@@ -427,7 +427,7 @@ li { margin-bottom: 4px; }
 <p><code>sonar</code> resta quindi in <code>ctxcargoservice</code>. Nessuno dei quattro attori applicativi (<code>cargoservice</code>, <code>cargorobot</code>, <code>ioport</code>, <code>sonar</code>) giustifica un <code>Context</code> separato, perché nessuno di essi comunica con un altro vero processo qak se non tramite <code>robotsmart</code> (unico caso di <code>ExternalQActor</code>), in quanto fornito e gestito dal committente come servizio indipendente.</p>
 
 <h2 id="cargorobot-guasto-sonar">Reazione di cargorobot al guasto</h2>
-<p>Come deciso col committente, un guasto sonar rilevato mentre <code>cargorobot</code> è già in movimento deve fermare immediatamente il robot, lasciare il container nella posizione corrente e riprendere l'operazione dal punto di interruzione al ripristino (<code>D ≤ DFREE</code>). <code>cargorobot</code> deve quindi restare sensibile a guasti in ognuna delle quattro tratte del trasporto (verso IOPort, verso slot5, verso lo slot riservato, verso HOME), non solo in una di esse.</p>
+<p>Come deciso col committente, un guasto sonar rilevato mentre <code>cargorobot</code> è già in movimento deve fermare il robot e lasciare il container nella posizione corrente. <code>cargorobot</code> deve quindi restare sensibile a guasti in ognuna delle quattro tratte del trasporto (verso IOPort, verso slot5, verso lo slot riservato, verso HOME).</p>
 
 <h2 id="led-reale">Led</h2>
 <p><code>blinkLed</code> raggiunge il PicoW via MQTT, che deve farlo lampeggiare fisicamente mentre allo stesso tempo continua a leggere il sonar e pubblicare. Il firmware MicroPython gira però su un solo thread: si considera quindi come ipotesi un semplice flag booleano, aggiornato dal callback MQTT sul topic del Led, controllato una volta per iterazione nel loop principale già esistente.</p>
@@ -440,7 +440,7 @@ Event    sonarreading  : sonarreading(DISTANCE)   // lettura di distanza
 Dispatch sonarfault    : sonarfault(CAUSE)        // D &gt; DFREE per &gt;= 3s: sospetto guasto sonar
 Dispatch sonarrestored : sonarrestored(NONE)      // sonar tornato a D &lt;= DFREE dopo un guasto
 Dispatch blinkLed      : blinkLed(FLAG)           // ordinare al PicoW di accendere il Led (via MQTT)
-Dispatch halt          : halt(X)                  // arresto immediato </pre></div>
+Event    alarm         : alarm(X)                 // segnale di arresto </pre></div>
 
 <!-- ══════════════════════════════════════════════════════ -->
 <h1 id="test-plans">Test plans</h1>
@@ -462,7 +462,7 @@ Dispatch halt          : halt(X)                  // arresto immediato </pre></d
 <table>
 <tr><th>ID</th><th>Scenario</th><th>Esito atteso</th></tr>
 <tr><td>TP-B1</td><td>Flusso completo: pulsante IOPort → container fisico posizionato davanti al sonar per &gt;3&nbsp;s → trasporto</td><td><code>ioport</code> segna occupato, <code>cargoservice</code> accetta il carico, il Led lampeggia per tutta la fase <code>engaged</code> e si spegne a trasporto concluso</td></tr>
-<tr><td>TP-B2</td><td>Copro/scopro il sonar con la mano oltre <code>DFREE</code> per &gt;3&nbsp;s durante un <code>moverobot</code> di <code>cargorobot</code> in corso</td><td><code>cargorobot</code> ferma RobotSmart26 (<code>halt</code>), sospende il movimento e, al ripristino, riprende la stessa tratta (stesso <code>Leg</code>) fino a destinazione</td></tr>
+<tr><td>TP-B2</td><td>Copro/scopro il sonar con la mano oltre <code>DFREE</code> per &gt;3&nbsp;s durante un <code>moverobot</code> di <code>cargorobot</code> in corso</td><td><code>cargorobot</code> ferma RobotSmart26, sospende il movimento e, al ripristino, riprende la stessa tratta (stesso <code>Leg</code>) fino a destinazione</td></tr>
 </table>
 
 <!-- ══════════════════════════════════════════════════════ -->
@@ -602,7 +602,7 @@ Transition t1
 // oltre all'aggiornamento display gia' presente da Sprint2</pre></div>
 
 <h2 id="project-cargorobot">cargorobot</h2>
-<p>Ogni tratta del trasporto (verso IOPort, verso slot5, verso lo slot riservato, verso HOME) resta sensibile a <code>sonarfault</code> mentre attende la reply di <code>moverobot</code>. Alla ricezione, <code>cargorobot</code> ferma RobotSmart26 con <code>halt</code> e attende <code>sonarrestored</code> per riprendere la stessa tratta, usando <code>Leg</code> per sapere dove rientrare nel flusso normale:</p>
+<p>Ogni tratta del trasporto (verso IOPort, verso slot5, verso lo slot riservato, verso HOME) resta sensibile a <code>sonarfault</code> mentre attende la reply di <code>moverobot</code>. Alla ricezione, <code>cargorobot</code> ferma RobotSmart26 con l'evento <code>alarm</code> e attende <code>sonarrestored</code> per riprendere la stessa tratta, usando <code>Leg</code> per sapere dove rientrare nel flusso normale:</p>
 <div class="code-wrapper"><span class="code-source">sprint3.qak</span><pre>[# var TargetSlot = -1
    var TargetX = -1
    var TargetY = -1
@@ -619,7 +619,7 @@ Transition t1
 State onSonarFault {
     onMsg(sonarfault : sonarfault(CAUSE)) {
         println("$name | sonarfault ricevuto, fermo RobotSmart26") color red
-        forward robotsmart -m halt : halt(NONE)
+        emit alarm : alarm(sonarfault)
     }
 }
 Transition tf whenMsg sonarrestored -> resumeMove
