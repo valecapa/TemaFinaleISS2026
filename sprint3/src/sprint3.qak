@@ -98,10 +98,7 @@ QActor cargoservice context ctxcargoservice
     }
     Goto engaged if [# Slot != -1 && Occupied == false #] else idle
 
-    // FIX R2: prima questo stato mandava subito transportContainer a cargorobot, senza aspettare
-    // che il cliente avesse davvero posato il container. Ora si limita ad attendere: o arriva
-    // sonarcontainer (il cliente ha portato il container in tempo) o scadono i 30s (R2).
-    State engaged {
+   State engaged {
 	    println("$name | engaged, in attesa che il cliente porti il container (slot $Slot)") color magenta
 	    forward sonar -m blinkLed : blinkLed(true)
 	}
@@ -147,8 +144,7 @@ QActor cargoservice context ctxcargoservice
 	}
 	Goto waitingTransport
 
-	// Non c'è più whenTime 30000 qui: quel timeout riguardava l'attesa del container (R2),
-	// già consumato nello stato "engaged". Qui si aspetta solo l'esito del trasporto.
+
 	State waitingTransport {
 	    // attendo la fine del trasporto o che succeda qualcosa
 	}
@@ -298,8 +294,6 @@ QActor cargorobot context ctxcargoservice
         whenReply moverobotfailed -> halted
         whenMsg   sonarfault      -> onSonarFault
 
-    // FIX marker: ripristinata la request/reply bloccante verso cargoservice (Sprint2), al posto
-    // del generico whenTime 2000 che aveva fatto perdere il significato di questa attesa.
     State atSlot5 {
         println("$name | container depositato in slot5, attendo fine marcatura") color yellow
         request cargoservice -m waitMarker : waitMarker(NONE)
@@ -320,7 +314,6 @@ QActor cargorobot context ctxcargoservice
         println("$name | arrivato allo slot riservato $TargetSlot") color yellow
     }
     Transition t6 whenTime 2000 -> goHome
-    // Stessa nota di atIOPort: pausa di assestamento, robot fermo, nessun halt necessario qui.
 
     State goHome {
         [# var H = hold.getHomePosition()
@@ -345,13 +338,6 @@ QActor cargorobot context ctxcargoservice
     }
     Goto idle
 
-    // FIX: mancava una via d'uscita da questo stato. Senza "Goto idle" cargorobot restava
-    // bloccato qui per sempre dopo un guasto RobotSmart26 (moverobotfailed), anche se
-    // cargoservice nel frattempo tornava regolarmente operativo: non avrebbe più potuto
-    // accettare un nuovo transportContainer.
-    // FIX: rimosso anche il forward robotHalted (messaggio morto, nessuno stato di cargoservice
-    // lo intercettava): cargoservice scopre comunque il guasto tramite transportFailed, la
-    // reply alla propria stessa request.
     State halted {
         println("$name | guasto RobotSmart26 rilevato, mi fermo e attendo decisione") color red
         replyTo transportContainer with transportFailed : transportFailed(guastoRobotSmart26)
