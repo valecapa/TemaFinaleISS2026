@@ -1,0 +1,49 @@
+services:
+  mqtt:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    ports: 
+      - 1883:1883
+      - 9001:9001 # accesso alla rete
+    restart: unless-stopped
+  sprint3:
+    build: 
+      dockerfile: Dockerfile
+    container_name: sprint3
+    ports:
+      - 8050:8050
+      - 7070:7070
+    depends_on:
+      - mqtt
+      - robotsmart26
+    restart: unless-stopped
+  wenv:
+    container_name: wenv
+    image: docker.io/natbodocker/virtualrobotdisi26:1.0
+    ports:
+      - 8090:8090
+      - 8091:8091/tcp
+      - 8091:8091/udp
+    volumes:
+      - ./spaceship.json:/home/node/WEnv/WebGLScene/models/spaceship.json
+    restart: unless-stopped
+
+  robotoutgui25:
+    container_name: robotoutgui25
+    image: docker.io/natbodocker/robotoutgui25:1.0
+    ports:
+     - 8085:8085/tcp
+    restart: unless-stopped
+  robotsmart26:
+    container_name: robotsmart26
+    image: docker.io/natbodocker/robotsmart26:1.0
+    ports:
+      - "8020:8020/tcp"
+      - "8020:8020/udp"
+    environment:
+      - VIRTUAL_ENV=wenv
+      - MQTTBROKER=mosquitto
+    depends_on:
+      - wenv
+      - mqtt
+    restart: unless-stopped

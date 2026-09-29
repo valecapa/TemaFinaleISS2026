@@ -32,6 +32,7 @@ with Diagram('sprint3Arch', show=False, outformat='png', graph_attr=graphattr) a
           sonar=Custom('sonar','./qakicons/symActorWithobjSmall.png')
      with Cluster('ctxrobotsmart', graph_attr=nodeattr):
           robotsmart=Custom('robotsmart(ext)','./qakicons/externalQActor.png')
+     cargorobot >> Edge( label='alarm', **eventedgeattr, decorate='true', fontcolor='red') >> sys
      sys >> Edge( label='sonarreading', **evattr, decorate='true', fontcolor='darkgreen') >> sonar
      ioport >> Edge(color='magenta', style='solid', decorate='true', label='<loadrequest<font color="darkgreen"> loadaccepted loadrejected</font> &nbsp; >',  fontcolor='magenta') >> cargoservice
      cargorobot >> Edge(color='magenta', style='solid', decorate='true', label='<waitMarker<font color="darkgreen"> markerDone</font> &nbsp; >',  fontcolor='magenta') >> cargoservice
@@ -42,5 +43,4 @@ with Diagram('sprint3Arch', show=False, outformat='png', graph_attr=graphattr) a
      cargoservice >> Edge(color='blue', style='solid',  decorate='true', label='<updateDisplay &nbsp; >',  fontcolor='blue') >> ioport
      sonar >> Edge(color='blue', style='solid',  decorate='true', label='<setOccupied &nbsp; >',  fontcolor='blue') >> ioport
      sonar >> Edge(color='blue', style='solid',  decorate='true', label='<sonarfault &nbsp; sonarrestored &nbsp; >',  fontcolor='blue') >> cargorobot
-     cargorobot >> Edge(color='blue', style='solid',  decorate='true', label='<halt &nbsp; >',  fontcolor='blue') >> robotsmart
 diag

@@ -186,7 +186,7 @@ class Cargorobot ( name: String, scope: CoroutineScope, isconfined: Boolean=fals
 						if( checkMsgContent( Term.createTerm("sonarfault(CAUSE)"), Term.createTerm("sonarfault(CAUSE)"), 
 						                        currentMsg.msgContent()) ) { //set msgArgList
 								CommUtils.outred("$name | sonarfault ricevuto, fermo RobotSmart26")
-								forward("halt", "halt(NONE)" ,"robotsmart" ) 
+								emit("alarm", "alarm(sonarfault)" ) 
 						}
 						//genTimer( actor, state )
 					}
